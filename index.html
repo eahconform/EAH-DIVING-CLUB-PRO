@@ -1,0 +1,3283 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+  <!-- =========================================================
+       EAH DIVING PRO CLUB
+       INDEX.HTML
+  ========================================================== -->
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#03131f"
+  >
+
+  <meta
+    name="description"
+    content="EAH Diving Pro Club — le passeport numérique de progression du plongeur."
+  >
+
+  <meta
+    name="referrer"
+    content="strict-origin-when-cross-origin"
+  >
+
+  <title>
+    EAH Diving Pro Club
+  </title>
+
+
+  <!-- =========================================================
+       FAVICON
+       Image à uploader dans GitHub :
+       eah-diving-favicon.png
+  ========================================================== -->
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="eah-diving-favicon.png"
+  >
+
+
+  <!-- =========================================================
+       POLICE
+  ========================================================== -->
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
+
+  <!-- =========================================================
+       PRELOAD HERO
+  ========================================================== -->
+
+  <link
+    rel="preload"
+    as="image"
+    href="hero-divers-group.png"
+  >
+
+
+  <!-- =========================================================
+       CSS
+       Le prochain code sera styles.css
+  ========================================================== -->
+
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
+
+  <!-- =========================================================
+       CONFIGURATION PUBLIQUE SUPABASE
+
+       La publishable key peut être utilisée dans le navigateur.
+
+       NE JAMAIS METTRE :
+       - secret key
+       - service_role key
+       dans ce fichier.
+  ========================================================== -->
+
+  <script>
+
+    window.EAH_CONFIG = {
+
+      APP_NAME:
+        "EAH DIVING PRO CLUB",
+
+      VERSION:
+        "1.0.0",
+
+      SUPABASE_URL:
+        "https://limyeqpdzjjwsdximehp.supabase.co",
+
+      SUPABASE_PUBLISHABLE_KEY:
+        "sb_publishable_K9iUm_0Qhea65P1Zt6rbXQ_BXQCzJ9w",
+
+      DEFAULT_PRIMARY_COLOR:
+        "#0b6bff",
+
+      DEFAULT_SECONDARY_COLOR:
+        "#03131f"
+
+    };
+
+  </script>
+
+
+  <!-- =========================================================
+       SUPABASE JS
+  ========================================================== -->
+
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+
+  <!-- =========================================================
+       JS EAH
+       Le code sera envoyé après styles.css
+  ========================================================== -->
+
+  <script
+    defer
+    src="script.js"
+  ></script>
+
+</head>
+
+
+<body>
+
+
+  <!-- =========================================================
+       FOND PREMIUM
+  ========================================================== -->
+
+  <div
+    class="site-background"
+    aria-hidden="true"
+  ></div>
+
+
+  <div
+    class="water-effects"
+    aria-hidden="true"
+  >
+
+    <span class="bubble bubble-1"></span>
+
+    <span class="bubble bubble-2"></span>
+
+    <span class="bubble bubble-3"></span>
+
+    <span class="bubble bubble-4"></span>
+
+    <span class="bubble bubble-5"></span>
+
+  </div>
+
+
+
+  <!-- =========================================================
+       HEADER
+  ========================================================== -->
+
+  <header
+    class="site-header"
+    id="siteHeader"
+  >
+
+    <div class="header-inner">
+
+
+      <!-- LOGO -->
+
+      <a
+        href="#accueil"
+        class="brand"
+        data-page="accueil"
+        aria-label="EAH Diving"
+      >
+
+        <img
+          src="eah-diving-logo.png"
+          alt="EAH Diving"
+          class="brand-logo"
+        >
+
+        <div class="brand-text">
+
+          <strong>
+            EAH DIVING
+          </strong>
+
+          <span>
+            PRO CLUB
+          </span>
+
+        </div>
+
+      </a>
+
+
+
+      <!-- NAVIGATION -->
+
+      <nav
+        class="navigation"
+        id="navigation"
+      >
+
+        <a
+          href="#grading"
+          data-page="grading"
+        >
+          Le grading
+        </a>
+
+
+        <a
+          href="#blazons"
+          data-page="blazons"
+        >
+          Blazons
+        </a>
+
+
+        <a
+          href="#population"
+          data-page="population"
+        >
+          Population
+        </a>
+
+
+        <a
+          href="#spots"
+          data-page="spots"
+        >
+          Spots
+        </a>
+
+
+        <a
+          href="#actualites"
+          data-page="actualites"
+        >
+          Actualités
+        </a>
+
+
+        <a
+          href="#tarifs"
+          data-page="tarifs"
+        >
+          Tarifs
+        </a>
+
+
+
+        <!-- DISCIPLINES -->
+
+        <div class="nav-dropdown">
+
+          <button
+            type="button"
+            class="nav-dropdown-button"
+          >
+            Disciplines
+          </button>
+
+          <div class="nav-dropdown-menu">
+
+            <a
+              href="#olympique"
+              data-page="olympique"
+            >
+              Plongeon olympique
+            </a>
+
+            <a
+              href="#freestyle"
+              data-page="freestyle"
+            >
+              Freestyle / Døds
+            </a>
+
+            <a
+              href="#highdiving"
+              data-page="highdiving"
+            >
+              High Diving
+            </a>
+
+            <a
+              href="#ange"
+              data-page="ange"
+            >
+              Saut de l'ange
+            </a>
+
+          </div>
+
+        </div>
+
+
+
+        <a
+          href="#club"
+          class="nav-club"
+          data-page="club"
+        >
+          Espace Club
+        </a>
+
+
+        <a
+          href="#faire-grader"
+          class="button small"
+          data-page="faire-grader"
+        >
+          Faire grader
+        </a>
+
+      </nav>
+
+
+
+      <!-- MENU MOBILE -->
+
+      <button
+        type="button"
+        class="mobile-menu"
+        id="mobileMenu"
+        aria-label="Ouvrir le menu"
+      >
+
+        <span></span>
+        <span></span>
+        <span></span>
+
+      </button>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- =========================================================
+       CONTENU
+  ========================================================== -->
+
+  <main>
+
+
+
+    <!-- =======================================================
+         ACCUEIL
+    ======================================================== -->
+
+    <section
+      class="page active"
+      id="accueil"
+    >
+
+
+      <!-- HERO -->
+
+      <section class="hero hero-home">
+
+        <img
+          src="hero-divers-group.png"
+          alt=""
+          class="hero-background-image"
+        >
+
+        <div class="hero-overlay"></div>
+
+
+        <div class="container hero-content">
+
+          <span class="overline">
+            EAH DIVING PRO CLUB
+          </span>
+
+          <h1>
+            Le plongeon.<br>
+            <span>Mesuré autrement.</span>
+          </h1>
+
+          <p class="hero-lead">
+
+            Un passeport numérique de progression
+            pour suivre les plongeurs,
+            mesurer les performances
+            et valoriser leur évolution.
+
+          </p>
+
+
+          <div class="hero-actions">
+
+            <button
+              type="button"
+              class="button"
+              data-page-button="faire-grader"
+            >
+              Faire grader un plongeon
+            </button>
+
+            <button
+              type="button"
+              class="button secondary"
+              data-page-button="grading"
+            >
+              Comprendre le grading
+            </button>
+
+          </div>
+
+
+          <div class="hero-tags">
+
+            <span>
+              NFC / QR
+            </span>
+
+            <span>
+              Grade Report
+            </span>
+
+            <span>
+              Blazons
+            </span>
+
+            <span>
+              EAH Verified
+            </span>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- PRINCIPE -->
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="section-title">
+
+            <span class="overline">
+              LE SYSTÈME EAH
+            </span>
+
+            <h2>
+              Un parcours simple
+            </h2>
+
+            <p>
+              Du profil du plongeur jusqu'à sa progression.
+            </p>
+
+          </div>
+
+
+          <div class="workflow-grid">
+
+            <article class="workflow-card">
+
+              <span class="workflow-number">
+                01
+              </span>
+
+              <h3>
+                Profil EAH
+              </h3>
+
+              <p>
+                Chaque plongeur possède un numéro EAH
+                et une carte NFC / QR personnelle.
+              </p>
+
+            </article>
+
+
+            <article class="workflow-card">
+
+              <span class="workflow-number">
+                02
+              </span>
+
+              <h3>
+                Grading
+              </h3>
+
+              <p>
+                Le coach évalue Takeoff,
+                Trick et Entry.
+              </p>
+
+            </article>
+
+
+            <article class="workflow-card">
+
+              <span class="workflow-number">
+                03
+              </span>
+
+              <h3>
+                Grade Report
+              </h3>
+
+              <p>
+                Un rapport est généré
+                et enregistré dans l'historique.
+              </p>
+
+            </article>
+
+
+            <article class="workflow-card">
+
+              <span class="workflow-number">
+                04
+              </span>
+
+              <h3>
+                Progression
+              </h3>
+
+              <p>
+                Les évaluations alimentent automatiquement
+                la progression des blazons.
+              </p>
+
+            </article>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- DISCIPLINES -->
+
+      <section class="section section-soft">
+
+        <div class="container">
+
+          <div class="section-title">
+
+            <span class="overline">
+              DISCIPLINES
+            </span>
+
+            <h2>
+              Plusieurs pratiques.
+              Un même passeport.
+            </h2>
+
+          </div>
+
+
+          <div class="discipline-grid">
+
+
+            <!-- OLYMPIQUE -->
+
+            <article
+              class="discipline-card"
+              data-open="olympique"
+            >
+
+              <picture>
+
+                <source
+                  media="(max-width: 700px)"
+                  srcset="portrait-water-diver.jpg"
+                >
+
+                <img
+                  src="olympique-desktop.jpg"
+                  alt="Plongeon olympique"
+                  loading="lazy"
+                >
+
+              </picture>
+
+              <div class="discipline-overlay"></div>
+
+              <div class="discipline-content">
+
+                <span>
+                  EAH DIVING
+                </span>
+
+                <h3>
+                  Plongeon olympique
+                </h3>
+
+                <p>
+                  Tremplin et plateforme jusqu'à 10 mètres.
+                </p>
+
+              </div>
+
+            </article>
+
+
+
+            <!-- FREESTYLE -->
+
+            <article
+              class="discipline-card"
+              data-open="freestyle"
+            >
+
+              <img
+                src="freestyle-divers-group.jpg"
+                alt="Freestyle Diving"
+                loading="lazy"
+              >
+
+              <div class="discipline-overlay"></div>
+
+              <div class="discipline-content">
+
+                <span>
+                  EAH DIVING
+                </span>
+
+                <h3>
+                  Freestyle / Døds
+                </h3>
+
+                <p>
+                  Créativité, contrôle et règles adaptées à la discipline.
+                </p>
+
+              </div>
+
+            </article>
+
+
+
+            <!-- HIGH DIVING -->
+
+            <article
+              class="discipline-card"
+              data-open="highdiving"
+            >
+
+              <picture>
+
+                <source
+                  media="(max-width: 700px)"
+                  srcset="hero-diver-vertical.jpg"
+                >
+
+                <img
+                  src="high-diving-desktop.jpg"
+                  alt="High Diving"
+                  loading="lazy"
+                >
+
+              </picture>
+
+              <div class="discipline-overlay"></div>
+
+              <div class="discipline-content">
+
+                <span>
+                  EAH DIVING
+                </span>
+
+                <h3>
+                  High Diving
+                </h3>
+
+                <p>
+                  Progression et évaluation en grande hauteur.
+                </p>
+
+              </div>
+
+            </article>
+
+
+
+            <!-- ANGE -->
+
+            <article
+              class="discipline-card"
+              data-open="ange"
+            >
+
+              <img
+                src="saut-ange-desktop.jpg"
+                alt="Saut de l'ange"
+                loading="lazy"
+              >
+
+              <div class="discipline-overlay"></div>
+
+              <div class="discipline-content">
+
+                <span>
+                  EAH DIVING
+                </span>
+
+                <h3>
+                  Saut de l'ange
+                </h3>
+
+                <p>
+                  Progression spécifique selon la hauteur.
+                </p>
+
+              </div>
+
+            </article>
+
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- GRADING PREVIEW -->
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="premium-panel">
+
+            <div>
+
+              <span class="overline">
+                ÉVALUATION EAH
+              </span>
+
+              <h2>
+                Trois critères.
+                Une lecture claire.
+              </h2>
+
+              <p>
+                Le coach reste le coach.
+                EAH fournit une méthode structurée
+                pour suivre la progression.
+              </p>
+
+            </div>
+
+
+            <div class="grading-preview">
+
+              <div>
+
+                <span>
+                  D
+                </span>
+
+                <strong>
+                  Takeoff
+                </strong>
+
+                <small>
+                  Départ
+                </small>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  T
+                </span>
+
+                <strong>
+                  Trick
+                </strong>
+
+                <small>
+                  Phase aérienne
+                </small>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  E
+                </span>
+
+                <strong>
+                  Entry
+                </strong>
+
+                <small>
+                  Entrée
+                </small>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+    </section>
+
+
+
+    <!-- =======================================================
+         GRADING
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="grading"
+    >
+
+      <section class="page-hero">
+
+        <img
+          src="grading-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            MÉTHODE EAH
+          </span>
+
+          <h1>
+            Le grading
+          </h1>
+
+          <p>
+            Une évaluation structurée du plongeon
+            autour de trois critères complémentaires.
+          </p>
+
+        </div>
+
+      </section>
+
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="grading-grid">
+
+
+            <!-- TAKEOFF -->
+
+            <article
+              class="grading-card"
+              data-sheet="D"
+            >
+
+              <img
+                src="grading-takeoff.png"
+                alt="Takeoff"
+                loading="lazy"
+              >
+
+              <div>
+
+                <span class="grading-letter">
+                  D
+                </span>
+
+                <h3>
+                  Takeoff
+                </h3>
+
+                <p>
+                  Départ
+                </p>
+
+              </div>
+
+            </article>
+
+
+
+            <!-- TRICK -->
+
+            <article
+              class="grading-card"
+              data-sheet="T"
+            >
+
+              <img
+                src="grading-trick.png"
+                alt="Trick"
+                loading="lazy"
+              >
+
+              <div>
+
+                <span class="grading-letter">
+                  T
+                </span>
+
+                <h3>
+                  Trick
+                </h3>
+
+                <p>
+                  Phase aérienne
+                </p>
+
+              </div>
+
+            </article>
+
+
+
+            <!-- ENTRY -->
+
+            <article
+              class="grading-card"
+              data-sheet="E"
+            >
+
+              <img
+                src="grading-entry.png"
+                alt="Entry"
+                loading="lazy"
+              >
+
+              <div>
+
+                <span class="grading-letter">
+                  E
+                </span>
+
+                <h3>
+                  Entry
+                </h3>
+
+                <p>
+                  Entrée à l'eau
+                </p>
+
+              </div>
+
+            </article>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- FORMULE -->
+
+      <section class="section section-soft">
+
+        <div class="container">
+
+          <div class="content-panel">
+
+            <span class="overline">
+              NOTE FINALE
+            </span>
+
+            <h2>
+              Le critère le plus faible compte.
+            </h2>
+
+            <p>
+              La note finale repose sur le minimum
+              des trois critères.
+              Lorsque ce minimum n'apparaît qu'une seule fois,
+              un bonus de 0,5 est appliqué.
+            </p>
+
+
+            <div class="score-examples">
+
+              <div>
+
+                <span>
+                  9 / 9 / 8
+                </span>
+
+                <strong>
+                  8,5
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  8 / 8 / 9
+                </span>
+
+                <strong>
+                  8
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  7 / 6 / 6
+                </span>
+
+                <strong>
+                  6
+                </strong>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- ECHELLE -->
+
+      <section class="section">
+
+        <div class="container two-column">
+
+          <article class="image-panel">
+
+            <img
+              src="notation-levels.png"
+              alt="Échelle EAH Diving"
+              loading="lazy"
+            >
+
+          </article>
+
+
+          <article class="image-panel">
+
+            <img
+              src="grade-report-example.png"
+              alt="Exemple Grade Report"
+              loading="lazy"
+            >
+
+          </article>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         BLAZONS
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="blazons"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="blazons-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            PROGRESSION EAH
+          </span>
+
+          <h1>
+            Les blazons
+          </h1>
+
+          <p>
+            Du Blazon Blanc au Blazon Titan.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div
+            class="blazon-grid"
+            id="blazonGrid"
+          >
+
+            <div class="loading-panel">
+              Chargement des blazons…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         POPULATION
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="population"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="population-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            POPULATION EAH
+          </span>
+
+          <h1>
+            Explorer les performances
+          </h1>
+
+          <p>
+            Recherche par code de plongeon.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="search-panel">
+
+            <label for="populationCode">
+              Code du plongeon
+            </label>
+
+            <div class="search-line">
+
+              <input
+                id="populationCode"
+                type="text"
+                placeholder="Exemple : 5152B"
+                autocomplete="off"
+              >
+
+              <button
+                type="button"
+                class="button"
+                id="populationSearchButton"
+              >
+                Rechercher
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="populationResults"
+            class="population-results"
+          >
+
+            <div class="loading-panel">
+              Entre un code pour afficher les statistiques EAH.
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         SPOTS
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="spots"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="spots-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            SPOTS EAH
+          </span>
+
+          <h1>
+            Où plonger ?
+          </h1>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div
+            id="spotsGrid"
+            class="spots-grid"
+          >
+
+            <div class="loading-panel">
+              Chargement des spots…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         ACTUALITES
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="actualites"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="news-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            EAH DIVING
+          </span>
+
+          <h1>
+            Actualités
+          </h1>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div
+            id="newsGrid"
+            class="news-grid"
+          >
+
+            <div class="loading-panel">
+              Chargement des actualités…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         TARIFS
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="tarifs"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="pricing-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            EAH DIVING PRO CLUB
+          </span>
+
+          <h1>
+            Les offres
+          </h1>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div
+            class="pricing-grid"
+            id="pricingGrid"
+          >
+
+            <div class="loading-panel">
+              Chargement des offres…
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         FAIRE GRADER
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="faire-grader"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="grading-request-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            GRADING EAH
+          </span>
+
+          <h1>
+            Faire grader un plongeon
+          </h1>
+
+          <p>
+            Envoyez une demande à EAH Diving.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container form-container">
+
+          <form
+            id="publicGradingForm"
+            class="premium-form"
+          >
+
+
+            <div class="form-grid">
+
+
+              <label>
+
+                <span>
+                  Prénom
+                </span>
+
+                <input
+                  id="publicFirstName"
+                  type="text"
+                  required
+                >
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  Nom
+                </span>
+
+                <input
+                  id="publicLastName"
+                  type="text"
+                  required
+                >
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  E-mail
+                </span>
+
+                <input
+                  id="publicEmail"
+                  type="email"
+                  required
+                >
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  Discipline
+                </span>
+
+                <select
+                  id="publicDiscipline"
+                  required
+                >
+
+                  <option value="Plongeon">
+                    Plongeon olympique
+                  </option>
+
+                  <option value="High Diving">
+                    High Diving
+                  </option>
+
+                  <option value="Freestyle">
+                    Freestyle
+                  </option>
+
+                  <option value="Døds">
+                    Døds
+                  </option>
+
+                  <option value="Saut de l'ange">
+                    Saut de l'ange
+                  </option>
+
+                </select>
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  Code / figure
+                </span>
+
+                <input
+                  id="publicDive"
+                  type="text"
+                  placeholder="Exemple : 5152B"
+                >
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  Hauteur
+                </span>
+
+                <input
+                  id="publicHeight"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                >
+
+              </label>
+
+
+              <label>
+
+                <span>
+                  Type de hauteur
+                </span>
+
+                <select
+                  id="publicHeightType"
+                >
+
+                  <option value="KNOWN">
+                    Hauteur connue
+                  </option>
+
+                  <option value="ESTIMATED">
+                    Hauteur approximative
+                  </option>
+
+                </select>
+
+              </label>
+
+
+              <label class="form-full">
+
+                <span>
+                  Lien vidéo
+                </span>
+
+                <input
+                  id="publicVideo"
+                  type="url"
+                  placeholder="Google Drive, YouTube, etc."
+                  required
+                >
+
+              </label>
+
+
+              <label class="form-full">
+
+                <span>
+                  Message
+                </span>
+
+                <textarea
+                  id="publicMessage"
+                  rows="5"
+                ></textarea>
+
+              </label>
+
+
+            </div>
+
+
+            <button
+              type="submit"
+              class="button"
+              id="publicSubmitButton"
+            >
+              Envoyer la demande
+            </button>
+
+
+            <div
+              id="publicFormMessage"
+              class="form-message"
+            ></div>
+
+          </form>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         ESPACE CLUB / CONNEXION
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="club"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="club-dashboard-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            EAH DIVING PRO CLUB
+          </span>
+
+          <h1>
+            Espace Club
+          </h1>
+
+          <p>
+            Gestion des plongeurs,
+            évaluations et progression.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+
+          <!-- =================================================
+               CONNEXION
+          ================================================== -->
+
+          <div
+            id="clubAccess"
+            class="access-grid"
+          >
+
+
+            <!-- COACH -->
+
+            <article class="access-card">
+
+              <span class="overline">
+                COACH
+              </span>
+
+              <h2>
+                Connexion coach
+              </h2>
+
+              <p>
+                Accédez à votre club avec votre compte personnel.
+              </p>
+
+
+              <form
+                id="coachLoginForm"
+                class="premium-form compact-form"
+              >
+
+                <label>
+
+                  <span>
+                    E-mail
+                  </span>
+
+                  <input
+                    id="coachEmail"
+                    type="email"
+                    autocomplete="email"
+                    required
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Mot de passe
+                  </span>
+
+                  <input
+                    id="coachPassword"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                  >
+
+                </label>
+
+
+                <button
+                  type="submit"
+                  class="button"
+                  id="coachLoginButton"
+                >
+                  Accéder à l'espace coach
+                </button>
+
+
+                <div
+                  id="loginMsg"
+                  class="form-message"
+                ></div>
+
+              </form>
+
+            </article>
+
+
+
+            <!-- PLONGEUR -->
+
+            <article class="access-card">
+
+              <span class="overline">
+                PLONGEUR
+              </span>
+
+              <h2>
+                Ouvrir mon profil
+              </h2>
+
+              <p>
+                Retrouvez votre passeport EAH sans votre carte.
+              </p>
+
+
+              <form
+                id="diverLoginForm"
+                class="premium-form compact-form"
+              >
+
+                <label>
+
+                  <span>
+                    Numéro EAH
+                  </span>
+
+                  <input
+                    id="diverEahId"
+                    type="text"
+                    placeholder="EAH-..."
+                    autocomplete="off"
+                    required
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Code personnel
+                  </span>
+
+                  <input
+                    id="diverPin"
+                    type="password"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    required
+                  >
+
+                </label>
+
+
+                <button
+                  type="submit"
+                  class="button secondary"
+                  id="diverLoginButton"
+                >
+                  Ouvrir mon profil
+                </button>
+
+
+                <div
+                  id="diverLoginMsg"
+                  class="form-message"
+                ></div>
+
+              </form>
+
+            </article>
+
+
+          </div>
+
+
+
+          <!-- =================================================
+               ESPACE COACH CONNECTÉ
+          ================================================== -->
+
+          <section
+            id="coachPrivate"
+            class="coach-private hidden"
+          >
+
+
+            <!-- BARRE CLUB -->
+
+            <div class="dashboard-topbar">
+
+              <div>
+
+                <span class="overline">
+                  ESPACE PRIVÉ
+                </span>
+
+                <h2 id="dashboardClubName">
+                  EAH Diving Club
+                </h2>
+
+                <div
+                  id="dashboardCoachBadge"
+                  class="badge"
+                >
+                  Coach
+                </div>
+
+              </div>
+
+
+              <div class="dashboard-actions">
+
+                <button
+                  type="button"
+                  class="button"
+                  id="openEvaluationButton"
+                >
+                  + Nouvelle évaluation
+                </button>
+
+                <button
+                  type="button"
+                  class="button secondary"
+                  id="logoutCoachButton"
+                >
+                  Déconnexion
+                </button>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- KPI -->
+
+            <div
+              class="dashboard-stats"
+              id="dashboardStats"
+            >
+
+              <div class="stat-card skeleton-card"></div>
+
+              <div class="stat-card skeleton-card"></div>
+
+              <div class="stat-card skeleton-card"></div>
+
+              <div class="stat-card skeleton-card"></div>
+
+            </div>
+
+
+
+            <!-- DASHBOARD -->
+
+            <div class="dashboard-grid">
+
+
+              <article class="dashboard-card">
+
+                <h3>
+                  Dernières évaluations
+                </h3>
+
+                <div id="recentDashboard">
+
+                  <div class="mini-loading">
+                    Chargement…
+                  </div>
+
+                </div>
+
+              </article>
+
+
+              <article class="dashboard-card">
+
+                <h3>
+                  Groupes
+                </h3>
+
+                <div id="groupsDashboard">
+
+                  <div class="mini-loading">
+                    Chargement…
+                  </div>
+
+                </div>
+
+              </article>
+
+
+            </div>
+
+
+          </section>
+
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         PROFIL PLONGEUR
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="profil"
+    >
+
+      <section class="section profile-section">
+
+        <div class="container">
+
+
+          <!-- LOADING -->
+
+          <div
+            id="profileLoading"
+            class="profile-loading"
+          >
+
+            <div class="profile-skeleton">
+
+              <div class="skeleton-avatar"></div>
+
+              <div>
+
+                <div class="skeleton-line large"></div>
+
+                <div class="skeleton-line"></div>
+
+                <div class="skeleton-line small"></div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+
+          <!-- PAS DE SESSION -->
+
+          <div
+            id="profileNoAuth"
+            class="content-panel hidden"
+          >
+
+            <span class="overline">
+              PROFIL EAH
+            </span>
+
+            <h2>
+              Aucun profil ouvert
+            </h2>
+
+            <p>
+              Scannez votre carte NFC / QR
+              ou connectez-vous avec votre numéro EAH.
+            </p>
+
+            <button
+              type="button"
+              class="button"
+              data-page-button="club"
+            >
+              Connexion
+            </button>
+
+          </div>
+
+
+
+          <!-- PREMIERE ACTIVATION -->
+
+          <div
+            id="profileSetup"
+            class="content-panel hidden"
+          >
+
+            <span class="overline">
+              PREMIÈRE ACTIVATION
+            </span>
+
+            <h2>
+              Activez votre profil EAH
+            </h2>
+
+
+            <div class="premium-form">
+
+
+              <div class="form-grid">
+
+                <label>
+
+                  <span>
+                    Prénom
+                  </span>
+
+                  <input
+                    id="setupFirstName"
+                    type="text"
+                    required
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Nom
+                  </span>
+
+                  <input
+                    id="setupLastName"
+                    type="text"
+                    required
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Date de naissance
+                  </span>
+
+                  <input
+                    id="setupBirthDate"
+                    type="date"
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Sexe / catégorie
+                  </span>
+
+                  <select id="setupSex">
+
+                    <option value="">
+                      Non renseigné
+                    </option>
+
+                    <option value="F">
+                      Femme
+                    </option>
+
+                    <option value="M">
+                      Homme
+                    </option>
+
+                    <option value="OTHER">
+                      Autre / non renseigné
+                    </option>
+
+                  </select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Groupe
+                  </span>
+
+                  <input
+                    id="setupGroup"
+                    type="text"
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Code personnel
+                  </span>
+
+                  <input
+                    id="setupAccessPin"
+                    type="password"
+                    inputmode="numeric"
+                    minlength="4"
+                    maxlength="8"
+                    required
+                  >
+
+                </label>
+
+
+                <label class="form-full">
+
+                  <span>
+                    URL de la photo
+                  </span>
+
+                  <input
+                    id="setupPhotoUrl"
+                    type="url"
+                    placeholder="Lien Google Drive ou image"
+                  >
+
+                </label>
+
+              </div>
+
+
+              <button
+                type="button"
+                class="button"
+                id="setupProfileButton"
+              >
+                Activer mon profil
+              </button>
+
+
+              <div
+                id="setupProfileMsg"
+                class="form-message"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+
+          <!-- PROFIL -->
+
+          <div
+            id="profileView"
+            class="hidden"
+          ></div>
+
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         EVALUATION COACH
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="evaluation"
+    >
+
+      <section class="page-hero compact">
+
+        <img
+          src="evaluation-hero.jpg"
+          alt=""
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            COACH
+          </span>
+
+          <h1>
+            Nouveau Grade Report
+          </h1>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container form-container wide">
+
+
+          <!-- LOCK -->
+
+          <div
+            id="evaluationLocked"
+            class="content-panel hidden"
+          >
+
+            <h2>
+              Connexion coach requise
+            </h2>
+
+            <p>
+              Vous devez être connecté à un club pour grader un plongeur.
+            </p>
+
+            <button
+              type="button"
+              class="button"
+              data-page-button="club"
+            >
+              Se connecter
+            </button>
+
+          </div>
+
+
+
+          <!-- FORM -->
+
+          <form
+            id="evaluationForm"
+            class="premium-form hidden"
+          >
+
+
+            <div class="evaluation-form-head">
+
+              <span
+                class="badge"
+                id="coachBadge"
+              >
+                Coach
+              </span>
+
+              <h2>
+                Évaluation EAH Diving
+              </h2>
+
+            </div>
+
+
+
+            <!-- IDENTITE -->
+
+            <div class="form-section">
+
+              <h3>
+                Plongeur & figure
+              </h3>
+
+
+              <div class="form-grid">
+
+
+                <label>
+
+                  <span>
+                    Plongeur
+                  </span>
+
+                  <select
+                    id="eahId"
+                    required
+                  ></select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Discipline
+                  </span>
+
+                  <select
+                    id="discipline"
+                    required
+                  >
+
+                    <option value="Plongeon">
+                      Plongeon olympique
+                    </option>
+
+                    <option value="High Diving">
+                      High Diving
+                    </option>
+
+                    <option value="Freestyle">
+                      Freestyle
+                    </option>
+
+                    <option value="Døds">
+                      Døds
+                    </option>
+
+                    <option value="Saut de l'ange">
+                      Saut de l'ange
+                    </option>
+
+                  </select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Code plongeon
+                  </span>
+
+                  <input
+                    id="diveCode"
+                    type="text"
+                    list="diveCodes"
+                    autocomplete="off"
+                    required
+                  >
+
+                  <datalist id="diveCodes"></datalist>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Nom
+                  </span>
+
+                  <input
+                    id="diveName"
+                    type="text"
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Hauteur
+                  </span>
+
+                  <input
+                    id="height"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    required
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Type de hauteur
+                  </span>
+
+                  <select id="heightType">
+
+                    <option value="KNOWN">
+                      Connue
+                    </option>
+
+                    <option value="ESTIMATED">
+                      Approximative
+                    </option>
+
+                  </select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Spot EAH
+                  </span>
+
+                  <select id="spotId">
+
+                    <option value="">
+                      Autre / non répertorié
+                    </option>
+
+                  </select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Nom du lieu
+                  </span>
+
+                  <input
+                    id="spotName"
+                    type="text"
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    DD World Aquatics
+                  </span>
+
+                  <input
+                    id="dd"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                  >
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Difficulté EAH
+                  </span>
+
+                  <select id="eahDifficulty">
+
+                    <option value="">
+                      —
+                    </option>
+
+                    <option value="1">
+                      1
+                    </option>
+
+                    <option value="2">
+                      2
+                    </option>
+
+                    <option value="3">
+                      3
+                    </option>
+
+                    <option value="4">
+                      4
+                    </option>
+
+                    <option value="5">
+                      5
+                    </option>
+
+                  </select>
+
+                </label>
+
+
+                <label>
+
+                  <span>
+                    Note World Aquatics
+                  </span>
+
+                  <input
+                    id="waScore"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.5"
+                  >
+
+                </label>
+
+
+              </div>
+
+            </div>
+
+
+
+            <!-- TAKEOFF -->
+
+            <div class="form-section criteria-section">
+
+              <div class="criteria-title">
+
+                <span class="criteria-letter">
+                  D
+                </span>
+
+                <div>
+
+                  <h3>
+                    Takeoff
+                  </h3>
+
+                  <p>
+                    Départ
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="criteriaD"
+                class="criteria-list"
+              ></div>
+
+            </div>
+
+
+
+            <!-- TRICK -->
+
+            <div class="form-section criteria-section">
+
+              <div class="criteria-title">
+
+                <span class="criteria-letter">
+                  T
+                </span>
+
+                <div>
+
+                  <h3>
+                    Trick
+                  </h3>
+
+                  <p>
+                    Phase aérienne
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="criteriaT"
+                class="criteria-list"
+              ></div>
+
+            </div>
+
+
+
+            <!-- ENTRY -->
+
+            <div class="form-section criteria-section">
+
+              <div class="criteria-title">
+
+                <span class="criteria-letter">
+                  E
+                </span>
+
+                <div>
+
+                  <h3>
+                    Entry
+                  </h3>
+
+                  <p>
+                    Entrée
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div
+                id="criteriaE"
+                class="criteria-list"
+              ></div>
+
+            </div>
+
+
+
+            <!-- COMMENTAIRES -->
+
+            <div class="form-section">
+
+              <h3>
+                Retour du coach
+              </h3>
+
+
+              <div class="form-grid">
+
+
+                <label class="form-full">
+
+                  <span>
+                    Points réussis
+                  </span>
+
+                  <textarea
+                    id="positive"
+                    rows="4"
+                  ></textarea>
+
+                </label>
+
+
+                <label class="form-full">
+
+                  <span>
+                    Critères à améliorer
+                  </span>
+
+                  <textarea
+                    id="improve"
+                    rows="4"
+                  ></textarea>
+
+                </label>
+
+
+                <label class="form-full">
+
+                  <span>
+                    Commentaire
+                  </span>
+
+                  <textarea
+                    id="comment"
+                    rows="4"
+                  ></textarea>
+
+                </label>
+
+
+              </div>
+
+            </div>
+
+
+
+            <!-- VIDEO -->
+
+            <div class="form-section">
+
+              <h3>
+                Vidéo
+              </h3>
+
+
+              <div class="form-grid">
+
+
+                <label class="form-full">
+
+                  <span>
+                    Lien vidéo
+                  </span>
+
+                  <input
+                    id="videoUrl"
+                    type="url"
+                    placeholder="Lien vidéo"
+                  >
+
+                </label>
+
+
+                <label class="form-check">
+
+                  <input
+                    id="videoQrAccessible"
+                    type="checkbox"
+                  >
+
+                  <span>
+                    Ajouter un accès vidéo dans le Grade Report
+                  </span>
+
+                </label>
+
+
+              </div>
+
+            </div>
+
+
+
+            <!-- SUBMIT -->
+
+            <button
+              type="submit"
+              class="button large"
+              id="submitEvalBtn"
+            >
+              Générer le Grade Report
+            </button>
+
+
+            <div
+              id="evaluationMsg"
+              class="form-message"
+            ></div>
+
+
+          </form>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         DISCIPLINE — OLYMPIQUE
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="olympique"
+    >
+
+      <section class="page-hero discipline-hero">
+
+        <img
+          src="olympique-desktop.jpg"
+          alt="Plongeon olympique"
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            DISCIPLINE
+          </span>
+
+          <h1>
+            Plongeon olympique
+          </h1>
+
+          <p>
+            Tremplin, plateforme et progression jusqu'à 10 mètres.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="content-panel">
+
+            <h2>
+              Une lecture structurée du plongeon
+            </h2>
+
+            <p>
+              EAH Diving permet de suivre
+              les plongeons au tremplin et à la plateforme
+              avec les critères Takeoff, Trick et Entry.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         DISCIPLINE — FREESTYLE
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="freestyle"
+    >
+
+      <section class="page-hero discipline-hero">
+
+        <img
+          src="freestyle-divers-group.jpg"
+          alt="Freestyle Diving"
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            DISCIPLINE
+          </span>
+
+          <h1>
+            Freestyle / Døds
+          </h1>
+
+          <p>
+            Une notation adaptée aux spécificités
+            de ces pratiques.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="content-panel">
+
+            <h2>
+              Des critères adaptés
+            </h2>
+
+            <p>
+              La grille conserve Takeoff,
+              Trick et Entry,
+              avec des tolérances adaptées
+              à la discipline.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         DISCIPLINE — HIGH DIVING
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="highdiving"
+    >
+
+      <section class="page-hero discipline-hero">
+
+        <img
+          src="high-diving-desktop.jpg"
+          alt="High Diving"
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            DISCIPLINE
+          </span>
+
+          <h1>
+            High Diving
+          </h1>
+
+          <p>
+            Grande hauteur,
+            difficulté et progression.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="content-panel">
+
+            <h2>
+              Suivre les plongeons de grande hauteur
+            </h2>
+
+            <p>
+              EAH Diving peut associer la hauteur,
+              le degré de difficulté,
+              la note EAH
+              et l'historique du plongeur.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+
+    <!-- =======================================================
+         DISCIPLINE — SAUT DE L'ANGE
+    ======================================================== -->
+
+    <section
+      class="page"
+      id="ange"
+    >
+
+      <section class="page-hero discipline-hero">
+
+        <img
+          src="saut-ange-desktop.jpg"
+          alt="Saut de l'ange"
+          class="page-hero-image"
+        >
+
+        <div class="page-hero-overlay"></div>
+
+        <div class="container">
+
+          <span class="overline">
+            DISCIPLINE
+          </span>
+
+          <h1>
+            Saut de l'ange
+          </h1>
+
+          <p>
+            Une progression par maîtrise
+            et par hauteur.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="container">
+
+          <div class="content-panel">
+
+            <h2>
+              Une catégorie spécifique
+            </h2>
+
+            <p>
+              EAH Diving conserve une lecture
+              adaptée de l'entrée à l'eau
+              et de la hauteur réalisée.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- =========================================================
+       FOOTER
+  ========================================================== -->
+
+  <footer class="site-footer">
+
+    <div class="container footer-grid">
+
+
+      <div>
+
+        <img
+          src="eah-diving-logo.png"
+          alt="EAH Diving"
+          class="footer-logo"
+        >
+
+        <p>
+          Le passeport numérique
+          de progression du plongeur.
+        </p>
+
+      </div>
+
+
+      <div>
+
+        <strong>
+          EAH Diving
+        </strong>
+
+        <a
+          href="#grading"
+          data-page="grading"
+        >
+          Grading
+        </a>
+
+        <a
+          href="#blazons"
+          data-page="blazons"
+        >
+          Blazons
+        </a>
+
+        <a
+          href="#population"
+          data-page="population"
+        >
+          Population
+        </a>
+
+      </div>
+
+
+      <div>
+
+        <strong>
+          Clubs
+        </strong>
+
+        <a
+          href="#club"
+          data-page="club"
+        >
+          Espace Club
+        </a>
+
+        <a
+          href="#tarifs"
+          data-page="tarifs"
+        >
+          Tarifs
+        </a>
+
+      </div>
+
+
+      <div>
+
+        <strong>
+          Disciplines
+        </strong>
+
+        <a
+          href="#olympique"
+          data-page="olympique"
+        >
+          Plongeon olympique
+        </a>
+
+        <a
+          href="#highdiving"
+          data-page="highdiving"
+        >
+          High Diving
+        </a>
+
+        <a
+          href="#freestyle"
+          data-page="freestyle"
+        >
+          Freestyle / Døds
+        </a>
+
+      </div>
+
+
+    </div>
+
+
+    <div class="container footer-bottom">
+
+      <span>
+        © 2026 EAH Diving
+      </span>
+
+      <span>
+        EAH fournit l'outil.
+        Le coach reste le coach.
+      </span>
+
+    </div>
+
+  </footer>
+
+
+
+  <!-- =========================================================
+       MODAL
+  ========================================================== -->
+
+  <div
+    class="modal"
+    id="siteModal"
+    aria-hidden="true"
+  >
+
+    <button
+      type="button"
+      class="modal-backdrop"
+      data-close-modal
+      aria-label="Fermer"
+    ></button>
+
+
+    <div class="modal-box">
+
+      <button
+        type="button"
+        class="modal-close"
+        data-close-modal
+        aria-label="Fermer"
+      >
+        ×
+      </button>
+
+
+      <div id="modalContent"></div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================================
+       NOTIFICATIONS
+  ========================================================== -->
+
+  <div
+    id="toastContainer"
+    class="toast-container"
+    aria-live="polite"
+  ></div>
+
+
+</body>
+
+</html>
