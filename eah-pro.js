@@ -5398,3 +5398,1012 @@ function renderProfileHistoryEAH(
     html;
 
 }
+/* ============================================================
+   EAH DIVING PRO
+   PROFIL PERSONNEL PREMIUM
+   + INTERCEPTION CONNEXION PIN
+============================================================ */
+
+
+/* ============================================================
+   NORMALISER PHOTO GOOGLE DRIVE
+============================================================ */
+
+function photoProfilEAH(url) {
+
+  url =
+    String(
+      url || ""
+    )
+    .trim();
+
+
+  if (!url) {
+
+    return "";
+
+  }
+
+
+  let match =
+    url.match(
+      /[?&]id=([^&]+)/
+    );
+
+
+  if (
+    match &&
+    match[1]
+  ) {
+
+    return (
+      "https://drive.google.com/thumbnail?id="
+      +
+      encodeURIComponent(
+        match[1]
+      )
+      +
+      "&sz=w1000"
+    );
+
+  }
+
+
+  match =
+    url.match(
+      /\/d\/([^\/]+)/
+    );
+
+
+  if (
+    match &&
+    match[1]
+  ) {
+
+    return (
+      "https://drive.google.com/thumbnail?id="
+      +
+      encodeURIComponent(
+        match[1]
+      )
+      +
+      "&sz=w1000"
+    );
+
+  }
+
+
+  return url;
+
+}
+
+
+
+/* ============================================================
+   NOUVEAU RENDER PROFIL
+============================================================ */
+
+function renderProfileWelcomeEAH(
+  result
+) {
+
+  const container =
+    eahEl(
+      "eah-profile-runtime"
+    );
+
+
+  if (!container) {
+
+    return;
+
+  }
+
+
+  const profile =
+    result.profile ||
+    result.diver ||
+    result;
+
+
+  const firstName =
+    String(
+      profile.firstName ||
+      profile.first_name ||
+      ""
+    )
+    .trim();
+
+
+  const lastName =
+    String(
+      profile.lastName ||
+      profile.last_name ||
+      ""
+    )
+    .trim();
+
+
+  const fullName =
+    (
+      firstName
+      +
+      " "
+      +
+      lastName
+    )
+    .trim()
+    ||
+    profile.eahId
+    ||
+    profile.eah_id
+    ||
+    "Plongeur";
+
+
+  const eahId =
+    profile.eahId ||
+    profile.eah_id ||
+    "";
+
+
+  const group =
+    profile.group ||
+    profile.group_name ||
+    "";
+
+
+  const blazon =
+    profile.currentBlazon ||
+    profile.current_blazon ||
+    "";
+
+
+  const rawPhoto =
+    profile.photoUrl ||
+    profile.photo_url ||
+    "";
+
+
+  const photo =
+    photoProfilEAH(
+      rawPhoto
+    );
+
+
+  const initials =
+    initialsEAH(
+      fullName
+    );
+
+
+  const evaluations =
+    result.evaluations ||
+    [];
+
+
+  container.innerHTML = `
+
+    <article class="eah-personal-profile">
+
+      <div class="eah-personal-profile-glow"></div>
+
+      <div class="eah-personal-profile-main">
+
+        <div class="eah-personal-photo-wrap">
+
+          ${
+            photo
+            ?
+            `
+              <img
+                class="eah-personal-photo"
+                src="${escapeAttrEAH(
+                  photo
+                )}"
+                alt="${escapeAttrEAH(
+                  fullName
+                )}"
+                onerror="
+                  this.style.display='none';
+                  this.nextElementSibling.style.display='grid';
+                "
+              >
+            `
+            :
+            ""
+          }
+
+          <div
+            class="eah-personal-photo-fallback"
+            style="${
+              photo
+              ?
+              "display:none"
+              :
+              "display:grid"
+            }"
+          >
+            ${escapeHtmlEAH(
+              initials
+            )}
+          </div>
+
+        </div>
+
+
+        <div class="eah-personal-identity">
+
+          <span class="eah-personal-kicker">
+            ESPACE PERSONNEL EAH
+          </span>
+
+          <h1>
+
+            Bienvenue
+            ${escapeHtmlEAH(
+              firstName ||
+              fullName
+            )}
+            sur ton espace personnel
+
+          </h1>
+
+          <p class="eah-personal-name">
+            ${escapeHtmlEAH(
+              fullName
+            )}
+          </p>
+
+
+          <div class="eah-personal-meta">
+
+            <span>
+              ${escapeHtmlEAH(
+                eahId
+              )}
+            </span>
+
+            ${
+              group
+              ?
+              `
+                <span>
+                  ${escapeHtmlEAH(
+                    group
+                  )}
+                </span>
+              `
+              :
+              ""
+            }
+
+            ${
+              blazon
+              ?
+              `
+                <span>
+                  ${escapeHtmlEAH(
+                    blazon
+                  )}
+                </span>
+              `
+              :
+              ""
+            }
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="eah-personal-stats">
+
+        <div>
+
+          <span>
+            ÉVALUATIONS
+          </span>
+
+          <strong>
+            ${evaluations.length}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            BLAZON ACTUEL
+          </span>
+
+          <strong>
+            ${escapeHtmlEAH(
+              blazon ||
+              "—"
+            )}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            NUMÉRO EAH
+          </span>
+
+          <strong class="eah-personal-id">
+            ${escapeHtmlEAH(
+              eahId
+            )}
+          </strong>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  `;
+
+
+  container.hidden =
+    false;
+
+
+  /*
+    Lorsqu'une carte est scannée,
+    le profil remonte en haut de la page.
+  */
+
+  const profileSection =
+    eahEl(
+      "eah-profile-section"
+    );
+
+
+  if (
+    profileSection
+  ) {
+
+    const header =
+      document.querySelector(
+        "header"
+      );
+
+
+    if (
+      header &&
+      header.nextSibling !==
+        profileSection
+    ) {
+
+      header.parentNode
+        .insertBefore(
+
+          profileSection,
+
+          header.nextSibling
+
+        );
+
+    }
+
+
+    profileSection.scrollIntoView({
+
+      behavior:
+        "smooth",
+
+      block:
+        "start"
+
+    });
+
+  }
+
+}
+
+
+
+/* ============================================================
+   UTILISER CE NOUVEAU RENDER
+============================================================ */
+
+renderProfileEAH =
+  renderProfileWelcomeEAH;
+
+
+
+/* ============================================================
+   CACHER L'ANCIEN BLOC CONNEXION
+   LORS D'UN SCAN NFC
+============================================================ */
+
+function modeScanCarteEAH() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  const hasCard =
+    Boolean(
+      params.get("id")
+      &&
+      params.get("token")
+    );
+
+
+  if (!hasCard) {
+
+    return;
+
+  }
+
+
+  /*
+    Cherche l'ancien bloc qui contient
+    "Connexion coach" + "Ouvrir mon profil"
+    et le masque uniquement lors d'un scan.
+  */
+
+  const sections =
+    Array.from(
+      document.querySelectorAll(
+        "section"
+      )
+    );
+
+
+  sections.forEach(
+    function(section) {
+
+      const text =
+        String(
+          section.textContent ||
+          ""
+        );
+
+
+      if (
+        text.indexOf(
+          "Connexion coach"
+        )
+        >= 0
+        &&
+        text.indexOf(
+          "Ouvrir mon profil"
+        )
+        >= 0
+      ) {
+
+        section.style.display =
+          "none";
+
+      }
+
+    }
+  );
+
+}
+
+
+
+/* ============================================================
+   CONNEXION PAR EAH ID + PIN
+   INTERCEPTE L'ANCIEN FORMULAIRE
+============================================================ */
+
+document.addEventListener(
+
+  "submit",
+
+  async function(event) {
+
+    const form =
+      event.target;
+
+
+    if (
+      !(form instanceof HTMLFormElement)
+    ) {
+
+      return;
+
+    }
+
+
+    const section =
+      form.closest(
+        "section"
+      )
+      ||
+      form.parentElement;
+
+
+    const text =
+      String(
+        section
+        ?
+        section.textContent ||
+        ""
+        :
+        ""
+      );
+
+
+    /*
+      Ne prendre que le formulaire
+      "Ouvrir mon profil".
+    */
+
+    if (
+      text.indexOf(
+        "Ouvrir mon profil"
+      )
+      <
+      0
+    ) {
+
+      return;
+
+    }
+
+
+    const passwordInput =
+      form.querySelector(
+        'input[type="password"]'
+      );
+
+
+    if (!passwordInput) {
+
+      return;
+
+    }
+
+
+    const inputs =
+      Array.from(
+        form.querySelectorAll(
+          "input"
+        )
+      );
+
+
+    const eahInput =
+      inputs.find(
+        function(input) {
+
+          const value =
+            String(
+              input.value ||
+              ""
+            )
+            .toUpperCase();
+
+
+          return (
+            value.indexOf(
+              "EAH-"
+            )
+            ===
+            0
+          );
+
+        }
+      )
+      ||
+      form.querySelector(
+        'input[type="text"]'
+      );
+
+
+    if (!eahInput) {
+
+      return;
+
+    }
+
+
+    /*
+      Capture du formulaire avant l'ancien script.
+    */
+
+    event.preventDefault();
+
+    event.stopImmediatePropagation();
+
+
+    const eahId =
+      String(
+        eahInput.value ||
+        ""
+      )
+      .trim()
+      .toUpperCase();
+
+
+    const pin =
+      String(
+        passwordInput.value ||
+        ""
+      )
+      .trim();
+
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+
+    const club =
+      String(
+        params.get("club")
+        ||
+        EAH_STATE.clubSlug
+        ||
+        localStorage.getItem(
+          "EAH_CLUB"
+        )
+        ||
+        ""
+      )
+      .trim()
+      .toLowerCase();
+
+
+    const submitButton =
+      form.querySelector(
+        '[type="submit"]'
+      );
+
+
+    setButtonLoadingEAH(
+
+      submitButton,
+
+      true,
+
+      "Ouverture du profil…"
+
+    );
+
+
+    try {
+
+      const result =
+        await apiPostEAH(
+
+          "diverQuickLogin",
+
+          {
+
+            club:
+              club,
+
+            eahId:
+              eahId,
+
+            pin:
+              pin
+
+          }
+
+        );
+
+
+      EAH_STATE.profile =
+        result;
+
+
+      renderProfileWelcomeEAH(
+        result
+      );
+
+
+      renderProfileHistoryEAH(
+        result
+      );
+
+
+      showToastEAH(
+
+        "Profil ouvert.",
+
+        "success"
+
+      );
+
+
+    } catch(error) {
+
+      showToastEAH(
+
+        error.message,
+
+        "error"
+
+      );
+
+
+    } finally {
+
+      setButtonLoadingEAH(
+
+        submitButton,
+
+        false
+
+      );
+
+    }
+
+  },
+
+  true
+
+);
+
+
+
+/* ============================================================
+   DEMARRAGE MODE SCAN
+============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  modeScanCarteEAH
+);
+
+
+
+/* ============================================================
+   STYLE PROFIL PREMIUM
+============================================================ */
+
+(function styleProfilPersonnelEAH() {
+
+  if (
+    document.getElementById(
+      "eah-personal-profile-style"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      "style"
+    );
+
+
+  style.id =
+    "eah-personal-profile-style";
+
+
+  style.textContent = `
+
+    .eah-personal-profile {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 58px);
+      border: 1px solid rgba(143,205,255,.23);
+      border-radius: 34px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(4,22,47,.96),
+          rgba(4,40,76,.88)
+        );
+      box-shadow:
+        0 35px 110px rgba(0,0,0,.38);
+    }
+
+
+    .eah-personal-profile-glow {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      right: -180px;
+      top: -220px;
+      border-radius: 50%;
+      background: rgba(48,207,255,.12);
+      filter: blur(25px);
+      pointer-events: none;
+    }
+
+
+    .eah-personal-profile-main {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: clamp(24px, 5vw, 55px);
+    }
+
+
+    .eah-personal-photo-wrap {
+      width: clamp(150px, 20vw, 230px);
+      height: clamp(150px, 20vw, 230px);
+      flex: 0 0 auto;
+      padding: 6px;
+      border-radius: 34px;
+      background:
+        linear-gradient(
+          145deg,
+          #30cfff,
+          #0b6bff,
+          rgba(255,255,255,.9)
+        );
+      box-shadow:
+        0 24px 70px rgba(11,107,255,.22);
+    }
+
+
+    .eah-personal-photo,
+    .eah-personal-photo-fallback {
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+    }
+
+
+    .eah-personal-photo {
+      object-fit: cover;
+      background: #061e33;
+    }
+
+
+    .eah-personal-photo-fallback {
+      place-items: center;
+      background:
+        linear-gradient(
+          145deg,
+          #0b6bff,
+          #061e33
+        );
+      color: #fff;
+      font-size: 3rem;
+      font-weight: 900;
+    }
+
+
+    .eah-personal-identity {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-width: 0;
+    }
+
+
+    .eah-personal-kicker {
+      color: #30cfff;
+      font-size: .78rem;
+      font-weight: 900;
+      letter-spacing: .16em;
+    }
+
+
+    .eah-personal-identity h1 {
+      max-width: 800px;
+      margin: 10px 0 12px;
+      color: #f5f9ff;
+      font-size:
+        clamp(
+          2rem,
+          5vw,
+          4.2rem
+        );
+      line-height: 1.03;
+    }
+
+
+    .eah-personal-name {
+      margin: 0;
+      color: rgba(245,249,255,.74);
+      font-size: 1.2rem;
+    }
+
+
+    .eah-personal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 22px;
+    }
+
+
+    .eah-personal-meta span {
+      padding: 8px 13px;
+      border: 1px solid rgba(48,207,255,.22);
+      border-radius: 999px;
+      background: rgba(48,207,255,.07);
+    }
+
+
+    .eah-personal-stats {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0,1fr)
+        );
+      gap: 12px;
+      margin-top: 35px;
+    }
+
+
+    .eah-personal-stats > div {
+      padding: 18px;
+      border: 1px solid rgba(143,205,255,.15);
+      border-radius: 20px;
+      background: rgba(3,19,31,.45);
+    }
+
+
+    .eah-personal-stats span {
+      display: block;
+      margin-bottom: 8px;
+      color: #8fa8bc;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+
+    .eah-personal-stats strong {
+      color: #fff;
+      font-size: 1.3rem;
+    }
+
+
+    .eah-personal-id {
+      font-size: .95rem !important;
+    }
+
+
+    @media (max-width: 720px) {
+
+      .eah-personal-profile-main {
+        display: grid;
+        text-align: center;
+      }
+
+
+      .eah-personal-photo-wrap {
+        margin: auto;
+      }
+
+
+      .eah-personal-meta {
+        justify-content: center;
+      }
+
+
+      .eah-personal-stats {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+})();
