@@ -3295,7 +3295,217 @@
       id="eah-profile-runtime"
       hidden
     ></div>
+<!-- =========================================================
+     ACTIVATION CARTE EAH
+========================================================== -->
 
+<div
+  id="eah-card-activation"
+  class="eah-pro-form-block"
+  hidden
+>
+
+  <div class="eah-pro-heading">
+
+    <div>
+
+      <span class="eah-pro-eyebrow">
+        CARTE EAH
+      </span>
+
+      <h2>
+        Activer mon profil
+      </h2>
+
+      <p>
+        Cette carte n'est pas encore attribuée.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="eah-pro-final-score">
+
+    <span>
+      NUMÉRO EAH
+    </span>
+
+    <strong
+      id="eah-activation-id"
+      style="font-size:2rem"
+    >
+      —
+    </strong>
+
+  </div>
+
+
+  <form
+    id="eah-card-activation-form"
+    class="eah-pro-form"
+  >
+
+    <input
+      type="hidden"
+      name="club"
+      id="eah-activation-club"
+    >
+
+    <input
+      type="hidden"
+      name="eahId"
+      id="eah-activation-eah-id"
+    >
+
+    <input
+      type="hidden"
+      name="token"
+      id="eah-activation-token"
+    >
+
+
+    <div class="eah-pro-form-grid">
+
+      <label>
+
+        Prénom
+
+        <input
+          type="text"
+          name="firstName"
+          required
+          autocomplete="given-name"
+        >
+
+      </label>
+
+
+      <label>
+
+        Nom
+
+        <input
+          type="text"
+          name="lastName"
+          required
+          autocomplete="family-name"
+        >
+
+      </label>
+
+
+      <label>
+
+        Date de naissance
+
+        <input
+          type="date"
+          name="birthDate"
+        >
+
+      </label>
+
+
+      <label>
+
+        Groupe
+
+        <select
+          name="groupName"
+          id="eah-activation-group"
+        >
+
+          <option value="">
+            Sans groupe
+          </option>
+
+        </select>
+
+      </label>
+
+
+      <label>
+
+        PIN personnel
+
+        <input
+          type="password"
+          name="pin"
+          inputmode="numeric"
+          pattern="[0-9]{4,8}"
+          minlength="4"
+          maxlength="8"
+          placeholder="4 à 8 chiffres"
+          required
+        >
+
+      </label>
+
+
+      <label>
+
+        Confirmer le PIN
+
+        <input
+          type="password"
+          name="pinConfirm"
+          inputmode="numeric"
+          pattern="[0-9]{4,8}"
+          minlength="4"
+          maxlength="8"
+          required
+        >
+
+      </label>
+
+    </div>
+
+
+    <label>
+
+      Photo du plongeur
+
+      <input
+        id="eah-activation-photo"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+      >
+
+    </label>
+
+
+    <div
+      id="eah-activation-photo-preview"
+      style="
+        display:none;
+        margin-top:15px;
+      "
+    ></div>
+
+
+    <button
+      type="submit"
+      class="eah-runtime-button eah-pro-submit"
+    >
+      Activer ma carte EAH
+    </button>
+
+  </form>
+
+</div>
+
+
+<!-- =========================================================
+     HISTORIQUE PROFIL
+========================================================== -->
+
+<div
+  id="eah-profile-history"
+  class="eah-pro-grid"
+  style="margin-top:25px"
+></div>
   </div>
 </section>
 
