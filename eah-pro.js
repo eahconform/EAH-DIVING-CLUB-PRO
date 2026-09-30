@@ -6661,3 +6661,717 @@ document.addEventListener(
   }
 
 })();
+/* ============================================================
+   EAH DIVING PRO
+   FAST MODE V2
+   SUPABASE DIRECT
+============================================================ */
+
+
+/* ============================================================
+   CLIENT SUPABASE
+============================================================ */
+
+function getFastSupabaseEAH() {
+
+  try {
+
+    if (
+      typeof supabaseClient !==
+        "undefined"
+      &&
+      supabaseClient
+    ) {
+
+      return supabaseClient;
+
+    }
+
+  } catch (_) {}
+
+
+  if (
+    window.__EAH_FAST_SUPABASE
+  ) {
+
+    return window.__EAH_FAST_SUPABASE;
+
+  }
+
+
+  const config =
+    window.EAH_CONFIG ||
+    {};
+
+
+  if (
+    !window.supabase
+    ||
+    !config.SUPABASE_URL
+    ||
+    !config.SUPABASE_PUBLISHABLE_KEY
+  ) {
+
+    return null;
+
+  }
+
+
+  window.__EAH_FAST_SUPABASE =
+    window.supabase.createClient(
+
+      config.SUPABASE_URL,
+
+      config.SUPABASE_PUBLISHABLE_KEY,
+
+      {
+
+        auth: {
+
+          persistSession:
+            true,
+
+          autoRefreshToken:
+            true
+
+        }
+
+      }
+
+    );
+
+
+  return window.__EAH_FAST_SUPABASE;
+
+}
+
+
+
+/* ============================================================
+   DETECTER UN SCAN NFC
+============================================================ */
+
+function isFastCardScanEAH() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  return Boolean(
+
+    params.get("club")
+    &&
+    params.get("id")
+    &&
+    params.get("token")
+
+  );
+
+}
+
+
+
+/* ============================================================
+   PENDANT UN SCAN :
+   NE PAS CHARGER LE SITE ENTIER AVANT LE PROFIL
+============================================================ */
+
+const __EAH_SLOW_PUBLIC =
+  loadPublicContentEAH;
+
+
+loadPublicContentEAH =
+  async function() {
+
+    if (
+      isFastCardScanEAH()
+    ) {
+
+      return;
+
+    }
+
+
+    const sb =
+      getFastSupabaseEAH();
+
+
+    if (!sb) {
+
+      return __EAH_SLOW_PUBLIC();
+
+    }
+
+
+    try {
+
+      const results =
+        await Promise.all([
+
+          sb
+            .from("news")
+            .select("*")
+            .eq("active", true)
+            .order(
+              "sort_order",
+              {
+                ascending:
+                  true
+              }
+            ),
+
+          sb
+            .from("spots")
+            .select("*")
+            .eq("active", true)
+            .order(
+              "name",
+              {
+                ascending:
+                  true
+              }
+            ),
+
+          sb
+            .from("pricing")
+            .select("*")
+            .eq("active", true)
+            .order(
+              "sort_order",
+              {
+                ascending:
+                  true
+              }
+            ),
+
+          sb
+            .from(
+              "blazon_definitions"
+            )
+            .select("*")
+            .eq("active", true)
+            .order(
+              "sort_order",
+              {
+                ascending:
+                  true
+              }
+            )
+
+        ]);
+
+
+      const [
+        news,
+        spots,
+        pricing,
+        blazons
+      ] =
+        results;
+
+
+      if (
+        news.error
+        ||
+        spots.error
+        ||
+        pricing.error
+        ||
+        blazons.error
+      ) {
+
+        throw new Error(
+          "Lecture Supabase incomplète."
+        );
+
+      }
+
+
+      EAH_STATE.news =
+        news.data ||
+        [];
+
+
+      EAH_STATE.spots =
+        spots.data ||
+        [];
+
+
+      EAH_STATE.pricing =
+        pricing.data ||
+        [];
+
+
+      EAH_STATE.blazons =
+        blazons.data ||
+        [];
+
+
+      renderNewsEAH();
+
+      renderSpotsEAH();
+
+      renderPricingEAH();
+
+      renderBlazonsEAH();
+
+
+    } catch(error) {
+
+      console.warn(
+        "Fast public fallback",
+        error
+      );
+
+
+      return __EAH_SLOW_PUBLIC();
+
+    }
+
+  };
+
+
+
+/* ============================================================
+   PAS DE WORKSPACE AVANT PROFIL LORS D'UN SCAN
+============================================================ */
+
+const __EAH_SLOW_WORKSPACE =
+  loadClubWorkspaceEAH;
+
+
+loadClubWorkspaceEAH =
+  async function(slug) {
+
+    if (
+      isFastCardScanEAH()
+    ) {
+
+      return;
+
+    }
+
+
+    return __EAH_SLOW_WORKSPACE(
+      slug
+    );
+
+  };
+
+
+
+/* ============================================================
+   SCAN DIRECT SUPABASE
+============================================================ */
+
+loadProfileFromUrlEAH =
+  async function() {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+
+    const club =
+      String(
+        params.get("club") ||
+        ""
+      )
+      .trim()
+      .toLowerCase();
+
+
+    const eahId =
+      String(
+        params.get("id") ||
+        ""
+      )
+      .trim()
+      .toUpperCase();
+
+
+    const token =
+      String(
+        params.get("token") ||
+        ""
+      )
+      .trim();
+
+
+    if (
+      !club ||
+      !eahId ||
+      !token
+    ) {
+
+      return;
+
+    }
+
+
+    const sb =
+      getFastSupabaseEAH();
+
+
+    if (!sb) {
+
+      throw new Error(
+        "Supabase indisponible."
+      );
+
+    }
+
+
+    try {
+
+      const {
+        data,
+        error
+      } =
+        await sb.rpc(
+
+          "eah_open_profile_fast",
+
+          {
+
+            p_club_slug:
+              club,
+
+            p_eah_id:
+              eahId,
+
+            p_token:
+              token
+
+          }
+
+        );
+
+
+      if (error) {
+
+        throw error;
+
+      }
+
+
+      if (
+        !data
+        ||
+        data.ok === false
+      ) {
+
+        throw new Error(
+
+          data?.error
+          ||
+          "Profil introuvable."
+
+        );
+
+      }
+
+
+      EAH_STATE.club =
+        data.club ||
+        null;
+
+
+      EAH_STATE.profile =
+        data;
+
+
+      /*
+        Carte vierge
+      */
+
+      if (
+        data.assigned ===
+        false
+      ) {
+
+        if (
+          typeof afficherActivationCarteEAH ===
+          "function"
+        ) {
+
+          afficherActivationCarteEAH(
+
+            club,
+
+            eahId,
+
+            token,
+
+            data
+
+          );
+
+        }
+
+
+        return;
+
+      }
+
+
+      /*
+        Carte déjà attribuée
+      */
+
+      if (
+        typeof cacherActivationCarteEAH ===
+        "function"
+      ) {
+
+        cacherActivationCarteEAH();
+
+      }
+
+
+      if (
+        typeof renderProfileWelcomeEAH ===
+        "function"
+      ) {
+
+        renderProfileWelcomeEAH(
+          data
+        );
+
+      } else {
+
+        renderProfileEAH(
+          data
+        );
+
+      }
+
+
+      if (
+        typeof renderProfileHistoryEAH ===
+        "function"
+      ) {
+
+        renderProfileHistoryEAH(
+          data
+        );
+
+      }
+
+
+      /*
+        Précharger la photo
+      */
+
+      const photo =
+        data.profile?.photoUrl
+        ||
+        data.profile?.photo_url;
+
+
+      if (photo) {
+
+        const img =
+          new Image();
+
+
+        img.src =
+          photo;
+
+      }
+
+
+    } catch(error) {
+
+      console.error(
+        error
+      );
+
+
+      showToastEAH(
+
+        "Carte EAH : "
+        +
+        (
+          error.message ||
+          error
+        ),
+
+        "error"
+
+      );
+
+    }
+
+  };
+
+
+
+/* ============================================================
+   SHA-256 PIN DANS LE NAVIGATEUR
+============================================================ */
+
+async function sha256FastEAH(
+  text
+) {
+
+  const encoded =
+    new TextEncoder()
+      .encode(
+        String(text)
+      );
+
+
+  const digest =
+    await crypto.subtle.digest(
+
+      "SHA-256",
+
+      encoded
+
+    );
+
+
+  return Array
+    .from(
+      new Uint8Array(
+        digest
+      )
+    )
+    .map(
+      function(value) {
+
+        return value
+          .toString(16)
+          .padStart(
+            2,
+            "0"
+          );
+
+      }
+    )
+    .join("");
+
+}
+
+
+
+/* ============================================================
+   LOGIN PLONGEUR DIRECT SUPABASE
+============================================================ */
+
+const __EAH_SLOW_POST =
+  apiPostEAH;
+
+
+apiPostEAH =
+  async function(
+    action,
+    payload = {}
+  ) {
+
+    if (
+      action !==
+      "diverQuickLogin"
+    ) {
+
+      return __EAH_SLOW_POST(
+        action,
+        payload
+      );
+
+    }
+
+
+    const sb =
+      getFastSupabaseEAH();
+
+
+    if (!sb) {
+
+      return __EAH_SLOW_POST(
+        action,
+        payload
+      );
+
+    }
+
+
+    const pinHash =
+      await sha256FastEAH(
+
+        payload.pin ||
+        payload.code ||
+        ""
+
+      );
+
+
+    const {
+
+      data,
+      error
+
+    } =
+      await sb.rpc(
+
+        "eah_diver_login_fast",
+
+        {
+
+          p_club_slug:
+            String(
+              payload.club ||
+              payload.clubSlug ||
+              ""
+            )
+            .trim()
+            .toLowerCase(),
+
+          p_eah_id:
+            String(
+              payload.eahId ||
+              payload.id ||
+              ""
+            )
+            .trim()
+            .toUpperCase(),
+
+          p_pin_hash:
+            pinHash
+
+        }
+
+      );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data
+      ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+
+        data?.error
+        ||
+        "Connexion impossible."
+
+      );
+
+    }
+
+
+    return data;
+
+  };
