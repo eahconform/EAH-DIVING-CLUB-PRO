@@ -6407,3 +6407,257 @@ document.addEventListener(
   );
 
 })();
+/* ============================================================
+   EAH DIVING PRO
+   CORRECTIF COMPATIBILITE ANCIEN SCRIPT.JS
+   NFC / PROFIL
+============================================================ */
+
+(function corrigerAncienModuleNFCEAH() {
+
+  function isScanEAH() {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    return Boolean(
+      params.get("club")
+      &&
+      params.get("id")
+      &&
+      params.get("token")
+    );
+
+  }
+
+
+  function supprimerAncienMessageNFC() {
+
+    if (!isScanEAH()) {
+      return;
+    }
+
+
+    const elements =
+      Array.from(
+        document.querySelectorAll(
+          "body *"
+        )
+      );
+
+
+    elements.forEach(
+      function(element) {
+
+        /*
+          On cible uniquement les petits conteneurs
+          affichant l'ancien message d'erreur.
+        */
+
+        if (
+          element.children.length > 3
+        ) {
+          return;
+        }
+
+
+        const text =
+          String(
+            element.textContent || ""
+          )
+          .trim();
+
+
+        if (
+          text.indexOf(
+            "Le module sécurisé des cartes NFC doit encore être installé dans Supabase"
+          )
+          >= 0
+        ) {
+
+          element.style.display =
+            "none";
+
+        }
+
+      }
+    );
+
+  }
+
+
+  function forcerNouvelEspacePersonnel() {
+
+    if (!isScanEAH()) {
+      return;
+    }
+
+
+    const section =
+      document.getElementById(
+        "eah-profile-section"
+      );
+
+
+    if (section) {
+
+      section.style.display =
+        "";
+
+      section.hidden =
+        false;
+
+
+      const header =
+        document.querySelector(
+          "header"
+        );
+
+
+      if (
+        header
+        &&
+        header.parentNode
+      ) {
+
+        header.parentNode.insertBefore(
+          section,
+          header.nextSibling
+        );
+
+      }
+
+    }
+
+  }
+
+
+  async function rechargerProfilEAH() {
+
+    if (!isScanEAH()) {
+      return;
+    }
+
+
+    supprimerAncienMessageNFC();
+
+    forcerNouvelEspacePersonnel();
+
+
+    /*
+      La fonction existe dans eah-pro.js.
+      On la rappelle après l'ancien script.js.
+    */
+
+    if (
+      typeof loadProfileFromUrlEAH
+      ===
+      "function"
+    ) {
+
+      try {
+
+        await loadProfileFromUrlEAH();
+
+      } catch(error) {
+
+        console.error(
+          "EAH profil NFC :",
+          error
+        );
+
+      }
+
+    }
+
+
+    supprimerAncienMessageNFC();
+
+    forcerNouvelEspacePersonnel();
+
+  }
+
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+      if (!isScanEAH()) {
+        return;
+      }
+
+
+      /*
+        Premier passage.
+      */
+
+      setTimeout(
+        rechargerProfilEAH,
+        300
+      );
+
+
+      /*
+        Deuxième passage :
+        l'ancien script.js peut modifier l'écran
+        après son propre chargement.
+      */
+
+      setTimeout(
+        rechargerProfilEAH,
+        1200
+      );
+
+  }
+  );
+
+
+  /*
+    Surveiller pendant quelques secondes les changements
+    provoqués par l'ancien script.
+  */
+
+  if (isScanEAH()) {
+
+    const observer =
+      new MutationObserver(
+        function() {
+
+          supprimerAncienMessageNFC();
+
+          forcerNouvelEspacePersonnel();
+
+        }
+      );
+
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function() {
+
+        observer.observe(
+          document.body,
+          {
+            childList: true,
+            subtree: true
+          }
+        );
+
+
+        setTimeout(
+          function() {
+
+            observer.disconnect();
+
+          },
+          8000
+        );
+
+      }
+    );
+
+  }
+
+})();
