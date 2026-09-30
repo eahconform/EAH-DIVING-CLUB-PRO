@@ -144,11 +144,8 @@
        Le code sera envoyé après styles.css
   ========================================================== -->
 
-  <script
-    defer
-    src="script.js"
-  ></script>
-<script src="eah-pro.js"></script>
+  <script defer src="script.js"></script>
+<script defer src="eah-pro.js"></script>
 </head>
 
 
@@ -3277,7 +3274,1838 @@
     aria-live="polite"
   ></div>
 
+<!-- =========================================================
+     EAH DIVING PRO
+     INTERFACE DYNAMIQUE CLUB / COACH / PROFIL
+     À AJOUTER AVANT script.js ET eah-pro.js
+========================================================== -->
 
+
+<!-- =========================================================
+     PROFIL NFC
+========================================================== -->
+
+<section
+  id="eah-profile-section"
+  class="section eah-pro-section"
+>
+  <div class="container">
+
+    <div
+      id="eah-profile-runtime"
+      hidden
+    ></div>
+
+  </div>
+</section>
+
+
+<!-- =========================================================
+     ESPACE CLUB PRO
+========================================================== -->
+
+<section
+  id="eah-club-pro"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          EAH DIVING PRO CLUB
+        </span>
+
+        <h2 id="eah-club-name">
+          Espace Club
+        </h2>
+
+        <p>
+          <span id="eah-club-city"></span>
+
+          <span
+            id="eah-club-season"
+            style="margin-left:8px"
+          ></span>
+        </p>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="eah-runtime-button"
+        data-eah-refresh
+      >
+        Actualiser
+      </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         STATISTIQUES
+    ====================================================== -->
+
+    <div class="eah-pro-stats">
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Plongeurs
+        </span>
+
+        <strong id="eah-stat-divers">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Cartes NFC
+        </span>
+
+        <strong id="eah-stat-cards">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Cartes disponibles
+        </span>
+
+        <strong id="eah-stat-cards-available">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Groupes
+        </span>
+
+        <strong id="eah-stat-groups">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Évaluations
+        </span>
+
+        <strong id="eah-stat-evaluations">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          EAH Verified
+        </span>
+
+        <strong id="eah-stat-verified">
+          0
+        </strong>
+
+      </article>
+
+
+      <article class="eah-pro-stat">
+
+        <span>
+          Moyenne EAH
+        </span>
+
+        <strong id="eah-stat-average">
+          —
+        </strong>
+
+      </article>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     PLONGEURS
+========================================================== -->
+
+<section
+  id="eah-club-divers"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          CLUB
+        </span>
+
+        <h2>
+          Plongeurs
+        </h2>
+
+        <p>
+          Profils rattachés aux cartes EAH du club.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-divers-list"
+      class="eah-pro-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     GROUPES
+========================================================== -->
+
+<section
+  id="eah-club-groups"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          ORGANISATION
+        </span>
+
+        <h2>
+          Groupes
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-groups-list"
+      class="eah-pro-grid eah-pro-grid-small"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     FORMULAIRE COACH
+========================================================== -->
+
+<section
+  id="eah-coach-evaluation"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          GRADE REPORT
+        </span>
+
+        <h2>
+          Évaluer un plongeon
+        </h2>
+
+        <p>
+          Takeoff • Trick • Entry
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <form
+      id="eah-evaluation-form"
+      class="eah-pro-form"
+    >
+
+
+      <!-- ===================================================
+           PLONGEUR
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <h3>
+          1. Plongeur
+        </h3>
+
+
+        <div class="eah-pro-form-grid">
+
+          <label>
+
+            Plongeur
+
+            <select
+              id="eah-evaluation-diver"
+              name="eahId"
+              required
+            >
+              <option value="">
+                Choisir un plongeur
+              </option>
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Nom du coach
+
+            <input
+              type="text"
+              name="coachName"
+              placeholder="Nom du coach"
+              required
+            >
+
+          </label>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           PLONGEON
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <h3>
+          2. Plongeon
+        </h3>
+
+
+        <div class="eah-pro-form-grid">
+
+          <label>
+
+            Discipline
+
+            <select name="discipline">
+
+              <option value="Plongeon">
+                Plongeon
+              </option>
+
+              <option value="High Diving">
+                High Diving
+              </option>
+
+              <option value="Freestyle">
+                Freestyle
+              </option>
+
+              <option value="Dods">
+                Dods
+              </option>
+
+              <option value="Saut de l'ange">
+                Saut de l'ange
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Code du plongeon
+
+            <input
+              type="text"
+              name="diveCode"
+              placeholder="Ex : 5152B"
+              required
+            >
+
+          </label>
+
+
+          <label>
+
+            Nom du plongeon
+
+            <input
+              type="text"
+              name="diveName"
+              placeholder="Nom du plongeon"
+            >
+
+          </label>
+
+
+          <label>
+
+            Hauteur
+
+            <input
+              type="number"
+              name="height"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="Ex : 10"
+              required
+            >
+
+          </label>
+
+
+          <label>
+
+            Hauteur
+
+            <select name="heightType">
+
+              <option value="MESUREE">
+                Mesurée
+              </option>
+
+              <option value="APPROXIMATIVE">
+                Approximative
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Spot
+
+            <select
+              id="eah-evaluation-spot"
+              name="spotId"
+            >
+
+              <option value="">
+                Aucun spot
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            DD World Aquatics
+
+            <input
+              type="number"
+              name="dd"
+              min="0"
+              step="0.1"
+              placeholder="Ex : 3.0"
+            >
+
+          </label>
+
+
+          <label>
+
+            Difficulté EAH
+
+            <select name="eahDifficulty">
+
+              <option value="">
+                —
+              </option>
+
+              <option value="1">
+                1
+              </option>
+
+              <option value="2">
+                2
+              </option>
+
+              <option value="3">
+                3
+              </option>
+
+              <option value="4">
+                4
+              </option>
+
+              <option value="5">
+                5
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Note World Aquatics /10
+
+            <input
+              type="number"
+              name="waScore"
+              min="0"
+              max="10"
+              step="0.5"
+              placeholder="Optionnel"
+            >
+
+          </label>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           TAKEOFF
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <div class="eah-pro-phase-header">
+
+          <div>
+
+            <span class="eah-pro-eyebrow">
+              TAKEOFF
+            </span>
+
+            <h3>
+              Départ
+            </h3>
+
+          </div>
+
+
+          <strong id="eah-live-takeoff">
+            0/10
+          </strong>
+
+        </div>
+
+
+        <div class="eah-pro-criteria">
+
+          <label>
+
+            <span>
+              D1 — Coordination / élan
+            </span>
+
+            <select name="D1">
+
+              <option value="NA">
+                N/A
+              </option>
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              D2 — Impulsion / détente / élévation
+            </span>
+
+            <select name="D2">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              D3 — Trajectoire verticale
+            </span>
+
+            <select name="D3">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              D4 — Temps de fixation
+            </span>
+
+            <select name="D4">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              D5 — Amplitude des bras
+            </span>
+
+            <select name="D5">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           TRICK
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <div class="eah-pro-phase-header">
+
+          <div>
+
+            <span class="eah-pro-eyebrow">
+              TRICK
+            </span>
+
+            <h3>
+              Phase aérienne
+            </h3>
+
+          </div>
+
+
+          <strong id="eah-live-trick">
+            0/10
+          </strong>
+
+        </div>
+
+
+        <div class="eah-pro-criteria">
+
+          <label>
+
+            <span>
+              T1 — Vitesse des rotations
+            </span>
+
+            <select name="T1">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              T2 — Saltos et/ou vrilles contrôlés
+            </span>
+
+            <select name="T2">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              T3 — Ligne / tenue / position du corps
+            </span>
+
+            <select name="T3">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              T4 — Ouverture
+            </span>
+
+            <select name="T4">
+
+              <option value="NA">
+                N/A
+              </option>
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              T5 — Continuité / rythme
+            </span>
+
+            <select name="T5">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           ENTRY
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <div class="eah-pro-phase-header">
+
+          <div>
+
+            <span class="eah-pro-eyebrow">
+              ENTRY
+            </span>
+
+            <h3>
+              Entrée à l'eau
+            </h3>
+
+          </div>
+
+
+          <strong id="eah-live-entry">
+            0/10
+          </strong>
+
+        </div>
+
+
+        <div class="eah-pro-criteria">
+
+          <label>
+
+            <span>
+              E1 — Angle vertical
+            </span>
+
+            <select name="E1">
+
+              <option value="NA">
+                N/A
+              </option>
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              E2 — Éclaboussures
+            </span>
+
+            <select name="E2">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              E3 — Position des bras
+            </span>
+
+            <select name="E3">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              E4 — Jambes tendues et serrées
+            </span>
+
+            <select name="E4">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            <span>
+              E5 — Axe d'entrée
+            </span>
+
+            <select name="E5">
+
+              <option value="0">
+                0 — Non validé
+              </option>
+
+              <option value="1">
+                1 — Partiel
+              </option>
+
+              <option value="2">
+                2 — Validé
+              </option>
+
+            </select>
+
+          </label>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           NOTE FINALE
+      ==================================================== -->
+
+      <div class="eah-pro-final-score">
+
+        <span>
+          NOTE EAH
+        </span>
+
+        <strong id="eah-live-final">
+          0/10
+        </strong>
+
+        <small>
+          Calculée automatiquement à partir de Takeoff, Trick et Entry
+        </small>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           COMMENTAIRES
+      ==================================================== -->
+
+      <div class="eah-pro-form-block">
+
+        <h3>
+          3. Synthèse
+        </h3>
+
+
+        <div class="eah-pro-form-grid">
+
+          <label>
+
+            Points réussis
+
+            <textarea
+              name="positive"
+              rows="4"
+              placeholder="Optionnel — sinon généré automatiquement"
+            ></textarea>
+
+          </label>
+
+
+          <label>
+
+            Critères à améliorer
+
+            <textarea
+              name="improve"
+              rows="4"
+              placeholder="Optionnel — sinon généré automatiquement"
+            ></textarea>
+
+          </label>
+
+        </div>
+
+
+        <label>
+
+          Commentaire du coach
+
+          <textarea
+            name="comment"
+            rows="5"
+            placeholder="Commentaire général..."
+          ></textarea>
+
+        </label>
+
+
+        <label>
+
+          Lien vidéo
+
+          <input
+            type="url"
+            name="videoUrl"
+            placeholder="https://..."
+          >
+
+        </label>
+
+      </div>
+
+
+
+      <!-- ===================================================
+           VALIDATION
+      ==================================================== -->
+
+      <div class="eah-pro-submit-zone">
+
+        <button
+          type="submit"
+          class="eah-runtime-button eah-pro-submit"
+        >
+          Générer le Grade Report
+        </button>
+
+
+        <a
+          id="eah-last-grade-report"
+          class="eah-runtime-link"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          hidden
+        >
+          Ouvrir le Grade Report
+        </a>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     DERNIERES EVALUATIONS
+========================================================== -->
+
+<section
+  id="eah-evaluations"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          HISTORIQUE
+        </span>
+
+        <h2>
+          Dernières évaluations
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-recent-evaluations"
+      class="eah-pro-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     ACTUALITES
+========================================================== -->
+
+<section
+  id="eah-actualites"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          EAH DIVING
+        </span>
+
+        <h2>
+          Actualités
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-news-list"
+      class="eah-pro-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     SPOTS
+========================================================== -->
+
+<section
+  id="eah-spots"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          EXPLORE
+        </span>
+
+        <h2>
+          Spots
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-spots-list"
+      class="eah-pro-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     BLAZONS
+========================================================== -->
+
+<section
+  id="eah-blazons"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          PROGRESSION
+        </span>
+
+        <h2>
+          Blazons EAH
+        </h2>
+
+        <p>
+          Blanc → Orange → Vert → Bleu → Rouge → Bronze → Argent → Or → Noir → Legend → Titan
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-blazons-list"
+      class="eah-pro-grid eah-pro-blazon-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     TARIFS
+========================================================== -->
+
+<section
+  id="eah-tarifs"
+  class="section eah-pro-section"
+>
+
+  <div class="container">
+
+    <div class="eah-pro-heading">
+
+      <div>
+
+        <span class="eah-pro-eyebrow">
+          EAH DIVING PRO
+        </span>
+
+        <h2>
+          Offres
+        </h2>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="eah-pricing-list"
+      class="eah-pro-grid"
+    ></div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     STYLE DE L'INTERFACE PRO
+========================================================== -->
+
+<style>
+
+  .eah-pro-section {
+    position: relative;
+    padding-top: 75px;
+    padding-bottom: 75px;
+  }
+
+
+  .eah-pro-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 25px;
+    margin-bottom: 30px;
+  }
+
+
+  .eah-pro-heading h2 {
+    margin:
+      5px
+      0
+      5px;
+  }
+
+
+  .eah-pro-heading p {
+    margin: 0;
+    opacity: .72;
+  }
+
+
+  .eah-pro-eyebrow {
+    display: block;
+    color:
+      var(
+        --cyan,
+        #30cfff
+      );
+    font-size: .73rem;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+
+  .eah-pro-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(
+          0,
+          1fr
+        )
+      );
+    gap: 18px;
+  }
+
+
+  .eah-pro-grid-small {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+
+  .eah-pro-blazon-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(
+          0,
+          1fr
+        )
+      );
+  }
+
+
+  .eah-pro-stats {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(
+          0,
+          1fr
+        )
+      );
+    gap: 14px;
+  }
+
+
+  .eah-pro-stat {
+    padding: 20px;
+    border:
+      1px
+      solid
+      rgba(
+        143,
+        205,
+        255,
+        .18
+      );
+    border-radius: 20px;
+    background:
+      rgba(
+        5,
+        23,
+        42,
+        .72
+      );
+    backdrop-filter:
+      blur(
+        18px
+      );
+  }
+
+
+  .eah-pro-stat span {
+    display: block;
+    margin-bottom: 9px;
+    opacity: .68;
+    font-size: .78rem;
+  }
+
+
+  .eah-pro-stat strong {
+    display: block;
+    color:
+      var(
+        --cyan,
+        #30cfff
+      );
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+
+  .eah-pro-form {
+    display: grid;
+    gap: 22px;
+  }
+
+
+  .eah-pro-form-block {
+    padding: 26px;
+    border:
+      1px
+      solid
+      rgba(
+        143,
+        205,
+        255,
+        .18
+      );
+    border-radius: 25px;
+    background:
+      rgba(
+        5,
+        23,
+        42,
+        .76
+      );
+    backdrop-filter:
+      blur(
+        18px
+      );
+  }
+
+
+  .eah-pro-form-block h3 {
+    margin:
+      0
+      0
+      20px;
+  }
+
+
+  .eah-pro-form-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(
+          0,
+          1fr
+        )
+      );
+    gap: 16px;
+  }
+
+
+  .eah-pro-form label,
+  .eah-pro-criteria label {
+    display: grid;
+    gap: 8px;
+    font-size: .86rem;
+    font-weight: 700;
+  }
+
+
+  .eah-pro-form input,
+  .eah-pro-form select,
+  .eah-pro-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding:
+      13px
+      14px;
+    border:
+      1px
+      solid
+      rgba(
+        143,
+        205,
+        255,
+        .2
+      );
+    border-radius: 14px;
+    outline: 0;
+    background:
+      rgba(
+        3,
+        19,
+        31,
+        .82
+      );
+    color:
+      var(
+        --white,
+        #f5f9ff
+      );
+    font: inherit;
+  }
+
+
+  .eah-pro-form input:focus,
+  .eah-pro-form select:focus,
+  .eah-pro-form textarea:focus {
+    border-color:
+      var(
+        --cyan,
+        #30cfff
+      );
+  }
+
+
+  .eah-pro-phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+
+  .eah-pro-phase-header h3 {
+    margin:
+      4px
+      0
+      0;
+  }
+
+
+  .eah-pro-phase-header strong {
+    min-width: 90px;
+    color:
+      var(
+        --cyan,
+        #30cfff
+      );
+    font-size: 1.7rem;
+    text-align: right;
+  }
+
+
+  .eah-pro-criteria {
+    display: grid;
+    gap: 12px;
+  }
+
+
+  .eah-pro-criteria label {
+    grid-template-columns:
+      minmax(
+        0,
+        1fr
+      )
+      180px;
+    align-items: center;
+    padding:
+      11px
+      0;
+    border-bottom:
+      1px
+      solid
+      rgba(
+        143,
+        205,
+        255,
+        .09
+      );
+  }
+
+
+  .eah-pro-final-score {
+    display: grid;
+    place-items: center;
+    padding:
+      34px
+      20px;
+    border:
+      1px
+      solid
+      rgba(
+        48,
+        207,
+        255,
+        .28
+      );
+    border-radius: 28px;
+    background:
+      linear-gradient(
+        145deg,
+        rgba(
+          11,
+          107,
+          255,
+          .14
+        ),
+        rgba(
+          48,
+          207,
+          255,
+          .05
+        )
+      );
+    text-align: center;
+  }
+
+
+  .eah-pro-final-score span {
+    font-size: .8rem;
+    font-weight: 900;
+    letter-spacing: .15em;
+  }
+
+
+  .eah-pro-final-score strong {
+    display: block;
+    margin:
+      8px
+      0;
+    color:
+      var(
+        --cyan,
+        #30cfff
+      );
+    font-size: clamp(
+      3rem,
+      8vw,
+      5.5rem
+    );
+    line-height: 1;
+  }
+
+
+  .eah-pro-final-score small {
+    opacity: .68;
+  }
+
+
+  .eah-pro-submit-zone {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+
+  .eah-pro-submit {
+    min-width: 260px;
+  }
+
+
+  @media (
+    max-width:
+    980px
+  ) {
+
+    .eah-pro-grid,
+    .eah-pro-blazon-grid {
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(
+            0,
+            1fr
+          )
+        );
+    }
+
+
+    .eah-pro-grid-small,
+    .eah-pro-stats {
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(
+            0,
+            1fr
+          )
+        );
+    }
+
+  }
+
+
+  @media (
+    max-width:
+    650px
+  ) {
+
+    .eah-pro-section {
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+
+
+    .eah-pro-heading {
+      display: grid;
+      align-items: start;
+    }
+
+
+    .eah-pro-grid,
+    .eah-pro-grid-small,
+    .eah-pro-blazon-grid,
+    .eah-pro-stats,
+    .eah-pro-form-grid {
+      grid-template-columns:
+        1fr;
+    }
+
+
+    .eah-pro-form-block {
+      padding: 18px;
+    }
+
+
+    .eah-pro-criteria label {
+      grid-template-columns:
+        1fr;
+    }
+
+
+    .eah-pro-phase-header strong {
+      min-width: 0;
+    }
+
+  }
+
+</style>
 </body>
 
 </html>
