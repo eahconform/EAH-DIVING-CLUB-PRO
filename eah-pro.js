@@ -4271,3 +4271,1130 @@ function formatDateEAH(
   );
 
 })();
+/* ============================================================
+   EAH DIVING PRO
+   ACTIVATION NFC / PROFIL
+   FRONTEND
+============================================================ */
+
+
+/* ============================================================
+   REMPLACE LA GESTION PROFIL PRECEDENTE
+============================================================ */
+
+async function loadProfileFromUrlEAH() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  const club =
+    String(
+      params.get("club") ||
+      EAH_STATE.clubSlug ||
+      ""
+    )
+    .trim()
+    .toLowerCase();
+
+
+  const eahId =
+    String(
+      params.get("id") ||
+      ""
+    )
+    .trim()
+    .toUpperCase();
+
+
+  const token =
+    String(
+      params.get("token") ||
+      ""
+    )
+    .trim();
+
+
+  if (
+    !club ||
+    !eahId ||
+    !token
+  ) {
+
+    return;
+
+  }
+
+
+  try {
+
+    const result =
+      await apiGetEAH(
+
+        "profile",
+
+        {
+
+          club:
+            club,
+
+          id:
+            eahId,
+
+          token:
+            token
+
+        }
+
+      );
+
+
+    EAH_STATE.profile =
+      result;
+
+
+    /* ======================================================
+       CARTE VIERGE
+    ====================================================== */
+
+    if (
+      result.assigned ===
+      false
+    ) {
+
+      afficherActivationCarteEAH(
+
+        club,
+
+        eahId,
+
+        token,
+
+        result
+
+      );
+
+
+      return;
+
+    }
+
+
+    /* ======================================================
+       PROFIL EXISTANT
+    ====================================================== */
+
+    cacherActivationCarteEAH();
+
+
+    renderProfileEAH(
+      result
+    );
+
+
+    renderProfileHistoryEAH(
+      result
+    );
+
+
+  } catch(error) {
+
+    console.error(
+      error
+    );
+
+
+    showToastEAH(
+
+      "Impossible d'ouvrir la carte : "
+      +
+      error.message,
+
+      "error"
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   AFFICHER LE FORMULAIRE D'ACTIVATION
+============================================================ */
+
+function afficherActivationCarteEAH(
+  club,
+  eahId,
+  token,
+  result
+) {
+
+  const block =
+    eahEl(
+      "eah-card-activation"
+    );
+
+
+  if (!block) {
+
+    return;
+
+  }
+
+
+  block.hidden =
+    false;
+
+
+  setTextEAH(
+    "eah-activation-id",
+    eahId
+  );
+
+
+  const clubInput =
+    eahEl(
+      "eah-activation-club"
+    );
+
+
+  const idInput =
+    eahEl(
+      "eah-activation-eah-id"
+    );
+
+
+  const tokenInput =
+    eahEl(
+      "eah-activation-token"
+    );
+
+
+  if (
+    clubInput
+  ) {
+
+    clubInput.value =
+      club;
+
+  }
+
+
+  if (
+    idInput
+  ) {
+
+    idInput.value =
+      eahId;
+
+  }
+
+
+  if (
+    tokenInput
+  ) {
+
+    tokenInput.value =
+      token;
+
+  }
+
+
+  remplirGroupesActivationEAH();
+
+
+  block.scrollIntoView({
+
+    behavior:
+      "smooth",
+
+    block:
+      "start"
+
+  });
+
+
+  if (
+    result &&
+    result.club
+  ) {
+
+    EAH_STATE.club =
+      result.club;
+
+
+    applyClubBrandEAH();
+
+  }
+
+}
+
+
+
+/* ============================================================
+   CACHER ACTIVATION
+============================================================ */
+
+function cacherActivationCarteEAH() {
+
+  const block =
+    eahEl(
+      "eah-card-activation"
+    );
+
+
+  if (
+    block
+  ) {
+
+    block.hidden =
+      true;
+
+  }
+
+}
+
+
+
+/* ============================================================
+   GROUPES DU CLUB
+============================================================ */
+
+function remplirGroupesActivationEAH() {
+
+  const select =
+    eahEl(
+      "eah-activation-group"
+    );
+
+
+  if (!select) {
+
+    return;
+
+  }
+
+
+  const groups =
+    Array.isArray(
+      EAH_STATE.groups
+    )
+    ?
+    EAH_STATE.groups
+    :
+    [];
+
+
+  select.innerHTML =
+    `
+      <option value="">
+        Sans groupe
+      </option>
+    `
+    +
+    groups.map(
+      function(group) {
+
+        const name =
+          String(
+            group.name || ""
+          );
+
+
+        return `
+          <option
+            value="${escapeAttrEAH(
+              name
+            )}"
+          >
+            ${escapeHtmlEAH(
+              name
+            )}
+          </option>
+        `;
+
+      }
+    )
+    .join("");
+
+}
+
+
+
+/* ============================================================
+   INITIALISER ACTIVATION
+============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    const form =
+      eahEl(
+        "eah-card-activation-form"
+      );
+
+
+    if (
+      form
+    ) {
+
+      form.addEventListener(
+        "submit",
+        submitActivationCarteEAH
+      );
+
+    }
+
+
+    const photo =
+      eahEl(
+        "eah-activation-photo"
+      );
+
+
+    if (
+      photo
+    ) {
+
+      photo.addEventListener(
+        "change",
+        previewPhotoActivationEAH
+      );
+
+    }
+
+  }
+);
+
+
+
+/* ============================================================
+   PREVIEW PHOTO
+============================================================ */
+
+async function previewPhotoActivationEAH(
+  event
+) {
+
+  const file =
+    event.target.files &&
+    event.target.files[0];
+
+
+  const preview =
+    eahEl(
+      "eah-activation-photo-preview"
+    );
+
+
+  if (
+    !file ||
+    !preview
+  ) {
+
+    return;
+
+  }
+
+
+  try {
+
+    const dataUrl =
+      await compresserPhotoEAH(
+        file
+      );
+
+
+    preview.innerHTML =
+      `
+        <img
+          src="${dataUrl}"
+          alt=""
+          style="
+            width:120px;
+            height:120px;
+            object-fit:cover;
+            border-radius:24px;
+          "
+        >
+      `;
+
+
+    preview.style.display =
+      "block";
+
+
+  } catch(error) {
+
+    showToastEAH(
+
+      "Impossible de lire la photo.",
+
+      "error"
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   COMPRESSER PHOTO
+============================================================ */
+
+function compresserPhotoEAH(
+  file
+) {
+
+  return new Promise(
+    function(
+      resolve,
+      reject
+    ) {
+
+      if (!file) {
+
+        resolve(
+          ""
+        );
+
+        return;
+
+      }
+
+
+      const reader =
+        new FileReader();
+
+
+      reader.onerror =
+        function() {
+
+          reject(
+            new Error(
+              "Lecture photo impossible."
+            )
+          );
+
+        };
+
+
+      reader.onload =
+        function() {
+
+          const image =
+            new Image();
+
+
+          image.onerror =
+            function() {
+
+              reject(
+                new Error(
+                  "Image invalide."
+                )
+              );
+
+          };
+
+
+          image.onload =
+            function() {
+
+              const max =
+                800;
+
+
+              let width =
+                image.width;
+
+
+              let height =
+                image.height;
+
+
+              if (
+                width > height
+                &&
+                width > max
+              ) {
+
+                height =
+                  Math.round(
+                    height
+                    *
+                    max
+                    /
+                    width
+                  );
+
+
+                width =
+                  max;
+
+              }
+
+
+              if (
+                height >= width
+                &&
+                height > max
+              ) {
+
+                width =
+                  Math.round(
+                    width
+                    *
+                    max
+                    /
+                    height
+                  );
+
+
+                height =
+                  max;
+
+              }
+
+
+              const canvas =
+                document.createElement(
+                  "canvas"
+                );
+
+
+              canvas.width =
+                width;
+
+
+              canvas.height =
+                height;
+
+
+              const ctx =
+                canvas.getContext(
+                  "2d"
+                );
+
+
+              ctx.drawImage(
+
+                image,
+
+                0,
+                0,
+                width,
+                height
+
+              );
+
+
+              resolve(
+
+                canvas.toDataURL(
+                  "image/jpeg",
+                  0.76
+                )
+
+              );
+
+            };
+
+
+          image.src =
+            reader.result;
+
+        };
+
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+
+
+
+/* ============================================================
+   ACTIVER CARTE
+============================================================ */
+
+async function submitActivationCarteEAH(
+  event
+) {
+
+  event.preventDefault();
+
+
+  const form =
+    event.currentTarget;
+
+
+  const button =
+    form.querySelector(
+      '[type="submit"]'
+    );
+
+
+  const data =
+    formDataObjectEAH(
+      form
+    );
+
+
+  if (
+    data.pin !==
+    data.pinConfirm
+  ) {
+
+    showToastEAH(
+
+      "Les deux PIN ne correspondent pas.",
+
+      "error"
+
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    !/^[0-9]{4,8}$/.test(
+      String(
+        data.pin || ""
+      )
+    )
+  ) {
+
+    showToastEAH(
+
+      "Le PIN doit contenir entre 4 et 8 chiffres.",
+
+      "error"
+
+    );
+
+
+    return;
+
+  }
+
+
+  const photoInput =
+    eahEl(
+      "eah-activation-photo"
+    );
+
+
+  let photoDataUrl =
+    "";
+
+
+  if (
+    photoInput &&
+    photoInput.files &&
+    photoInput.files[0]
+  ) {
+
+    setButtonLoadingEAH(
+
+      button,
+
+      true,
+
+      "Préparation de la photo…"
+
+    );
+
+
+    try {
+
+      photoDataUrl =
+        await compresserPhotoEAH(
+
+          photoInput.files[0]
+
+        );
+
+    } catch(error) {
+
+      setButtonLoadingEAH(
+        button,
+        false
+      );
+
+
+      showToastEAH(
+
+        "Impossible de préparer la photo.",
+
+        "error"
+
+      );
+
+
+      return;
+
+    }
+
+  }
+
+
+  delete data.pinConfirm;
+
+
+  data.photoDataUrl =
+    photoDataUrl;
+
+
+  setButtonLoadingEAH(
+
+    button,
+
+    true,
+
+    "Activation du profil…"
+
+  );
+
+
+  try {
+
+    const result =
+      await apiPostEAH(
+
+        "setupProfile",
+
+        data
+
+      );
+
+
+    EAH_STATE.profile =
+      result;
+
+
+    cacherActivationCarteEAH();
+
+
+    renderProfileEAH(
+      result
+    );
+
+
+    renderProfileHistoryEAH(
+      result
+    );
+
+
+    showToastEAH(
+
+      "Profil EAH activé avec succès.",
+
+      "success"
+
+    );
+
+
+    if (
+      EAH_STATE.clubSlug
+    ) {
+
+      try {
+
+        await loadClubWorkspaceEAH(
+
+          EAH_STATE.clubSlug
+
+        );
+
+      } catch (_) {}
+
+    }
+
+
+  } catch(error) {
+
+    console.error(
+      error
+    );
+
+
+    showToastEAH(
+
+      "Activation impossible : "
+      +
+      error.message,
+
+      "error"
+
+    );
+
+
+  } finally {
+
+    setButtonLoadingEAH(
+      button,
+      false
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   HISTORIQUE DU PROFIL
+============================================================ */
+
+function renderProfileHistoryEAH(
+  result
+) {
+
+  const container =
+    eahEl(
+      "eah-profile-history"
+    );
+
+
+  if (!container) {
+
+    return;
+
+  }
+
+
+  const evaluations =
+    result.evaluations ||
+    [];
+
+
+  const blazons =
+    result.blazons ||
+    [];
+
+
+  let html = "";
+
+
+  /* ========================================================
+     BLAZONS
+  ======================================================== */
+
+  if (
+    blazons.length
+  ) {
+
+    html += `
+
+      <article class="eah-runtime-card">
+
+        <div class="eah-runtime-card-content">
+
+          <span class="eah-runtime-kicker">
+            PROGRESSION
+          </span>
+
+          <h3>
+            Blazons
+          </h3>
+
+          <div class="eah-runtime-tags">
+
+            ${
+
+              blazons.map(
+                function(blazon) {
+
+                  return `
+
+                    <span class="eah-runtime-tag">
+
+                      ${escapeHtmlEAH(
+                        blazon.name ||
+                        blazon.key
+                      )}
+
+                      —
+
+                      ${Number(
+                        blazon.progress ||
+                        0
+                      )}%
+
+                    </span>
+
+                  `;
+
+                }
+              )
+              .join("")
+
+            }
+
+          </div>
+
+        </div>
+
+      </article>
+
+    `;
+
+  }
+
+
+  /* ========================================================
+     EVALUATIONS
+  ======================================================== */
+
+  if (
+    evaluations.length
+  ) {
+
+    evaluations.forEach(
+      function(evaluation) {
+
+        html += `
+
+          <article class="eah-runtime-card">
+
+            <div class="eah-runtime-card-content">
+
+              <span class="eah-runtime-kicker">
+
+                ${escapeHtmlEAH(
+                  formatDateEAH(
+                    evaluation.date
+                  )
+                )}
+
+              </span>
+
+              <h3>
+
+                ${escapeHtmlEAH(
+                  evaluation.code ||
+                  "Plongeon"
+                )}
+
+              </h3>
+
+              <p>
+
+                ${Number(
+                  evaluation.height ||
+                  0
+                )} m
+
+                •
+
+                EAH
+
+                ${escapeHtmlEAH(
+                  String(
+                    evaluation.eahScore ??
+                    "—"
+                  )
+                )}/10
+
+              </p>
+
+              <div class="eah-runtime-tags">
+
+                <span class="eah-runtime-tag">
+                  Takeoff
+                  ${escapeHtmlEAH(
+                    String(
+                      evaluation.takeoff ??
+                      "—"
+                    )
+                  )}
+                </span>
+
+                <span class="eah-runtime-tag">
+                  Trick
+                  ${escapeHtmlEAH(
+                    String(
+                      evaluation.trick ??
+                      "—"
+                    )
+                  )}
+                </span>
+
+                <span class="eah-runtime-tag">
+                  Entry
+                  ${escapeHtmlEAH(
+                    String(
+                      evaluation.entry ??
+                      "—"
+                    )
+                  )}
+                </span>
+
+              </div>
+
+            </div>
+
+            ${
+              evaluation.reportUrl
+              ?
+              `
+
+                <a
+                  href="${escapeAttrEAH(
+                    evaluation.reportUrl
+                  )}"
+                  target="_blank"
+                  rel="noopener"
+                  class="eah-runtime-link"
+                >
+                  Grade Report
+                </a>
+
+              `
+              :
+              ""
+            }
+
+          </article>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  if (!html) {
+
+    html =
+      emptyStateEAH(
+
+        "Profil activé",
+
+        "Aucune évaluation enregistrée pour le moment."
+
+      );
+
+  }
+
+
+  container.innerHTML =
+    html;
+
+}
