@@ -6328,3 +6328,62 @@ section {
 
   pointer-events: none;
 }
+/* ============================================================
+   EAH DIVING PRO
+   FOND PLUS LUMINEUX / PROCHE DE L'ANCIEN SITE
+============================================================ */
+
+/* Fond premium général */
+.site-background {
+  background:
+    linear-gradient(
+      rgba(3, 19, 31, 0.20),
+      rgba(3, 19, 31, 0.38)
+    ),
+    url("site-water-premium-bg.jpg")
+    center center / cover
+    no-repeat !important;
+
+  opacity: 1 !important;
+
+  filter:
+    brightness(1.18)
+    contrast(1.03)
+    saturate(1.08);
+}
+
+
+/* Réduit le voile supplémentaire posé sur le fond */
+.site-background::after {
+  background:
+    linear-gradient(
+      rgba(3, 19, 31, 0.05),
+      rgba(3, 19, 31, 0.18)
+    ) !important;
+
+  opacity: 1 !important;
+}
+
+
+/* ============================================================
+   HERO ACCUEIL
+   Rend hero-divers-group.png plus visible
+============================================================ */
+
+.hero::before,
+.home-hero::before,
+.hero-home::before,
+.hero-section::before {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 15, 27, 0.68) 0%,
+      rgba(2, 15, 27, 0.32) 42%,
+      rgba(2, 15, 27, 0.10) 72%,
+      rgba(2, 15, 27, 0.15) 100%
+    ) !important;
+}
+
+
+/* On garde le texte lisible à gauche,
+   mais l'image ressort beaucoup plus au centre et à droite */
