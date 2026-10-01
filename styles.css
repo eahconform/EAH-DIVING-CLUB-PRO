@@ -6470,3 +6470,44 @@ img[src*="blazon-"] {
     contrast(1.02)
     saturate(1.08) !important;
 }
+/* ============================================================
+   EAH DIVING PRO
+   SUPPRESSION DES VOILES SOMBRES EN HAUT DES PAGES
+============================================================ */
+
+.page-hero::before,
+.page-hero::after,
+.discipline-hero::before,
+.discipline-hero::after,
+.hero-discipline::before,
+.hero-discipline::after,
+.page-banner::before,
+.page-banner::after,
+.page-head::before,
+.page-head::after {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+
+/* Pas de rectangle sombre supplémentaire */
+
+.page-hero,
+.discipline-hero,
+.hero-discipline,
+.page-banner,
+.page-head {
+  background-color: transparent !important;
+}
+
+
+/* Les photos restent lumineuses */
+
+.page-hero img,
+.discipline-hero img,
+.hero-discipline img {
+  filter:
+    brightness(1.22)
+    contrast(1.02)
+    saturate(1.08) !important;
+}
