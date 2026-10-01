@@ -14599,6 +14599,959 @@ function renderCoachCardWorkspaceEAH(
 
   `;
 
+}/* ============================================================
+   EAH DIVING PRO
+   CORRECTIF PROFIL / GRADING V3
+============================================================ */
+
+
+/* ============================================================
+   LOGIN PLONGEUR
+   PLUS BESOIN DE SELECTIONNER UN CLUB
+============================================================ */
+
+async function diverLogin(
+  event
+) {
+
+  event
+    ?.preventDefault();
+
+
+  const eahId =
+    normalizeCode(
+      val(
+        'diverEahId'
+      )
+    );
+
+
+  const pin =
+    val(
+      'diverPin'
+    )
+    .trim();
+
+
+  const button =
+    document.getElementById(
+      'diverLoginButton'
+    );
+
+
+  if (
+    !eahId ||
+    !pin
+  ) {
+
+    setMessage(
+
+      'diverLoginMsg',
+
+      `
+        <div class="notice error">
+          Numéro EAH et code personnel obligatoires.
+        </div>
+      `
+
+    );
+
+    return;
+
+  }
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Ouverture…',
+
+    'Ouvrir mon profil'
+
+  );
+
+
+  try {
+
+    const pinHash =
+      await eahFastSha256(
+        pin
+      );
+
+
+    const {
+      data,
+      error
+    } =
+      await requireSupabase()
+        .rpc(
+
+          'eah_diver_login_global_fast',
+
+          {
+
+            p_eah_id:
+              eahId,
+
+            p_pin_hash:
+              pinHash
+
+          }
+
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+
+        data?.error
+        ||
+        'Connexion impossible.'
+
+      );
+
+    }
+
+
+    /* ======================================================
+       LE CLUB VIENT DU PROFIL
+       ET NON PLUS D'UN CHOIX UTILISATEUR
+    ====================================================== */
+
+    if (
+      data.club
+    ) {
+
+      state.club =
+        data.club;
+
+
+      CLUB_SLUG =
+        data.club.slug;
+
+
+      localStorage.setItem(
+
+        'EAH_CLUB',
+
+        data.club.slug
+
+      );
+
+    }
+
+
+    const profile =
+      data.profile ||
+      {};
+
+
+    state.profile = {
+
+      eahId:
+        profile.eahId,
+
+      firstName:
+        profile.firstName || '',
+
+      lastName:
+        profile.lastName || '',
+
+      photoUrl:
+        profile.photoUrl || '',
+
+      group:
+        profile.group || '',
+
+      currentBlazon:
+        profile.currentBlazon || '',
+
+      clubSlug:
+        data.club?.slug || '',
+
+      clubName:
+        data.club?.name || ''
+
+    };
+
+
+    /*
+      Conserver le hash durant la session navigateur
+      pour permettre d'envoyer une demande de grading
+      sans redemander le PIN.
+    */
+
+    state.diverPinHash =
+      pinHash;
+
+
+    state.profileHistory = {
+
+      evaluations:
+        data.evaluations || [],
+
+      blazons:
+        data.blazons || []
+
+    };
+
+
+    showPage(
+      'profil'
+    );
+
+
+    renderProfileSummary(
+
+      state.profile,
+
+      true
+
+    );
+
+
+    renderProfileHistory(
+
+      state.profileHistory
+
+    );
+
+
+    setMessage(
+      'diverLoginMsg',
+      ''
+    );
+
+
+  } catch(error) {
+
+    setMessage(
+
+      'diverLoginMsg',
+
+      `
+        <div class="notice error">
+          ${esc(
+            error.message ||
+            'Connexion impossible.'
+          )}
+        </div>
+      `
+
+    );
+
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Ouvrir mon profil'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   REMPLACER L'ANCIEN FORMULAIRE DE GRADING
+============================================================ */
+
+const __EAH_PROFILE_V3 =
+  renderProfileSummary;
+
+
+renderProfileSummary =
+  function(
+    profile,
+    privateAccess = false
+  ) {
+
+    __EAH_PROFILE_V3(
+
+      profile,
+
+      privateAccess
+
+    );
+
+
+    /*
+      Supprimer l'ancien formulaire à radios.
+    */
+
+    document
+      .getElementById(
+        'eahDiverGradingBox'
+      )
+      ?.remove();
+
+
+    const view =
+      document.getElementById(
+        'profileView'
+      );
+
+
+    if (!view) {
+
+      return;
+
+    }
+
+
+    if (
+      document.getElementById(
+        'eahDiverGradingV3'
+      )
+    ) {
+
+      return;
+
+    }
+
+
+    const clubName =
+      state.club?.name
+      ||
+      profile.clubName
+      ||
+      'mon club';
+
+
+    const box =
+      document.createElement(
+        'section'
+      );
+
+
+    box.id =
+      'eahDiverGradingV3';
+
+
+    box.className =
+      'dashboard-card';
+
+
+    box.style.marginTop =
+      '24px';
+
+
+    box.innerHTML = `
+
+      <span class="overline">
+        GRADING
+      </span>
+
+      <h2>
+        Soumettre un plongeon
+      </h2>
+
+      <p class="muted">
+        Envoie ta vidéo directement à
+        ${esc(clubName)}
+        ou à EAH Grading.
+      </p>
+
+
+      <button
+        type="button"
+        id="eahToggleRequestV3"
+        class="primary-button"
+      >
+        Soumettre un plongeon
+      </button>
+
+
+      <form
+        id="eahRequestFormV3"
+        class="hidden"
+        style="margin-top:22px"
+      >
+
+        <div class="form-grid">
+
+          <label>
+
+            Discipline
+
+            <select
+              id="eahRequestDisciplineV3"
+            >
+
+              <option value="Plongeon">
+                Plongeon
+              </option>
+
+              <option value="High Diving">
+                High Diving
+              </option>
+
+              <option value="Freestyle">
+                Freestyle
+              </option>
+
+              <option value="Dods">
+                Dods
+              </option>
+
+              <option value="Saut de l'ange">
+                Saut de l'ange
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            Code du plongeon
+
+            <input
+              id="eahRequestDiveCodeV3"
+              type="text"
+              placeholder="Ex : 107B"
+              required
+            >
+
+          </label>
+
+
+          <label>
+
+            Nom du plongeon
+
+            <input
+              id="eahRequestDiveNameV3"
+              type="text"
+              placeholder="Optionnel"
+            >
+
+          </label>
+
+
+          <label>
+
+            Hauteur
+
+            <input
+              id="eahRequestHeightV3"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="Ex : 10"
+            >
+
+          </label>
+
+        </div>
+
+
+        <label>
+
+          Lien de la vidéo
+
+          <input
+            id="eahRequestVideoV3"
+            type="url"
+            placeholder="https://..."
+            required
+          >
+
+        </label>
+
+
+        <label>
+
+          Message pour l'évaluateur
+
+          <textarea
+            id="eahRequestMessageV3"
+            rows="4"
+            placeholder="Informations utiles..."
+          ></textarea>
+
+        </label>
+
+
+        <div class="eah-request-buttons-v3">
+
+          <button
+            type="button"
+            id="eahSendClubV3"
+            class="primary-button"
+          >
+
+            Envoyer à
+            ${esc(clubName)}
+
+          </button>
+
+
+          <button
+            type="button"
+            id="eahSendEahV3"
+            class="secondary-button"
+          >
+            Envoyer à EAH Grading
+          </button>
+
+        </div>
+
+
+        <div
+          id="eahRequestMessageV3Result"
+          style="margin-top:15px"
+        ></div>
+
+      </form>
+
+    `;
+
+
+    view.appendChild(
+      box
+    );
+
+
+    document
+      .getElementById(
+        'eahToggleRequestV3'
+      )
+      ?.addEventListener(
+
+        'click',
+
+        () => {
+
+          document
+            .getElementById(
+              'eahRequestFormV3'
+            )
+            ?.classList
+            .toggle(
+              'hidden'
+            );
+
+        }
+
+      );
+
+
+    document
+      .getElementById(
+        'eahSendClubV3'
+      )
+      ?.addEventListener(
+
+        'click',
+
+        () =>
+          submitGradingV3(
+            'CLUB'
+          )
+
+      );
+
+
+    document
+      .getElementById(
+        'eahSendEahV3'
+      )
+      ?.addEventListener(
+
+        'click',
+
+        () =>
+          submitGradingV3(
+            'EAH'
+          )
+
+      );
+
+  };
+
+
+
+/* ============================================================
+   ENVOI CLUB OU EAH
+============================================================ */
+
+async function submitGradingV3(
+  destination
+) {
+
+  const clubButton =
+    document.getElementById(
+      'eahSendClubV3'
+    );
+
+
+  const eahButton =
+    document.getElementById(
+      'eahSendEahV3'
+    );
+
+
+  const eahId =
+    state.profile?.eahId
+    ||
+    CARD_EAH_ID
+    ||
+    '';
+
+
+  if (!eahId) {
+
+    return;
+
+  }
+
+
+  const diveCode =
+    normalizeCode(
+
+      document
+        .getElementById(
+          'eahRequestDiveCodeV3'
+        )
+        ?.value
+      ||
+      ''
+
+    );
+
+
+  const videoUrl =
+    document
+      .getElementById(
+        'eahRequestVideoV3'
+      )
+      ?.value
+      ?.trim()
+    ||
+    '';
+
+
+  if (
+    !diveCode ||
+    !videoUrl
+  ) {
+
+    setMessage(
+
+      'eahRequestMessageV3Result',
+
+      `
+        <div class="notice error">
+          Code du plongeon et vidéo obligatoires.
+        </div>
+      `
+
+    );
+
+    return;
+
+  }
+
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  const token =
+    params.get(
+      'token'
+    )
+    ||
+    '';
+
+
+  let pinHash =
+    state.diverPinHash
+    ||
+    '';
+
+
+  /*
+    Si ouvert sans carte et qu'on n'a plus le PIN en session.
+  */
+
+  if (
+    !token &&
+    !pinHash
+  ) {
+
+    const pin =
+      window.prompt(
+        'Entre ton code personnel pour confirmer :'
+      );
+
+
+    if (!pin) {
+
+      return;
+
+    }
+
+
+    pinHash =
+      await eahFastSha256(
+        pin
+      );
+
+  }
+
+
+  setLoadingButton(
+
+    destination ===
+      'CLUB'
+      ?
+      clubButton
+      :
+      eahButton,
+
+    true,
+
+    'Envoi…',
+
+    destination ===
+      'CLUB'
+      ?
+      'Envoyer à mon club'
+      :
+      'Envoyer à EAH Grading'
+
+  );
+
+
+  try {
+
+    const {
+
+      data,
+      error
+
+    } =
+      await requireSupabase()
+        .rpc(
+
+          'submit_diver_grading_request',
+
+          {
+
+            /*
+              Peut être vide :
+              Supabase retrouvera désormais
+              automatiquement le club.
+            */
+
+            p_club_slug:
+              state.club?.slug
+              ||
+              state.profile?.clubSlug
+              ||
+              CLUB_SLUG
+              ||
+              '',
+
+            p_eah_id:
+              eahId,
+
+            p_token:
+              token,
+
+            p_pin_hash:
+              pinHash,
+
+            p_destination:
+              destination,
+
+            p_payload: {
+
+              discipline:
+                document
+                  .getElementById(
+                    'eahRequestDisciplineV3'
+                  )
+                  ?.value
+                ||
+                'Plongeon',
+
+              diveCode:
+                diveCode,
+
+              diveName:
+                document
+                  .getElementById(
+                    'eahRequestDiveNameV3'
+                  )
+                  ?.value
+                  ?.trim()
+                ||
+                '',
+
+              height:
+                document
+                  .getElementById(
+                    'eahRequestHeightV3'
+                  )
+                  ?.value
+                ||
+                '',
+
+              videoUrl:
+                videoUrl,
+
+              message:
+                document
+                  .getElementById(
+                    'eahRequestMessageV3'
+                  )
+                  ?.value
+                  ?.trim()
+                ||
+                ''
+
+            }
+
+          }
+
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+
+        data?.error
+        ||
+        'Envoi impossible.'
+
+      );
+
+    }
+
+
+    setMessage(
+
+      'eahRequestMessageV3Result',
+
+      `
+        <div class="notice success">
+
+          <strong>
+            Demande envoyée.
+          </strong>
+
+          <br>
+
+          ${esc(
+            data.message
+            ||
+            ''
+          )}
+
+          <br>
+
+          Référence :
+          ${esc(
+            data.requestCode
+            ||
+            ''
+          )}
+
+        </div>
+      `
+
+    );
+
+
+  } catch(error) {
+
+    setMessage(
+
+      'eahRequestMessageV3Result',
+
+      `
+        <div class="notice error">
+          ${esc(
+            error.message
+            ||
+            'Envoi impossible.'
+          )}
+        </div>
+      `
+
+    );
+
+
+  } finally {
+
+    setLoadingButton(
+
+      clubButton,
+
+      false,
+
+      '',
+
+      'Envoyer à mon club'
+
+    );
+
+
+    setLoadingButton(
+
+      eahButton,
+
+      false,
+
+      '',
+
+      'Envoyer à EAH Grading'
+
+    );
+
+  }
+
 }
 init()
   .catch(
