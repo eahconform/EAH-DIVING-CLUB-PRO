@@ -1,18 +1,16 @@
 /* ============================================================
    EAH DIVING PRO
-   GESTION DES IMAGES DU SITE
-
-   Connecte automatiquement les fichiers déjà présents :
-   - Plongeon olympique
-   - Freestyle / Døds
-   - High Diving
-   - Saut de l'ange
-   - desktop / mobile
+   IMAGES FIX V2
+   - protège les blazons
+   - corrige les 4 disciplines
+   - desktop/mobile
+   - corrige Orange ≠ Saut de l'ange
+   - secours Actualités / Spots
 ============================================================ */
 
 (() => {
 
-  const FILES = {
+  const DISCIPLINES = {
 
     olympique: {
       desktop: "olympique-desktop.jpg",
@@ -41,9 +39,34 @@
   };
 
 
-  /* ========================================================
-     MOBILE / DESKTOP
-  ======================================================== */
+  const BLAZONS = {
+
+    blanc: "blazon-blanc.png",
+    orange: "blazon-orange.png",
+    vert: "blazon-vert.png",
+    bleu: "blazon-bleu.png",
+    rouge: "blazon-rouge.png",
+    bronze: "blazon-bronze.png",
+    argent: "blazon-argent.png",
+    or: "blazon-or.png",
+    noir: "blazon-noir.png",
+    legend: "blazon-legend.png",
+    titan: "blazon-titan.png"
+
+  };
+
+
+  function normalize(value) {
+
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/ø/g, "o")
+      .trim();
+
+  }
+
 
   function isMobile() {
 
@@ -54,68 +77,58 @@
 
   function disciplineImage(key) {
 
+    const data = DISCIPLINES[key];
+
+    if (!data) return "";
+
     return isMobile()
-      ? FILES[key].mobile
-      : FILES[key].desktop;
+      ? data.mobile
+      : data.desktop;
 
   }
 
 
-  /* ========================================================
-     NORMALISATION TEXTE
-  ======================================================== */
+  /* ============================================================
+     DETECTION DISCIPLINE
+     IMPORTANT :
+     PAS DE value.includes("ange")
+     car ORANGE contient ANGE.
+  ============================================================ */
 
-  function normalize(value) {
+  function detectDiscipline(value) {
 
-    return String(value || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/ø/g, "o");
-
-  }
-
-
-  function detectDiscipline(text) {
-
-    const value = normalize(text);
+    const text = normalize(value);
 
 
     if (
-      value.includes("plongeon olympique")
-      ||
-      value.includes("olympique")
+      text.includes("plongeon olympique") ||
+      text === "olympique"
     ) {
       return "olympique";
     }
 
 
     if (
-      value.includes("freestyle")
-      ||
-      value.includes("dods")
+      text.includes("freestyle") ||
+      text.includes("dods")
     ) {
       return "freestyle";
     }
 
 
     if (
-      value.includes("high diving")
-      ||
-      value.includes("high-diving")
-      ||
-      value.includes("highdiving")
+      text.includes("high diving") ||
+      text.includes("high-diving") ||
+      text.includes("highdiving")
     ) {
       return "highdiving";
     }
 
 
     if (
-      value.includes("saut de l'ange")
-      ||
-      value.includes("saut de lange")
-      ||
-      value.includes("ange")
+      text.includes("saut de l'ange") ||
+      text.includes("saut de lange") ||
+      text.includes("saut-ange")
     ) {
       return "ange";
     }
@@ -126,68 +139,116 @@
   }
 
 
-  /* ========================================================
-     CORRIGER LES <IMG>
-  ======================================================== */
 
-  function fixImages() {
+  /* ============================================================
+     PROTECTION BLAZONS
+  ============================================================ */
+
+  function fixBlazons() {
 
     document
-      .querySelectorAll("img")
-      .forEach(img => {
+      .querySelectorAll("h1,h2,h3,h4,h5")
+      .forEach(title => {
 
-        /*
-          Ne jamais modifier :
-          logo / blazons / photos de profils / grading
-        */
+        const text =
+          normalize(title.textContent);
 
-        const current =
-          normalize(
-            img.getAttribute("src")
+
+        if (!text.startsWith("blazon ")) {
+          return;
+        }
+
+
+        let key =
+          text
+            .replace(/^blazon\s+/, "")
+            .trim();
+
+
+        if (key === "silver") {
+          key = "argent";
+        }
+
+        if (key === "gold") {
+          key = "or";
+        }
+
+        if (key === "legende") {
+          key = "legend";
+        }
+
+
+        const file =
+          BLAZONS[key];
+
+
+        if (!file) {
+          return;
+        }
+
+
+        const card =
+          title.closest(
+            ".blazon-card, article, [class*='blazon']"
           );
 
 
+        if (!card) {
+          return;
+        }
+
+
+        const img =
+          card.querySelector("img");
+
+
+        if (!img) {
+          return;
+        }
+
+
         if (
-          current.includes("logo")
-          ||
-          current.includes("blazon")
-          ||
-          current.includes("grading-")
-          ||
-          current.includes("notation-")
-          ||
-          current.includes("grade-report")
+          img.getAttribute("src") !== file
+        ) {
+
+          img.src = file;
+
+        }
+
+      });
+
+  }
+
+
+
+  /* ============================================================
+     CARTES DISCIPLINES ACCUEIL
+  ============================================================ */
+
+  function fixDisciplineCards() {
+
+    document
+      .querySelectorAll("h1,h2,h3,h4")
+      .forEach(title => {
+
+        const titleText =
+          normalize(title.textContent);
+
+
+        /*
+          Ne jamais toucher aux blazons.
+        */
+
+        if (
+          titleText.startsWith("blazon ")
         ) {
           return;
         }
 
 
-        const context = [
-
-          img.alt,
-
-          img.title,
-
-          img.getAttribute(
-            "aria-label"
-          ),
-
-          img.parentElement
-            ?.textContent,
-
-          img.closest(
-            "article,section,a,div"
-          )
-            ?.textContent
-
-        ]
-        .filter(Boolean)
-        .join(" ");
-
-
         const discipline =
           detectDiscipline(
-            context
+            title.textContent
           );
 
 
@@ -196,226 +257,149 @@
         }
 
 
+        let card =
+          title.closest(
+            ".discipline-card"
+          );
+
+
+        if (!card) {
+
+          card =
+            title.closest(
+              "[class*='discipline-card']"
+            );
+
+        }
+
+
+        if (!card) {
+
+          card =
+            title.closest(
+              "article"
+            );
+
+        }
+
+
+        if (!card) {
+
+          let parent =
+            title.parentElement;
+
+
+          for (
+            let i = 0;
+            i < 4 && parent;
+            i++
+          ) {
+
+            const rect =
+              parent.getBoundingClientRect();
+
+
+            if (
+              rect.width > 250 &&
+              rect.height > 150
+            ) {
+
+              card = parent;
+
+              break;
+
+            }
+
+
+            parent =
+              parent.parentElement;
+
+          }
+
+        }
+
+
+        if (!card) {
+          return;
+        }
+
+
         /*
-          Remplace uniquement les images
-          de disciplines.
+          Protection supplémentaire.
         */
 
-        const correctSrc =
+        if (
+          normalize(
+            card.textContent
+          ).includes("blazon ")
+        ) {
+          return;
+        }
+
+
+        const file =
           disciplineImage(
             discipline
           );
 
 
-        if (
-          img.getAttribute("src")
-          !== correctSrc
-        ) {
+        const img =
+          card.querySelector("img");
 
-          img.src =
-            correctSrc;
+
+        if (img) {
+
+          img.src = file;
+
+          img.style.width =
+            "100%";
+
+          img.style.height =
+            "100%";
+
+          img.style.objectFit =
+            "cover";
+
+          return;
 
         }
 
 
-        img.style.objectFit =
+        card.style.backgroundImage = `
+
+          linear-gradient(
+            90deg,
+            rgba(3,19,31,.30),
+            rgba(3,19,31,.05)
+          ),
+
+          url("${file}")
+
+        `;
+
+
+        card.style.backgroundSize =
           "cover";
 
 
-        img.style.width =
-          "100%";
+        card.style.backgroundPosition =
+          "center";
 
 
-        img.style.height =
-          "100%";
+        card.style.backgroundRepeat =
+          "no-repeat";
 
       });
 
   }
 
 
-  /* ========================================================
-     CARTES DISCIPLINES DE L'ACCUEIL
 
-     Corrige notamment :
-     - Freestyle actuellement vide
-     - High Diving actuellement cassé
-  ======================================================== */
+  /* ============================================================
+     HERO DES PAGES DISCIPLINES
+  ============================================================ */
 
-  function fixDisciplineCards() {
-
-    const headings =
-      document.querySelectorAll(
-        "h1,h2,h3,h4,h5"
-      );
-
-
-    headings.forEach(title => {
-
-      const discipline =
-        detectDiscipline(
-          title.textContent
-        );
-
-
-      if (!discipline) {
-        return;
-      }
-
-
-      /*
-        Trouver la carte autour du titre.
-      */
-
-      let card =
-        title.closest(
-          ".discipline-card"
-        );
-
-
-      if (!card) {
-
-        card =
-          title.closest(
-            "[class*='discipline']"
-          );
-
-      }
-
-
-      if (!card) {
-
-        card =
-          title.closest(
-            "article"
-          );
-
-      }
-
-
-      /*
-        Si le HTML actuel n'utilise aucune
-        de ces classes, remonter quelques niveaux.
-      */
-
-      if (!card) {
-
-        let parent =
-          title.parentElement;
-
-
-        for (
-          let i = 0;
-          i < 4 && parent;
-          i++
-        ) {
-
-          const rect =
-            parent.getBoundingClientRect();
-
-
-          if (
-            rect.width > 250
-            &&
-            rect.height > 150
-          ) {
-
-            card =
-              parent;
-
-            break;
-
-          }
-
-
-          parent =
-            parent.parentElement;
-
-        }
-
-      }
-
-
-      if (!card) {
-        return;
-      }
-
-
-      const file =
-        disciplineImage(
-          discipline
-        );
-
-
-      /*
-        Si la carte possède une image,
-        utiliser directement cette image.
-      */
-
-      const img =
-        card.querySelector("img");
-
-
-      if (img) {
-
-        img.src =
-          file;
-
-
-        img.style.width =
-          "100%";
-
-
-        img.style.height =
-          "100%";
-
-
-        img.style.objectFit =
-          "cover";
-
-        return;
-
-      }
-
-
-      /*
-        Sinon on applique l'image comme fond.
-      */
-
-      card.style.backgroundImage = `
-
-        linear-gradient(
-          90deg,
-          rgba(3,19,31,.60),
-          rgba(3,19,31,.18)
-        ),
-
-        url("${file}")
-
-      `;
-
-
-      card.style.backgroundSize =
-        "cover";
-
-
-      card.style.backgroundPosition =
-        "center";
-
-
-      card.style.backgroundRepeat =
-        "no-repeat";
-
-    });
-
-  }
-
-
-  /* ========================================================
-     GRANDES PHOTOS EN HAUT DES PAGES DISCIPLINES
-  ======================================================== */
-
-  function fixPageHero() {
+  function fixDisciplineHero() {
 
     const hash =
       normalize(
@@ -423,49 +407,37 @@
       );
 
 
-    let discipline =
-      null;
+    let discipline = null;
 
 
     if (
       hash.includes("olympique")
     ) {
-
-      discipline =
-        "olympique";
-
+      discipline = "olympique";
     }
 
 
     if (
-      hash.includes("freestyle")
-      ||
+      hash.includes("freestyle") ||
       hash.includes("dods")
     ) {
-
-      discipline =
-        "freestyle";
-
+      discipline = "freestyle";
     }
 
 
     if (
       hash.includes("high")
     ) {
-
-      discipline =
-        "highdiving";
-
+      discipline = "highdiving";
     }
 
 
     if (
+      hash.includes("saut-ange") ||
+      hash.includes("sautdelange") ||
       hash.includes("ange")
     ) {
-
-      discipline =
-        "ange";
-
+      discipline = "ange";
     }
 
 
@@ -473,10 +445,6 @@
       return;
     }
 
-
-    /*
-      Trouver le grand hero visible.
-    */
 
     const candidates =
       document.querySelectorAll(
@@ -492,80 +460,162 @@
       );
 
 
-    let hero =
-      null;
-
-
-    candidates.forEach(el => {
+    candidates.forEach(hero => {
 
       const rect =
-        el.getBoundingClientRect();
+        hero.getBoundingClientRect();
 
 
       if (
-        rect.width > 500
-        &&
-        rect.height > 250
-        &&
-        rect.bottom > 0
+        rect.width < 300 ||
+        rect.height < 180
       ) {
-
-        hero =
-          el;
-
+        return;
       }
 
+
+      hero.style.backgroundImage = `
+
+        linear-gradient(
+          90deg,
+          rgba(2,15,27,.20),
+          rgba(2,15,27,.02)
+        ),
+
+        url("${DISCIPLINES[discipline].hero}")
+
+      `;
+
+
+      hero.style.backgroundSize =
+        "cover";
+
+
+      hero.style.backgroundPosition =
+        "center";
+
+
+      hero.style.backgroundRepeat =
+        "no-repeat";
+
     });
-
-
-    if (!hero) {
-      return;
-    }
-
-
-    const file =
-      FILES[discipline].hero;
-
-
-    hero.style.backgroundImage = `
-
-      linear-gradient(
-        90deg,
-        rgba(2,15,27,.40) 0%,
-        rgba(2,15,27,.18) 48%,
-        rgba(2,15,27,.06) 100%
-      ),
-
-      url("${file}")
-
-    `;
-
-
-    hero.style.backgroundSize =
-      "cover";
-
-
-    hero.style.backgroundPosition =
-      "center";
-
-
-    hero.style.backgroundRepeat =
-      "no-repeat";
 
   }
 
 
-  /* ========================================================
+
+  /* ============================================================
+     ACTUALITES / SPOTS
+     IMAGE PAR DEFAUT SI URL CASSEE
+  ============================================================ */
+
+  function fixCmsImages() {
+
+    document
+      .querySelectorAll("img")
+      .forEach(img => {
+
+        if (
+          img.dataset.eahFallbackInstalled ===
+          "true"
+        ) {
+          return;
+        }
+
+
+        img.dataset.eahFallbackInstalled =
+          "true";
+
+
+        img.addEventListener(
+
+          "error",
+
+          function () {
+
+            const context =
+              normalize(
+
+                this.closest(
+                  "article,section,div"
+                )?.textContent || ""
+
+              );
+
+
+            if (
+              context.includes("spot")
+            ) {
+
+              if (
+                !this.src.includes(
+                  "spot-default.jpg"
+                )
+              ) {
+
+                this.src =
+                  "spot-default.jpg";
+
+              }
+
+              return;
+
+            }
+
+
+            if (
+              context.includes("actualite") ||
+              context.includes("actualité") ||
+              context.includes("news")
+            ) {
+
+              if (
+                !this.src.includes(
+                  "news-default.jpg"
+                )
+              ) {
+
+                this.src =
+                  "news-default.jpg";
+
+              }
+
+            }
+
+          }
+
+        );
+
+      });
+
+  }
+
+
+
+  /* ============================================================
      LANCEMENT
-  ======================================================== */
+  ============================================================ */
 
-  function fixAllImages() {
+  function fixAll() {
 
-    fixImages();
+    /*
+      Toujours réparer les blazons EN PREMIER.
+    */
+
+    fixBlazons();
 
     fixDisciplineCards();
 
-    fixPageHero();
+    fixDisciplineHero();
+
+    fixCmsImages();
+
+    /*
+      Et une deuxième fois après les disciplines
+      pour garantir qu'aucun blazon n'a changé.
+    */
+
+    fixBlazons();
 
   }
 
@@ -579,7 +629,7 @@
 
       "DOMContentLoaded",
 
-      fixAllImages,
+      fixAll,
 
       {
         once: true
@@ -589,32 +639,20 @@
 
   } else {
 
-    fixAllImages();
+    fixAll();
 
   }
 
 
-  /*
-    Ton site fonctionne avec des #routes.
-    Relancer lorsque la page change.
-  */
-
   window.addEventListener(
     "hashchange",
-    () => {
-
+    () =>
       setTimeout(
-        fixAllImages,
+        fixAll,
         100
-      );
-
-    }
+      )
   );
 
-
-  /*
-    Responsive tablette / téléphone.
-  */
 
   let resizeTimer;
 
@@ -630,7 +668,7 @@
 
       resizeTimer =
         setTimeout(
-          fixAllImages,
+          fixAll,
           200
         );
 
@@ -638,24 +676,19 @@
   );
 
 
-  /*
-    Le site construit certaines parties
-    dynamiquement avec JavaScript.
-  */
-
   const observer =
     new MutationObserver(
       () => {
 
         clearTimeout(
-          window.__eahImageTimer
+          window.__eahImagesV2
         );
 
 
-        window.__eahImageTimer =
+        window.__eahImagesV2 =
           setTimeout(
-            fixAllImages,
-            100
+            fixAll,
+            120
           );
 
       }
@@ -675,13 +708,13 @@
 
 
   setTimeout(
-    fixAllImages,
+    fixAll,
     500
   );
 
 
   setTimeout(
-    fixAllImages,
+    fixAll,
     1500
   );
 
