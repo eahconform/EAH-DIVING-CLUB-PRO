@@ -6431,3 +6431,42 @@ img[src*="blazon-"] {
 
   filter: none !important;
 }
+/* ============================================================
+   EAH DIVING PRO
+   HERO DES PAGES DISCIPLINES PLUS LUMINEUX
+============================================================ */
+
+/* Réduit fortement le voile sombre */
+.discipline-hero::before,
+.discipline-page-hero::before,
+.page-hero::before,
+.hero-discipline::before {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 15, 27, 0.40) 0%,
+      rgba(2, 15, 27, 0.20) 45%,
+      rgba(2, 15, 27, 0.08) 100%
+    ) !important;
+}
+
+
+/* Si un deuxième voile existe */
+.discipline-hero::after,
+.discipline-page-hero::after,
+.page-hero::after,
+.hero-discipline::after {
+  opacity: 0.10 !important;
+}
+
+
+/* Rend la photo elle-même plus lumineuse si elle est dans une balise img */
+.discipline-hero img,
+.discipline-page-hero img,
+.page-hero img,
+.hero-discipline img {
+  filter:
+    brightness(1.25)
+    contrast(1.02)
+    saturate(1.08) !important;
+}
