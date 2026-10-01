@@ -14134,6 +14134,471 @@ async function submitDiverGradingRequestEAH(
 
   }
 
+}/* ============================================================
+   EAH DIVING PRO
+   CARTE NFC COACH
+============================================================ */
+
+const COACH_CARD_TOKEN =
+  new URLSearchParams(
+    window.location.search
+  )
+  .get(
+    'coachToken'
+  )
+  ||
+  '';
+
+
+/* ============================================================
+   OUVRIR ESPACE COACH PAR CARTE
+============================================================ */
+
+async function openCoachCardEAH() {
+
+  if (!COACH_CARD_TOKEN) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await requireSupabase()
+        .rpc(
+
+          'eah_coach_card_workspace',
+
+          {
+
+            p_token:
+              COACH_CARD_TOKEN
+
+          }
+
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+        data?.error ||
+        'Carte Coach invalide.'
+      );
+
+    }
+
+
+    state.coachCardToken =
+      COACH_CARD_TOKEN;
+
+
+    state.club =
+      data.club;
+
+
+    state.coach =
+      data.coach;
+
+
+    CLUB_SLUG =
+      data.club.slug;
+
+
+    state.divers =
+      (
+        data.divers ||
+        []
+      )
+      .map(
+        diver => ({
+
+          id:
+            diver.id,
+
+          eah_id:
+            diver.eahId,
+
+          first_name:
+            diver.firstName,
+
+          last_name:
+            diver.lastName,
+
+          photo_url:
+            diver.photoUrl,
+
+          group_name:
+            diver.group,
+
+          current_blazon:
+            diver.currentBlazon,
+
+          active:
+            true
+
+        })
+      );
+
+
+    state.coachAvailableCards =
+      data.availableCards ||
+      [];
+
+
+    state.coachGradingRequests =
+      data.gradingRequests ||
+      [];
+
+
+    applyClubBranding(
+      data.club
+    );
+
+
+    showPage(
+      'club'
+    );
+
+
+    renderCoachCardWorkspaceEAH(
+      data
+    );
+
+
+    renderDiversSelect();
+
+
+    return true;
+
+
+  } catch(error) {
+
+    console.error(
+      error
+    );
+
+
+    showToast(
+      error.message ||
+      'Impossible d’ouvrir la carte Coach.',
+      'error'
+    );
+
+
+    return false;
+
+  }
+
+}
+
+
+
+/* ============================================================
+   AFFICHAGE ESPACE COACH NFC
+============================================================ */
+
+function renderCoachCardWorkspaceEAH(
+  data
+) {
+
+  const page =
+    document.getElementById(
+      'page-club'
+    )
+    ||
+    document.querySelector(
+      '[data-page="club"]'
+    );
+
+
+  if (!page) {
+
+    return;
+
+  }
+
+
+  let container =
+    document.getElementById(
+      'eahCoachCardWorkspace'
+    );
+
+
+  if (!container) {
+
+    container =
+      document.createElement(
+        'section'
+      );
+
+
+    container.id =
+      'eahCoachCardWorkspace';
+
+
+    container.className =
+      'section';
+
+
+    page.prepend(
+      container
+    );
+
+  }
+
+
+  const requests =
+    data.gradingRequests ||
+    [];
+
+
+  const cards =
+    data.availableCards ||
+    [];
+
+
+  container.innerHTML = `
+
+    <div class="container">
+
+      <div class="dashboard-card">
+
+        <span class="overline">
+          CARTE COACH EAH
+        </span>
+
+        <h1>
+          Bienvenue
+          ${esc(
+            data.coach?.name ||
+            'Coach'
+          )}
+        </h1>
+
+        <p class="muted">
+
+          ${esc(
+            data.club?.name ||
+            ''
+          )}
+
+          ${
+            data.coach?.role
+            ?
+            ' • '
+            +
+            esc(
+              data.coach.role
+            )
+            :
+            ''
+          }
+
+        </p>
+
+      </div>
+
+
+      <div class="dashboard-grid">
+
+        <article class="dashboard-card">
+
+          <span class="overline">
+            PLONGEURS
+          </span>
+
+          <strong class="dashboard-number">
+            ${
+              (
+                data.divers ||
+                []
+              ).length
+            }
+          </strong>
+
+        </article>
+
+
+        <article class="dashboard-card">
+
+          <span class="overline">
+            CARTES DISPONIBLES
+          </span>
+
+          <strong class="dashboard-number">
+            ${cards.length}
+          </strong>
+
+        </article>
+
+
+        <article class="dashboard-card">
+
+          <span class="overline">
+            DEMANDES DE GRADING
+          </span>
+
+          <strong class="dashboard-number">
+            ${
+              requests.filter(
+                item =>
+                  item.status ===
+                  'PENDING'
+              ).length
+            }
+          </strong>
+
+        </article>
+
+      </div>
+
+
+      <div
+        class="dashboard-card"
+        style="margin-top:20px"
+      >
+
+        <h2>
+          Demandes de grading
+        </h2>
+
+
+        <div id="eahCoachRequests">
+
+          ${
+            !requests.length
+
+            ?
+
+            `
+              <div class="notice">
+                Aucune demande pour le moment.
+              </div>
+            `
+
+            :
+
+            requests.map(
+              request => `
+
+                <article
+                  class="dashboard-card"
+                  style="margin-top:12px"
+                >
+
+                  <span class="overline">
+                    ${esc(
+                      request.requestCode ||
+                      ''
+                    )}
+                  </span>
+
+                  <h3>
+                    ${esc(
+                      (
+                        request.firstName ||
+                        ''
+                      )
+                      +
+                      ' '
+                      +
+                      (
+                        request.lastName ||
+                        ''
+                      )
+                    )}
+                  </h3>
+
+                  <p>
+
+                    ${esc(
+                      request.diveCode ||
+                      ''
+                    )}
+
+                    ${
+                      request.height
+                      ?
+                      ' • '
+                      +
+                      esc(
+                        request.height
+                      )
+                      +
+                      ' m'
+                      :
+                      ''
+                    }
+
+                  </p>
+
+
+                  ${
+                    request.message
+                    ?
+                    `
+                      <p class="muted">
+                        ${esc(
+                          request.message
+                        )}
+                      </p>
+                    `
+                    :
+                    ''
+                  }
+
+
+                  ${
+                    request.videoUrl
+                    ?
+                    `
+                      <a
+                        href="${esc(
+                          request.videoUrl
+                        )}"
+                        target="_blank"
+                        rel="noopener"
+                        class="secondary-button"
+                      >
+                        Voir la vidéo
+                      </a>
+                    `
+                    :
+                    ''
+                  }
+
+                </article>
+
+              `
+            )
+            .join('')
+
+          }
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
 }
 init()
   .catch(
