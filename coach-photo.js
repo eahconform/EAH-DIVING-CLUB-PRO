@@ -1,6 +1,11 @@
 /* ============================================================
    EAH DIVING PRO
-   PHOTO COACH - AFFICHAGE FORCE
+   PHOTO COACH - VERSION COMPATIBLE AVEC TON COACH-CARD.JS
+
+   Fonctionne avec :
+   - .coach-profile-photo
+   - .coach-logo-box
+   - .coach-logo-fallback
 ============================================================ */
 
 (() => {
@@ -10,31 +15,26 @@
       window.location.search
     );
 
-
   const coachToken =
     String(
       params.get("coachToken") || ""
     ).trim();
-
 
   if (!coachToken) {
     return;
   }
 
 
-  let loading =
-    false;
-
-
-  let photoUrl =
-    "";
+  let photoUrl = "";
+  let coachName = "";
+  let loading = false;
 
 
   /* =========================================================
-     RECUPERER PHOTO SUPABASE
+     RECUPERER LA PHOTO DEPUIS SUPABASE
   ========================================================= */
 
-  async function chargerPhotoCoachEAH() {
+  async function loadCoachPhoto() {
 
     if (
       loading ||
@@ -76,35 +76,47 @@
 
       if (
         !data ||
-        data.ok === false ||
-        !data.photoUrl
+        data.ok === false
       ) {
 
         console.log(
-          "EAH Coach : aucune photo."
+          "EAH photo Coach :",
+          data?.error || "aucune donnée"
         );
 
         return;
-
       }
 
 
       photoUrl =
         String(
-          data.photoUrl
+          data.photoUrl || ""
         ).trim();
 
 
-      afficherPhotoCoachEAH(
-        photoUrl,
-        data.name || "Coach"
-      );
+      coachName =
+        String(
+          data.name || "Coach"
+        );
+
+
+      if (!photoUrl) {
+
+        console.log(
+          "EAH : aucune PHOTO_URL pour ce Coach."
+        );
+
+        return;
+      }
+
+
+      showCoachPhoto();
 
 
     } catch(error) {
 
       console.error(
-        "EAH Coach photo :",
+        "EAH Coach photo error:",
         error
       );
 
@@ -119,13 +131,10 @@
 
 
   /* =========================================================
-     AFFICHAGE
+     TROUVER LE BLOC ACTUEL
   ========================================================= */
 
-  function afficherPhotoCoachEAH(
-    url,
-    name
-  ) {
+  function findPhotoContainer() {
 
     const app =
       document.getElementById(
@@ -134,111 +143,204 @@
 
 
     if (!app) {
-      return false;
+      return null;
     }
 
 
-    const photoBox =
+    /*
+      Version avec vraie zone photo
+    */
+
+    const profilePhoto =
       app.querySelector(
         ".coach-profile-photo"
       );
 
 
-    if (!photoBox) {
-      return false;
+    if (profilePhoto) {
+      return profilePhoto;
     }
 
 
     /*
-      Si la photo est déjà bonne,
-      ne rien reconstruire.
+      Version actuelle visible sur ta capture
     */
 
-    const currentImage =
-      photoBox.querySelector(
-        "img"
+    const logoBox =
+      app.querySelector(
+        ".coach-logo-box"
       );
 
 
+    if (logoBox) {
+      return logoBox;
+    }
+
+
+    /*
+      Dernier recours :
+      le carré EAH lui-même
+    */
+
+    const fallback =
+      app.querySelector(
+        ".coach-logo-fallback"
+      );
+
+
+    if (fallback) {
+      return fallback;
+    }
+
+
+    return null;
+
+  }
+
+
+
+  /* =========================================================
+     AFFICHER LA PHOTO
+  ========================================================= */
+
+  function showCoachPhoto() {
+
+    if (!photoUrl) {
+      return;
+    }
+
+
+    const container =
+      findPhotoContainer();
+
+
+    if (!container) {
+      return;
+    }
+
+
+    /*
+      Ne pas refaire si déjà installé
+    */
+
     if (
-      currentImage &&
-      currentImage.dataset.eahCoachPhoto ===
-        "true"
+      container.querySelector(
+        "img[data-eah-coach-photo='true']"
+      )
     ) {
 
-      return true;
+      return;
 
     }
 
 
     const img =
-      new Image();
-
-
-    img.alt =
-      name;
+      document.createElement(
+        "img"
+      );
 
 
     img.dataset.eahCoachPhoto =
       "true";
 
 
+    img.alt =
+      coachName;
+
+
+    img.src =
+      photoUrl;
+
+
     img.style.cssText = `
 
-      display:block;
+      display:block !important;
 
-      width:100%;
+      width:100% !important;
 
-      height:100%;
+      height:100% !important;
 
-      object-fit:cover;
+      object-fit:cover !important;
+
+      border-radius:30px !important;
 
     `;
 
 
-    /*
-      On ne remplace EAH que lorsque
-      l'image a réellement chargé.
-    */
-
     img.onload =
       () => {
 
-        photoBox.innerHTML =
+        container.innerHTML =
           "";
 
 
-        photoBox.appendChild(
+        container.appendChild(
           img
         );
 
 
-        photoBox.style.width =
-          "175px";
+        /*
+          Taille proche de ton profil plongeur
+        */
+
+        container.style.setProperty(
+          "width",
+          "170px",
+          "important"
+        );
 
 
-        photoBox.style.height =
-          "175px";
+        container.style.setProperty(
+          "height",
+          "170px",
+          "important"
+        );
 
 
-        photoBox.style.border =
-          "7px solid #30cfff";
+        container.style.setProperty(
+          "min-width",
+          "170px",
+          "important"
+        );
 
 
-        photoBox.style.borderRadius =
-          "38px";
+        container.style.setProperty(
+          "border",
+          "6px solid #30cfff",
+          "important"
+        );
 
 
-        photoBox.style.overflow =
-          "hidden";
+        container.style.setProperty(
+          "border-radius",
+          "36px",
+          "important"
+        );
 
 
-        photoBox.style.background =
-          "#061e33";
+        container.style.setProperty(
+          "overflow",
+          "hidden",
+          "important"
+        );
+
+
+        container.style.setProperty(
+          "padding",
+          "0",
+          "important"
+        );
+
+
+        container.style.setProperty(
+          "background",
+          "#061e33",
+          "important"
+        );
 
 
         console.log(
-          "✅ Photo Coach affichée."
+          "✅ PHOTO COACH EAH affichée"
         );
 
       };
@@ -248,46 +350,53 @@
       () => {
 
         console.error(
-          "❌ L'URL de la photo existe mais l'image ne peut pas être chargée :",
-          url
+          "EAH : impossible d'afficher l'image :",
+          photoUrl
         );
 
       };
-
-
-    img.src =
-      url;
-
-
-    return true;
 
   }
 
 
 
   /* =========================================================
-     SURVEILLER CAR coach-card.js
-     CONSTRUIT L'INTERFACE APRÈS LE CHARGEMENT
+     LE COACH-CARD.JS CONSTRUIT L'INTERFACE APRES
+     LE CHARGEMENT : ON SURVEILLE DONC LA PAGE
   ========================================================= */
 
-  function actualiserPhoto() {
+  function refresh() {
 
     if (!photoUrl) {
 
-      chargerPhotoCoachEAH();
+      loadCoachPhoto();
 
       return;
 
     }
 
 
-    afficherPhotoCoachEAH(
-      photoUrl,
-      "Coach"
-    );
+    showCoachPhoto();
 
   }
 
+
+  const observer =
+    new MutationObserver(
+      refresh
+    );
+
+
+  observer.observe(
+
+    document.documentElement,
+
+    {
+      childList: true,
+      subtree: true
+    }
+
+  );
 
 
   if (
@@ -299,7 +408,7 @@
 
       "DOMContentLoaded",
 
-      actualiserPhoto,
+      refresh,
 
       {
         once: true
@@ -309,52 +418,31 @@
 
   } else {
 
-    actualiserPhoto();
+    refresh();
 
   }
 
 
-
-  const observer =
-    new MutationObserver(
-      () => {
-
-        actualiserPhoto();
-
-      }
-    );
-
-
-  observer.observe(
-
-    document.body,
-
-    {
-      childList: true,
-      subtree: true
-    }
-
-  );
-
-
-  /*
-    Sécurité pour appareils mobiles plus lents.
-  */
-
   setTimeout(
-    actualiserPhoto,
-    500
+    refresh,
+    300
   );
 
 
   setTimeout(
-    actualiserPhoto,
+    refresh,
+    800
+  );
+
+
+  setTimeout(
+    refresh,
     1500
   );
 
 
   setTimeout(
-    actualiserPhoto,
+    refresh,
     3000
   );
 
