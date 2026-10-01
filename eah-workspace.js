@@ -1,13 +1,6 @@
 /* ============================================================
    EAH DIVING PRO
-   WORKSPACE V1
-
-   - Espace Coach
-   - Photo Coach comme profil plongeur
-   - Evaluation libre
-   - Evaluation depuis demande de grading
-   - Takeoff / Trick / Entry
-   - Espace plongeur simplifié
+   ACTIONS COACH
 ============================================================ */
 
 (() => {
@@ -24,738 +17,49 @@
     ).trim();
 
 
-  /* =========================================================
-     CRITERES EAH
-  ========================================================= */
+  if (!coachToken) {
+    return;
+  }
 
-  const CRITERIA = {
+
+  let coachData =
+    null;
+
+
+  const criteria = {
 
     takeoff: [
-
-      [
-        "D1",
-        "Coordination / élan"
-      ],
-
-      [
-        "D2",
-        "Impulsion / détente / élévation"
-      ],
-
-      [
-        "D3",
-        "Trajectoire verticale"
-      ],
-
-      [
-        "D4",
-        "Temps de fixation"
-      ],
-
-      [
-        "D5",
-        "Amplitude des bras"
-      ]
-
+      ["D1", "Coordination / élan"],
+      ["D2", "Impulsion / détente / élévation"],
+      ["D3", "Trajectoire verticale"],
+      ["D4", "Temps de fixation"],
+      ["D5", "Amplitude des bras"]
     ],
-
 
     trick: [
-
-      [
-        "T1",
-        "Vitesse des rotations"
-      ],
-
-      [
-        "T2",
-        "Saltos et/ou vrilles contrôlés"
-      ],
-
-      [
-        "T3",
-        "Ligne / tenue / position du corps"
-      ],
-
-      [
-        "T4",
-        "Ouverture si applicable"
-      ],
-
-      [
-        "T5",
-        "Continuité / rythme"
-      ]
-
+      ["T1", "Vitesse des rotations"],
+      ["T2", "Saltos et/ou vrilles contrôlés"],
+      ["T3", "Ligne / tenue / position du corps"],
+      ["T4", "Ouverture si applicable"],
+      ["T5", "Continuité / rythme"]
     ],
 
-
     entry: [
-
-      [
-        "E1",
-        "Angle vertical"
-      ],
-
-      [
-        "E2",
-        "Éclaboussures"
-      ],
-
-      [
-        "E3",
-        "Position des bras"
-      ],
-
-      [
-        "E4",
-        "Jambes tendues et serrées"
-      ],
-
-      [
-        "E5",
-        "Axe d'entrée"
-      ]
-
+      ["E1", "Angle vertical"],
+      ["E2", "Éclaboussures"],
+      ["E3", "Position des bras"],
+      ["E4", "Jambes"],
+      ["E5", "Axe d'entrée"]
     ]
 
   };
 
 
-  let coachWorkspaceData =
-    null;
-
-
-  /* =========================================================
-     PHOTO COACH
-     MÊME ESPRIT QUE LE PROFIL PLONGEUR
-  ========================================================= */
-
-  function installWorkspaceCSS() {
-
-    if (
-      document.getElementById(
-        "eahWorkspaceCss"
-      )
-    ) {
-      return;
-    }
-
-
-    const style =
-      document.createElement(
-        "style"
-      );
-
-
-    style.id =
-      "eahWorkspaceCss";
-
-
-    style.textContent = `
-
-      /* =====================================================
-         PHOTO COACH
-         carré arrondi comme profil plongeur
-      ===================================================== */
-
-      #eahCoachCardApp
-      .coach-profile-photo {
-
-        width: 185px !important;
-
-        height: 185px !important;
-
-        margin-left: auto !important;
-
-        margin-right: auto !important;
-
-        border:
-          7px solid
-          #30cfff !important;
-
-        border-radius:
-          38px !important;
-
-        overflow:
-          hidden !important;
-
-      }
-
-
-      #eahCoachCardApp
-      .coach-profile-photo img {
-
-        width: 100% !important;
-
-        height: 100% !important;
-
-        object-fit: cover !important;
-
-      }
-
-
-      /* =====================================================
-         ACTION COACH
-      ===================================================== */
-
-      .eah-coach-evaluate-main {
-
-        width: 100%;
-
-        margin:
-          8px 0 28px;
-
-        padding:
-          17px 20px;
-
-        border: 0;
-
-        border-radius: 17px;
-
-        background:
-          linear-gradient(
-            135deg,
-            #0b6bff,
-            #168dff
-          );
-
-        color: white;
-
-        font-size: 1rem;
-
-        font-weight: 900;
-
-        cursor: pointer;
-
-      }
-
-
-      .eah-grade-request-button {
-
-        width: 100%;
-
-        margin-top: 10px;
-
-        padding:
-          13px 16px;
-
-        border:
-          1px solid
-          rgba(
-            48,
-            207,
-            255,
-            .35
-          );
-
-        border-radius: 13px;
-
-        background:
-          rgba(
-            48,
-            207,
-            255,
-            .12
-          );
-
-        color:
-          #30cfff;
-
-        font-weight:
-          900;
-
-        cursor: pointer;
-
-      }
-
-
-      /* =====================================================
-         MODAL NOTATION
-      ===================================================== */
-
-      #eahEvaluationModal {
-
-        position: fixed;
-
-        inset: 0;
-
-        z-index:
-          2147483647;
-
-        overflow-y: auto;
-
-        padding: 14px;
-
-        background:
-          rgba(
-            1,
-            9,
-            18,
-            .94
-          );
-
-        color:
-          #f5f9ff;
-
-      }
-
-
-      .eah-eval-shell {
-
-        width: 100%;
-
-        max-width: 900px;
-
-        margin:
-          10px auto 70px;
-
-      }
-
-
-      .eah-eval-panel {
-
-        padding:
-          clamp(
-            20px,
-            5vw,
-            42px
-          );
-
-        border:
-          1px solid
-          rgba(
-            143,
-            205,
-            255,
-            .22
-          );
-
-        border-radius: 28px;
-
-        background:
-          #061e33;
-
-      }
-
-
-      .eah-eval-top {
-
-        display: flex;
-
-        align-items: flex-start;
-
-        justify-content: space-between;
-
-        gap: 15px;
-
-      }
-
-
-      .eah-eval-close {
-
-        width: 44px;
-
-        height: 44px;
-
-        border: 0;
-
-        border-radius: 50%;
-
-        background:
-          rgba(
-            255,
-            255,
-            255,
-            .08
-          );
-
-        color: white;
-
-        font-size: 1.5rem;
-
-      }
-
-
-      .eah-eval-form {
-
-        display: grid;
-
-        gap: 18px;
-
-        margin-top: 25px;
-
-      }
-
-
-      .eah-eval-grid {
-
-        display: grid;
-
-        grid-template-columns:
-          repeat(
-            2,
-            minmax(
-              0,
-              1fr
-            )
-          );
-
-        gap: 14px;
-
-      }
-
-
-      .eah-eval-form label {
-
-        display: grid;
-
-        gap: 7px;
-
-        color: #c3d8e8;
-
-        font-weight: 700;
-
-      }
-
-
-      .eah-eval-form input,
-      .eah-eval-form select,
-      .eah-eval-form textarea {
-
-        box-sizing: border-box;
-
-        width: 100%;
-
-        padding: 14px 15px;
-
-        border:
-          1px solid
-          rgba(
-            143,
-            205,
-            255,
-            .22
-          );
-
-        border-radius: 14px;
-
-        outline: none;
-
-        background:
-          #10273a;
-
-        color: white;
-
-        font-size: 16px;
-
-      }
-
-
-      .eah-criteria-card {
-
-        padding: 18px;
-
-        border:
-          1px solid
-          rgba(
-            143,
-            205,
-            255,
-            .18
-          );
-
-        border-radius: 20px;
-
-        background:
-          rgba(
-            3,
-            19,
-            31,
-            .45
-          );
-
-      }
-
-
-      .eah-criteria-head {
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: space-between;
-
-        gap: 15px;
-
-        margin-bottom: 15px;
-
-      }
-
-
-      .eah-criteria-score {
-
-        padding:
-          8px 13px;
-
-        border-radius: 999px;
-
-        background:
-          rgba(
-            48,
-            207,
-            255,
-            .12
-          );
-
-        color:
-          #30cfff;
-
-        font-weight:
-          900;
-
-      }
-
-
-      .eah-criteria-line {
-
-        display: grid;
-
-        grid-template-columns:
-          1fr 105px;
-
-        align-items: center;
-
-        gap: 12px;
-
-        padding:
-          9px 0;
-
-        border-bottom:
-          1px solid
-          rgba(
-            143,
-            205,
-            255,
-            .08
-          );
-
-      }
-
-
-      .eah-criteria-line:last-child {
-
-        border-bottom: 0;
-
-      }
-
-
-      .eah-final-score {
-
-        padding: 22px;
-
-        border:
-          1px solid
-          rgba(
-            48,
-            207,
-            255,
-            .30
-          );
-
-        border-radius: 20px;
-
-        text-align: center;
-
-        background:
-          rgba(
-            11,
-            107,
-            255,
-            .10
-          );
-
-      }
-
-
-      .eah-final-score strong {
-
-        display: block;
-
-        margin-top: 5px;
-
-        color: #30cfff;
-
-        font-size: 3rem;
-
-      }
-
-
-      .eah-eval-submit {
-
-        min-height: 58px;
-
-        border: 0;
-
-        border-radius: 17px;
-
-        background:
-          linear-gradient(
-            135deg,
-            #0b6bff,
-            #168dff
-          );
-
-        color: white;
-
-        font-weight: 900;
-
-        font-size: 1rem;
-
-      }
-
-
-      /* =====================================================
-         PROFIL PLONGEUR UNIQUEMENT
-      ===================================================== */
-
-      body.eah-diver-simple {
-
-        overflow: hidden !important;
-
-      }
-
-
-      #eahDiverSimpleApp {
-
-        position: fixed;
-
-        inset: 0;
-
-        z-index: 2147483000;
-
-        overflow-y: auto;
-
-        padding:
-          10px 10px 60px;
-
-        background:
-          linear-gradient(
-            145deg,
-            #03131f,
-            #061e33
-          );
-
-      }
-
-
-      #eahDiverSimpleInner {
-
-        width: 100%;
-
-        max-width: 760px;
-
-        margin: 0 auto;
-
-      }
-
-
-      #eahDiverSimpleApp
-      #profileView {
-
-        display: block !important;
-
-      }
-
-
-      .eah-diver-simple-home {
-
-        display: block;
-
-        width: fit-content;
-
-        margin:
-          8px 0 12px;
-
-        padding:
-          9px 14px;
-
-        border-radius: 999px;
-
-        background:
-          rgba(
-            48,
-            207,
-            255,
-            .10
-          );
-
-        color:
-          #30cfff;
-
-        text-decoration: none;
-
-        font-weight: 800;
-
-      }
-
-
-      @media(max-width:600px) {
-
-        #eahCoachCardApp
-        .coach-profile-photo {
-
-          width:
-            155px !important;
-
-          height:
-            155px !important;
-
-          border-radius:
-            30px !important;
-
-        }
-
-
-        .eah-eval-grid {
-
-          grid-template-columns:
-            1fr;
-
-        }
-
-
-        .eah-criteria-line {
-
-          grid-template-columns:
-            1fr 90px;
-
-        }
-
-      }
-
-    `;
-
-
-    document.head
-      .appendChild(
-        style
-      );
-
-  }
-
-
-
-  /* =========================================================
-     RECUPERER ESPACE COACH
-  ========================================================= */
-
-  async function getCoachWorkspace() {
-
-    if (!coachToken) {
-      return null;
-    }
-
+  /* ========================================================
+     CHARGER DONNEES
+  ======================================================== */
+
+  async function loadCoachData() {
 
     const {
       data,
@@ -779,15 +83,7 @@
     }
 
 
-    if (
-      !data ||
-      data.ok === false
-    ) {
-      return null;
-    }
-
-
-    coachWorkspaceData =
+    coachData =
       data;
 
 
@@ -796,17 +92,11 @@
   }
 
 
+  /* ========================================================
+     AJOUTER LES ACTIONS
+  ======================================================== */
 
-  /* =========================================================
-     BOUTONS ESPACE COACH
-  ========================================================= */
-
-  async function installCoachEvaluationButtons() {
-
-    if (!coachToken) {
-      return;
-    }
-
+  async function installActions() {
 
     const app =
       document.getElementById(
@@ -819,16 +109,11 @@
     }
 
 
-    let data =
-      coachWorkspaceData;
-
-
-    if (!data) {
+    if (!coachData) {
 
       try {
 
-        data =
-          await getCoachWorkspace();
+        await loadCoachData();
 
       } catch (_) {
 
@@ -840,27 +125,25 @@
 
 
     if (
-      !data ||
-      data.assigned !== true
+      !coachData ||
+      coachData.assigned !== true
     ) {
       return;
     }
 
 
-    /* ======================================================
-       BOUTON EVALUATION LIBRE
-    ====================================================== */
+    /* EVALUER LIBREMENT */
 
-    const statGrid =
+    const stats =
       app.querySelector(
         ".coach-stat-grid"
       );
 
 
     if (
-      statGrid &&
+      stats &&
       !document.getElementById(
-        "eahCoachEvaluateAny"
+        "eahEvaluateDive"
       )
     ) {
 
@@ -871,25 +154,36 @@
 
 
       button.id =
-        "eahCoachEvaluateAny";
+        "eahEvaluateDive";
 
 
-      button.className =
-        "eah-coach-evaluate-main";
+      button.type =
+        "button";
 
 
       button.textContent =
         "Évaluer un plongeon";
 
 
-      button.addEventListener(
-        "click",
+      button.style.cssText = `
+        width:100%;
+        min-height:58px;
+        margin:20px 0;
+        border:0;
+        border-radius:16px;
+        background:#0b6bff;
+        color:white;
+        font-size:16px;
+        font-weight:900;
+      `;
+
+
+      button.onclick =
         () =>
-          openEvaluationModal()
-      );
+          openEvaluation();
 
 
-      statGrid.insertAdjacentElement(
+      stats.insertAdjacentElement(
         "afterend",
         button
       );
@@ -897,9 +191,7 @@
     }
 
 
-    /* ======================================================
-       BOUTONS SUR LES DEMANDES
-    ====================================================== */
+    /* DEMANDES */
 
     const sections =
       app.querySelectorAll(
@@ -907,57 +199,54 @@
       );
 
 
-    if (!sections.length) {
+    if (!sections[0]) {
       return;
     }
 
 
-    const requestCards =
+    const requests =
+      (
+        coachData.gradingRequests ||
+        []
+      )
+      .filter(
+        request =>
+          ![
+            "GRADED",
+            "DONE",
+            "COMPLETED"
+          ]
+          .includes(
+            String(
+              request.status ||
+              "PENDING"
+            )
+            .toUpperCase()
+          )
+      );
+
+
+    const cards =
       sections[0]
         .querySelectorAll(
           ".coach-list-card"
         );
 
 
-    (
-      data.gradingRequests ||
-      []
-    )
-    .forEach(
+    requests.forEach(
       (request, index) => {
 
         const card =
-          requestCards[index];
-
-
-        if (!card) {
-          return;
-        }
+          cards[index];
 
 
         if (
-          String(
-            request.status ||
-            ""
-          )
-          .toUpperCase()
-          ===
-          "GRADED"
-        ) {
-
-          return;
-
-        }
-
-
-        if (
+          !card ||
           card.querySelector(
-            ".eah-grade-request-button"
+            ".eah-grade-button"
           )
         ) {
-
           return;
-
         }
 
 
@@ -972,18 +261,28 @@
 
 
         button.className =
-          "eah-grade-request-button";
+          "eah-grade-button";
 
 
         button.textContent =
           "Grader le plongeon";
 
 
-        button.addEventListener(
-          "click",
-          () => {
+        button.style.cssText = `
+          width:100%;
+          min-height:50px;
+          margin-top:12px;
+          border:1px solid rgba(48,207,255,.35);
+          border-radius:14px;
+          background:rgba(48,207,255,.10);
+          color:#30cfff;
+          font-weight:900;
+        `;
 
-            openEvaluationModal({
+
+        button.onclick =
+          () =>
+            openEvaluation({
 
               requestId:
                 request.id,
@@ -1005,9 +304,6 @@
 
             });
 
-          }
-        );
-
 
         card.appendChild(
           button
@@ -1016,87 +312,163 @@
       }
     );
 
+
+    /* PROFILS PLONGEURS */
+
+    if (
+      sections[1]
+    ) {
+
+      const diverCards =
+        sections[1]
+          .querySelectorAll(
+            ".coach-list-card"
+          );
+
+
+      (
+        coachData.divers ||
+        []
+      )
+      .forEach(
+        (diver, index) => {
+
+          const card =
+            diverCards[index];
+
+
+          if (
+            !card ||
+            card.querySelector(
+              ".eah-open-diver"
+            )
+          ) {
+            return;
+          }
+
+
+          const button =
+            document.createElement(
+              "button"
+          );
+
+
+          button.type =
+            "button";
+
+
+          button.className =
+            "eah-open-diver";
+
+
+          button.textContent =
+            "Ouvrir le profil";
+
+
+          button.style.cssText = `
+            width:100%;
+            min-height:48px;
+            margin-top:10px;
+            border:1px solid rgba(48,207,255,.30);
+            border-radius:14px;
+            background:transparent;
+            color:#30cfff;
+            font-weight:900;
+          `;
+
+
+          button.onclick =
+            () =>
+              openDiverProfile(
+                diver
+              );
+
+
+          card.appendChild(
+            button
+          );
+
+        }
+      );
+
+    }
+
   }
 
 
+  /* ========================================================
+     HTML CRITERE
+  ======================================================== */
 
-  /* =========================================================
-     HTML CRITERES
-  ========================================================= */
-
-  function criteriaHtml(
-    phase,
+  function phaseHTML(
+    key,
     title
   ) {
 
     return `
 
-      <section class="eah-criteria-card">
+      <section
+        style="
+          margin-top:18px;
+          padding:18px;
+          border-radius:18px;
+          background:rgba(3,19,31,.55);
+        "
+      >
 
-        <div class="eah-criteria-head">
-
-          <h3>
-            ${title}
-          </h3>
-
-          <span
-            id="score-${phase}"
-            class="eah-criteria-score"
-          >
-            0 / 10
+        <h3>
+          ${title}
+          —
+          <span id="score-${key}">
+            0/10
           </span>
-
-        </div>
+        </h3>
 
 
         ${
-          CRITERIA[
-            phase
-          ]
-          .map(
-            ([code, name]) => `
+          criteria[key]
+            .map(
+              ([code, name]) => `
 
-              <div class="eah-criteria-line">
-
-                <span>
-
-                  <strong>
-                    ${code}
-                  </strong>
-
-                  ${name}
-
-                </span>
-
-
-                <select
-                  data-eah-phase="${phase}"
-                  data-eah-code="${code}"
+                <label
+                  style="
+                    display:grid;
+                    grid-template-columns:1fr 90px;
+                    gap:10px;
+                    align-items:center;
+                    margin-top:10px;
+                  "
                 >
 
-                  <option value="0">
-                    0
-                  </option>
+                  <span>
+                    <strong>${code}</strong>
+                    ${name}
+                  </span>
 
-                  <option value="1">
-                    1
-                  </option>
 
-                  <option value="2">
-                    2
-                  </option>
+                  <select
+                    data-phase="${key}"
+                    data-code="${code}"
+                    style="
+                      min-height:45px;
+                      background:#10273a;
+                      color:white;
+                      border-radius:10px;
+                    "
+                  >
 
-                  <option value="">
-                    N/A
-                  </option>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="">N/A</option>
 
-                </select>
+                  </select>
 
-              </div>
+                </label>
 
-            `
-          )
-          .join("")
+              `
+            )
+            .join("")
         }
 
       </section>
@@ -1106,41 +478,33 @@
   }
 
 
+  /* ========================================================
+     FORMULAIRE EVALUATION
+  ======================================================== */
 
-  /* =========================================================
-     OUVRIR NOTATION
-  ========================================================= */
-
-  async function openEvaluationModal(
+  async function openEvaluation(
     prefill = {}
   ) {
 
-    let data =
-      coachWorkspaceData;
+    const app =
+      document.getElementById(
+        "eahCoachCardApp"
+      );
 
 
-    if (!data) {
+    if (!app) {
+      return;
+    }
 
-      data =
-        await getCoachWorkspace();
 
+    if (!coachData) {
+      await loadCoachData();
     }
 
 
     const divers =
-      data?.divers ||
+      coachData.divers ||
       [];
-
-
-    if (!divers.length) {
-
-      alert(
-        "Aucun plongeur actif dans ce club."
-      );
-
-      return;
-
-    }
 
 
     document
@@ -1160,365 +524,375 @@
       "eahEvaluationModal";
 
 
+    modal.dataset.requestId =
+      prefill.requestId ||
+      "";
+
+
+    modal.style.cssText = `
+
+      position:fixed;
+      inset:0;
+      z-index:2147483647;
+
+      overflow-y:auto;
+
+      padding:12px;
+
+      background:rgba(1,9,18,.97);
+
+      color:white;
+
+      visibility:visible;
+      pointer-events:auto;
+
+    `;
+
+
     modal.innerHTML = `
 
-      <div class="eah-eval-shell">
+      <div
+        style="
+          width:100%;
+          max-width:850px;
+          margin:10px auto 80px;
+          box-sizing:border-box;
+          padding:22px;
+          border-radius:24px;
+          background:#061e33;
+        "
+      >
 
-        <div class="eah-eval-panel">
+        <div
+          style="
+            display:flex;
+            justify-content:space-between;
+            gap:15px;
+          "
+        >
 
-          <div class="eah-eval-top">
+          <div>
 
-            <div>
-
-              <span
-                style="
-                  color:#30cfff;
-                  font-weight:900;
-                  letter-spacing:.12em;
-                "
-              >
-                EAH DIVING
-              </span>
-
-              <h1>
-                Grader un plongeon
-              </h1>
-
-            </div>
-
-
-            <button
-              id="closeEAHEvaluation"
-              class="eah-eval-close"
-              type="button"
+            <span
+              style="
+                color:#30cfff;
+                font-weight:900;
+              "
             >
-              ×
-            </button>
+              EAH DIVING
+            </span>
+
+            <h1>
+              Grader un plongeon
+            </h1>
 
           </div>
 
 
-          <form
-            id="eahCoachEvaluationForm"
-            class="eah-eval-form"
+          <button
+            id="closeEval"
+            type="button"
+            style="
+              width:45px;
+              height:45px;
+              border:0;
+              border-radius:50%;
+            "
           >
-
-            <div class="eah-eval-grid">
-
-
-              <label>
-
-                Plongeur
-
-                <select
-                  id="eahEvalDiver"
-                  required
-                >
-
-                  ${
-
-                    divers.map(
-                      diver => `
-
-                        <option
-                          value="${escapeHTML(
-                            diver.id
-                          )}"
-
-                          ${
-                            (
-                              prefill.eahId
-
-                              &&
-
-                              String(
-                                diver.eahId
-                              )
-                              ===
-                              String(
-                                prefill.eahId
-                              )
-                            )
-                            ?
-                            "selected"
-                            :
-                            ""
-                          }
-                        >
-
-                          ${escapeHTML(
-                            (
-                              diver.firstName ||
-                              ""
-                            )
-                            +
-                            " "
-                            +
-                            (
-                              diver.lastName ||
-                              ""
-                            )
-                          )}
-
-                          —
-                          ${escapeHTML(
-                            diver.eahId ||
-                            ""
-                          )}
-
-                        </option>
-
-                      `
-                    )
-                    .join("")
-
-                  }
-
-                </select>
-
-              </label>
-
-
-              <label>
-
-                Discipline
-
-                <select
-                  id="eahEvalDiscipline"
-                >
-
-                  <option>
-                    Plongeon
-                  </option>
-
-                  <option>
-                    High Diving
-                  </option>
-
-                  <option>
-                    Freestyle
-                  </option>
-
-                  <option>
-                    Dods
-                  </option>
-
-                  <option>
-                    Saut de l'ange
-                  </option>
-
-                </select>
-
-              </label>
-
-
-              <label>
-
-                Code du plongeon
-
-                <input
-                  id="eahEvalDiveCode"
-                  value="${escapeHTML(
-                    prefill.diveCode ||
-                    ""
-                  )}"
-                  placeholder="Ex : 107B"
-                  required
-                >
-
-              </label>
-
-
-              <label>
-
-                Nom du plongeon
-
-                <input
-                  id="eahEvalDiveName"
-                  value="${escapeHTML(
-                    prefill.diveName ||
-                    ""
-                  )}"
-                >
-
-              </label>
-
-
-              <label>
-
-                Hauteur
-
-                <input
-                  id="eahEvalHeight"
-                  type="number"
-                  step="0.1"
-                  value="${escapeHTML(
-                    prefill.height ??
-                    ""
-                  )}"
-                  placeholder="Ex : 10"
-                >
-
-              </label>
-
-
-              <label>
-
-                Note WA /10
-
-                <input
-                  id="eahEvalWA"
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  placeholder="Optionnel"
-                >
-
-              </label>
-
-            </div>
-
-
-            <label>
-
-              Vidéo
-
-              <input
-                id="eahEvalVideo"
-                type="url"
-                value="${escapeHTML(
-                  prefill.videoUrl ||
-                  ""
-                )}"
-                placeholder="https://..."
-              >
-
-            </label>
-
-
-            ${criteriaHtml(
-              "takeoff",
-              "Takeoff"
-            )}
-
-
-            ${criteriaHtml(
-              "trick",
-              "Trick"
-            )}
-
-
-            ${criteriaHtml(
-              "entry",
-              "Entry"
-            )}
-
-
-            <div class="eah-final-score">
-
-              NOTE EAH
-
-              <strong
-                id="eahFinalScore"
-              >
-                0
-              </strong>
-
-            </div>
-
-
-            <label>
-
-              Points réussis
-
-              <textarea
-                id="eahEvalPositive"
-                rows="2"
-              ></textarea>
-
-            </label>
-
-
-            <label>
-
-              Critères à améliorer
-
-              <textarea
-                id="eahEvalImprove"
-                rows="2"
-              ></textarea>
-
-            </label>
-
-
-            <label>
-
-              Commentaire Coach
-
-              <textarea
-                id="eahEvalComment"
-                rows="3"
-              ></textarea>
-
-            </label>
-
-
-            <button
-              id="eahEvalSubmit"
-              class="eah-eval-submit"
-              type="submit"
-            >
-              Valider le Grade Report
-            </button>
-
-
-            <div
-              id="eahEvalMessage"
-            ></div>
-
-          </form>
+            ×
+          </button>
 
         </div>
+
+
+        <form id="coachEvaluationForm">
+
+
+          <label>
+            Plongeur
+          </label>
+
+          <select
+            id="evalDiver"
+            style="
+              width:100%;
+              min-height:52px;
+              margin-bottom:12px;
+            "
+          >
+
+            ${
+              divers.map(
+                diver => `
+
+                  <option
+                    value="${esc(diver.id)}"
+
+                    ${
+                      prefill.eahId
+                      &&
+                      String(
+                        prefill.eahId
+                      )
+                      ===
+                      String(
+                        diver.eahId
+                      )
+                      ?
+                      "selected"
+                      :
+                      ""
+                    }
+                  >
+
+                    ${esc(
+                      `${diver.firstName || ""} ${diver.lastName || ""}`
+                    )}
+
+                    —
+                    ${esc(
+                      diver.eahId ||
+                      ""
+                    )}
+
+                  </option>
+
+                `
+              )
+              .join("")
+            }
+
+          </select>
+
+
+          <label>
+            Code du plongeon
+          </label>
+
+          <input
+            id="evalCode"
+            value="${esc(
+              prefill.diveCode ||
+              ""
+            )}"
+            style="
+              width:100%;
+              min-height:52px;
+              box-sizing:border-box;
+            "
+          >
+
+
+          <label>
+            Nom
+          </label>
+
+          <input
+            id="evalName"
+            value="${esc(
+              prefill.diveName ||
+              ""
+            )}"
+            style="
+              width:100%;
+              min-height:52px;
+              box-sizing:border-box;
+            "
+          >
+
+
+          <label>
+            Hauteur
+          </label>
+
+          <input
+            id="evalHeight"
+            type="number"
+            step="0.1"
+            value="${esc(
+              prefill.height ??
+              ""
+            )}"
+            style="
+              width:100%;
+              min-height:52px;
+              box-sizing:border-box;
+            "
+          >
+
+
+          <label>
+            Note WA /10
+          </label>
+
+          <input
+            id="evalWA"
+            type="number"
+            min="0"
+            max="10"
+            step="0.5"
+            style="
+              width:100%;
+              min-height:52px;
+              box-sizing:border-box;
+            "
+          >
+
+
+          <label>
+            Vidéo
+          </label>
+
+          <input
+            id="evalVideo"
+            type="url"
+            value="${esc(
+              prefill.videoUrl ||
+              ""
+            )}"
+            style="
+              width:100%;
+              min-height:52px;
+              box-sizing:border-box;
+            "
+          >
+
+
+          ${phaseHTML(
+            "takeoff",
+            "Takeoff"
+          )}
+
+
+          ${phaseHTML(
+            "trick",
+            "Trick"
+          )}
+
+
+          ${phaseHTML(
+            "entry",
+            "Entry"
+          )}
+
+
+          <div
+            style="
+              margin-top:20px;
+              padding:20px;
+              text-align:center;
+              background:rgba(11,107,255,.12);
+              border-radius:18px;
+            "
+          >
+
+            NOTE EAH
+
+            <strong
+              id="finalEAH"
+              style="
+                display:block;
+                font-size:3rem;
+                color:#30cfff;
+              "
+            >
+              0
+            </strong>
+
+          </div>
+
+
+          <textarea
+            id="evalPositive"
+            placeholder="Points réussis"
+            style="
+              width:100%;
+              min-height:90px;
+              box-sizing:border-box;
+              margin-top:15px;
+            "
+          ></textarea>
+
+
+          <textarea
+            id="evalImprove"
+            placeholder="Critères à améliorer"
+            style="
+              width:100%;
+              min-height:90px;
+              box-sizing:border-box;
+              margin-top:10px;
+            "
+          ></textarea>
+
+
+          <textarea
+            id="evalComment"
+            placeholder="Commentaire Coach"
+            style="
+              width:100%;
+              min-height:90px;
+              box-sizing:border-box;
+              margin-top:10px;
+            "
+          ></textarea>
+
+
+          <button
+            id="submitEval"
+            type="submit"
+            style="
+              width:100%;
+              min-height:58px;
+              margin-top:18px;
+              border:0;
+              border-radius:16px;
+              background:#0b6bff;
+              color:white;
+              font-weight:900;
+            "
+          >
+            Valider l'évaluation
+          </button>
+
+
+          <div id="evalMessage"></div>
+
+        </form>
 
       </div>
 
     `;
 
 
-    document.body
-      .appendChild(
-        modal
-      );
+    /*
+      TRÈS IMPORTANT :
+      le modal est ajouté dans l'application Coach.
+    */
 
-
-    modal.dataset.requestId =
-      prefill.requestId ||
-      "";
+    app.appendChild(
+      modal
+    );
 
 
     document
       .getElementById(
-        "closeEAHEvaluation"
+        "closeEval"
       )
-      .addEventListener(
-        "click",
+      .onclick =
         () =>
-          modal.remove()
-      );
+          modal.remove();
 
 
     modal
       .querySelectorAll(
-        "[data-eah-phase]"
+        "[data-phase]"
       )
       .forEach(
         select => {
 
-          select.addEventListener(
-            "change",
-            updateEvaluationScores
-          );
+          select.onchange =
+            updateScores;
 
         }
       );
@@ -1526,60 +900,51 @@
 
     document
       .getElementById(
-        "eahCoachEvaluationForm"
+        "coachEvaluationForm"
       )
-      .addEventListener(
-        "submit",
-        submitCoachEvaluation
-      );
+      .onsubmit =
+        submitEvaluation;
 
 
-    updateEvaluationScores();
+    updateScores();
 
   }
 
 
+  /* ========================================================
+     SCORES
+  ======================================================== */
 
-  /* =========================================================
-     SCORE D'UNE PHASE
-  ========================================================= */
-
-  function calculatePhase(
+  function getPhaseScore(
     phase
   ) {
 
-    const selects =
+    const fields =
       Array.from(
         document.querySelectorAll(
-          `[data-eah-phase="${phase}"]`
+          `[data-phase="${phase}"]`
         )
       );
 
 
-    let obtained =
-      0;
+    let obtained = 0;
+    let max = 0;
 
 
-    let max =
-      0;
-
-
-    selects.forEach(
-      select => {
+    fields.forEach(
+      field => {
 
         if (
-          select.value ===
+          field.value ===
           ""
         ) {
-
           return;
-
         }
 
 
         obtained +=
           Number(
-            select.value
+            field.value
           );
 
 
@@ -1589,152 +954,129 @@
     );
 
 
-    if (!max) {
-      return 0;
-    }
-
-
-    return Math.round(
-      obtained /
-      max *
-      10
-    );
+    return max
+      ?
+      Math.round(
+        obtained /
+        max *
+        10
+      )
+      :
+      0;
 
   }
 
 
-
-  /* =========================================================
-     SCORE EAH
-  ========================================================= */
-
-  function calculateEAHFinal(
-    takeoff,
-    trick,
-    entry
+  function getFinal(
+    d,
+    t,
+    e
   ) {
 
-    const scores = [
-      takeoff,
-      trick,
-      entry
+    const values = [
+      d,
+      t,
+      e
     ];
 
 
     const min =
       Math.min(
-        ...scores
+        ...values
       );
 
 
     const count =
-      scores.filter(
-        score =>
-          score === min
+      values.filter(
+        value =>
+          value === min
       ).length;
 
 
     return Math.min(
-
       10,
-
       count === 1
       ?
       min + 0.5
       :
       min
-
     );
 
   }
 
 
+  function updateScores() {
 
-  function updateEvaluationScores() {
-
-    const takeoff =
-      calculatePhase(
+    const d =
+      getPhaseScore(
         "takeoff"
       );
 
 
-    const trick =
-      calculatePhase(
+    const t =
+      getPhaseScore(
         "trick"
       );
 
 
-    const entry =
-      calculatePhase(
+    const e =
+      getPhaseScore(
         "entry"
       );
 
 
-    document
-      .getElementById(
-        "score-takeoff"
-      )
-      .textContent =
-        `${takeoff} / 10`;
+    document.getElementById(
+      "score-takeoff"
+    ).textContent =
+      `${d}/10`;
 
 
-    document
-      .getElementById(
-        "score-trick"
-      )
-      .textContent =
-        `${trick} / 10`;
+    document.getElementById(
+      "score-trick"
+    ).textContent =
+      `${t}/10`;
 
 
-    document
-      .getElementById(
-        "score-entry"
-      )
-      .textContent =
-        `${entry} / 10`;
+    document.getElementById(
+      "score-entry"
+    ).textContent =
+      `${e}/10`;
 
 
-    document
-      .getElementById(
-        "eahFinalScore"
-      )
-      .textContent =
-        calculateEAHFinal(
-          takeoff,
-          trick,
-          entry
-        );
+    document.getElementById(
+      "finalEAH"
+    ).textContent =
+      getFinal(
+        d,
+        t,
+        e
+      );
 
   }
 
 
+  function getCriteria() {
 
-  /* =========================================================
-     JSON DES 15 ITEMS
-  ========================================================= */
-
-  function getCriteriaValues() {
-
-    const result =
-      {};
+    const result = {};
 
 
     document
       .querySelectorAll(
-        "[data-eah-code]"
+        "[data-code]"
       )
       .forEach(
-        select => {
+        field => {
 
           result[
-            select.dataset.eahCode
+            field.dataset.code
           ] =
-            select.value === ""
+            field.value ===
+            ""
             ?
             null
             :
             Number(
-              select.value
+              field.value
             );
 
         }
@@ -1746,12 +1088,11 @@
   }
 
 
+  /* ========================================================
+     ENVOI
+  ======================================================== */
 
-  /* =========================================================
-     ENREGISTRER EVALUATION
-  ========================================================= */
-
-  async function submitCoachEvaluation(
+  async function submitEvaluation(
     event
   ) {
 
@@ -1766,63 +1107,14 @@
 
     const button =
       document.getElementById(
-        "eahEvalSubmit"
+        "submitEval"
       );
 
 
     const message =
       document.getElementById(
-        "eahEvalMessage"
+        "evalMessage"
       );
-
-
-    const takeoff =
-      calculatePhase(
-        "takeoff"
-      );
-
-
-    const trick =
-      calculatePhase(
-        "trick"
-      );
-
-
-    const entry =
-      calculatePhase(
-        "entry"
-      );
-
-
-    const diveCode =
-      document
-        .getElementById(
-          "eahEvalDiveCode"
-        )
-        .value
-        .trim()
-        .toUpperCase();
-
-
-    if (!diveCode) {
-
-      message.innerHTML = `
-
-        <div
-          style="
-            padding:14px;
-            background:rgba(224,82,94,.15);
-            border-radius:14px;
-          "
-        >
-          Code du plongeon obligatoire.
-        </div>
-
-      `;
-
-      return;
-
-    }
 
 
     button.disabled =
@@ -1844,24 +1136,26 @@
         diverId:
           document
             .getElementById(
-              "eahEvalDiver"
+              "evalDiver"
             )
             .value,
 
         discipline:
-          document
-            .getElementById(
-              "eahEvalDiscipline"
-            )
-            .value,
+          "Plongeon",
 
         diveCode:
-          diveCode,
+          document
+            .getElementById(
+              "evalCode"
+            )
+            .value
+            .trim()
+            .toUpperCase(),
 
         diveName:
           document
             .getElementById(
-              "eahEvalDiveName"
+              "evalName"
             )
             .value
             .trim(),
@@ -1869,60 +1163,62 @@
         height:
           document
             .getElementById(
-              "eahEvalHeight"
+              "evalHeight"
             )
             .value,
 
         waScore:
           document
             .getElementById(
-              "eahEvalWA"
+              "evalWA"
             )
             .value,
 
         takeoff:
-          takeoff,
+          getPhaseScore(
+            "takeoff"
+          ),
 
         trick:
-          trick,
+          getPhaseScore(
+            "trick"
+          ),
 
         entry:
-          entry,
+          getPhaseScore(
+            "entry"
+          ),
 
         criteria:
-          getCriteriaValues(),
+          getCriteria(),
 
         videoUrl:
           document
             .getElementById(
-              "eahEvalVideo"
+              "evalVideo"
             )
-            .value
-            .trim(),
+            .value,
 
         positive:
           document
             .getElementById(
-              "eahEvalPositive"
+              "evalPositive"
             )
-            .value
-            .trim(),
+            .value,
 
         improve:
           document
             .getElementById(
-              "eahEvalImprove"
+              "evalImprove"
             )
-            .value
-            .trim(),
+            .value,
 
         comment:
           document
             .getElementById(
-              "eahEvalComment"
+              "evalComment"
             )
             .value
-            .trim()
 
       };
 
@@ -1971,21 +1267,19 @@
 
         <div
           style="
-            padding:15px;
             margin-top:12px;
-            background:rgba(24,185,120,.15);
+            padding:15px;
             border-radius:14px;
+            background:rgba(24,185,120,.15);
           "
         >
 
-          <strong>
-            Evaluation enregistrée.
-          </strong>
+          Évaluation enregistrée.
 
           <br>
 
           Note EAH :
-          ${escapeHTML(
+          ${esc(
             data.eahScore
           )}
           /10
@@ -1995,10 +1289,16 @@
       `;
 
 
+      /*
+        Recharge :
+        la demande passée GRADED
+        disparaîtra.
+      */
+
       setTimeout(
         () =>
           window.location.reload(),
-        900
+        700
       );
 
 
@@ -2009,21 +1309,21 @@
 
 
       button.textContent =
-        "Valider le Grade Report";
+        "Valider l'évaluation";
 
 
       message.innerHTML = `
 
         <div
           style="
-            padding:15px;
             margin-top:12px;
+            padding:15px;
             background:rgba(224,82,94,.15);
             border-radius:14px;
           "
         >
 
-          ${escapeHTML(
+          ${esc(
             error.message ||
             "Erreur."
           )}
@@ -2037,249 +1337,237 @@
   }
 
 
+  /* ========================================================
+     PROFIL PLONGEUR DEPUIS COACH
+  ======================================================== */
 
-  /* =========================================================
-     ESPACE PLONGEUR SIMPLE
-
-     On conserve :
-     - photo
-     - identité
-     - progression
-     - historique
-     - demande de grading
-
-     On masque tout le reste du site.
-  ========================================================= */
-
-  function trySimpleDiverProfile() {
-
-    if (coachToken) {
-      return;
-    }
-
-
-    const profileView =
-      document.getElementById(
-        "profileView"
-      );
-
-
-    if (
-      !profileView ||
-      !profileView.innerHTML.trim()
-    ) {
-      return;
-    }
-
-
-    /*
-      Il faut que le profil soit réellement affiché.
-    */
-
-    const rect =
-      profileView
-        .getBoundingClientRect();
-
-
-    if (
-      rect.width === 0
-    ) {
-      return;
-    }
-
-
-    if (
-      document.getElementById(
-        "eahDiverSimpleApp"
-      )
-    ) {
-      return;
-    }
-
-
-    const parent =
-      profileView.parentNode;
-
-
-    const marker =
-      document.createComment(
-        "EAH_PROFILE_POSITION"
-      );
-
-
-    parent.insertBefore(
-      marker,
-      profileView
-    );
-
+  function openDiverProfile(
+    diver
+  ) {
 
     const app =
+      document.getElementById(
+        "eahCoachCardApp"
+      );
+
+
+    if (!app) {
+      return;
+    }
+
+
+    const modal =
       document.createElement(
         "div"
       );
 
 
-    app.id =
-      "eahDiverSimpleApp";
+    modal.style.cssText = `
+
+      position:fixed;
+      inset:0;
+      z-index:2147483647;
+      overflow-y:auto;
+      padding:15px;
+      background:rgba(1,9,18,.97);
+      color:white;
+
+    `;
 
 
-    app.innerHTML = `
+    modal.innerHTML = `
 
-      <div id="eahDiverSimpleInner">
+      <div
+        style="
+          width:100%;
+          max-width:700px;
+          margin:auto;
+          padding:25px;
+          box-sizing:border-box;
+          border-radius:25px;
+          background:#061e33;
+          text-align:center;
+        "
+      >
 
-        <a
-          href="./"
-          class="eah-diver-simple-home"
+        <button
+          id="closeDiverCoach"
+          style="
+            float:right;
+          "
         >
-          ← EAH Diving
-        </a>
+          ×
+        </button>
+
+
+        ${
+          diver.photoUrl
+          ?
+          `
+
+            <img
+              src="${esc(
+                diver.photoUrl
+              )}"
+              style="
+                width:160px;
+                height:160px;
+                object-fit:cover;
+                border:6px solid #30cfff;
+                border-radius:34px;
+              "
+            >
+
+          `
+          :
+          ""
+        }
+
+
+        <h1>
+
+          ${esc(
+            `${diver.firstName || ""} ${diver.lastName || ""}`
+          )}
+
+        </h1>
+
+
+        <p>
+          ${esc(
+            diver.eahId ||
+            ""
+          )}
+        </p>
+
+
+        <p>
+
+          ${esc(
+            diver.group ||
+            ""
+          )}
+
+        </p>
+
+
+        <p>
+
+          Blazon :
+          ${esc(
+            diver.currentBlazon ||
+            "En progression"
+          )}
+
+        </p>
+
+
+        <button
+          id="evalThisDiver"
+          type="button"
+          style="
+            width:100%;
+            min-height:55px;
+            margin-top:20px;
+            border:0;
+            border-radius:15px;
+            background:#0b6bff;
+            color:white;
+            font-weight:900;
+          "
+        >
+          Évaluer un plongeon
+        </button>
 
       </div>
 
     `;
 
 
-    document.body.appendChild(
-      app
+    app.appendChild(
+      modal
     );
 
 
-    document
-      .getElementById(
-        "eahDiverSimpleInner"
-      )
-      .appendChild(
-        profileView
-      );
+    modal.querySelector(
+      "#closeDiverCoach"
+    ).onclick =
+      () =>
+        modal.remove();
 
 
-    document.body
-      .classList
-      .add(
-        "eah-diver-simple"
-      );
+    modal.querySelector(
+      "#evalThisDiver"
+    ).onclick =
+      () => {
+
+        modal.remove();
+
+
+        openEvaluation({
+
+          eahId:
+            diver.eahId
+
+        });
+
+      };
 
   }
 
 
-
-  /* =========================================================
-     ESCAPE
-  ========================================================= */
-
-  function escapeHTML(
+  function esc(
     value
   ) {
 
     return String(
       value ?? ""
     )
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-      .replace(
-        /</g,
-        "&lt;"
-      )
-      .replace(
-        />/g,
-        "&gt;"
-      )
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-      .replace(
-        /'/g,
-        "&#039;"
-      );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
   }
 
 
+  /* ========================================================
+     DEMARRAGE
+  ======================================================== */
 
-  /* =========================================================
-     INITIALISATION
-  ========================================================= */
-
-  installWorkspaceCSS();
-
-
-  if (coachToken) {
-
-    /*
-      coach-card.js construit d'abord l'interface.
-      On ajoute ensuite les fonctions d'évaluation.
-    */
-
-    let tries =
-      0;
+  let tries = 0;
 
 
-    const timer =
-      setInterval(
+  const timer =
+    setInterval(
 
-        async () => {
+      async () => {
 
-          tries++;
-
-
-          await installCoachEvaluationButtons();
+        tries++;
 
 
-          if (
-            document.getElementById(
-              "eahCoachEvaluateAny"
-            )
-            ||
-            tries > 20
-          ) {
-
-            clearInterval(
-              timer
-            );
-
-          }
-
-        },
-
-        500
-
-      );
-
-  }
+        await installActions();
 
 
-  /*
-    Observer profil plongeur.
-  */
+        if (
+          document.getElementById(
+            "eahEvaluateDive"
+          )
+          ||
+          tries > 30
+        ) {
 
-  const observer =
-    new MutationObserver(
-      () => {
+          clearInterval(
+            timer
+          );
 
-        trySimpleDiverProfile();
+        }
 
-      }
+      },
+
+      350
+
     );
-
-
-  observer.observe(
-
-    document.body,
-
-    {
-      childList: true,
-      subtree: true
-    }
-
-  );
-
-
-  setTimeout(
-    trySimpleDiverProfile,
-    700
-  );
 
 })();
