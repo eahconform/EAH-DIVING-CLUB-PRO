@@ -13576,8 +13576,10 @@ async function ouvrirCarteCoachDirectementEAH(
         "eah_coach_card_workspace",
 
         {
+
           p_token:
             coachToken
+
         }
 
       );
@@ -13586,6 +13588,7 @@ async function ouvrirCarteCoachDirectementEAH(
     if (error) {
 
       throw error;
+
     }
 
 
@@ -13595,8 +13598,11 @@ async function ouvrirCarteCoachDirectementEAH(
     ) {
 
       throw new Error(
-        data?.error ||
+
+        data?.error
+        ||
         "Carte Coach invalide."
+
       );
 
     }
@@ -13606,129 +13612,98 @@ async function ouvrirCarteCoachDirectementEAH(
        CLUB
     ====================================================== */
 
-    if (
-      data.club
-    ) {
-
-      state.club =
-        data.club;
+    state.club =
+      data.club;
 
 
-      CLUB_SLUG =
-        data.club.slug;
+    CLUB_SLUG =
+      data.club.slug;
 
+
+    try {
 
       localStorage.setItem(
+
         "EAH_CLUB",
+
         data.club.slug
+
       );
 
-
-      try {
-
-        applyClubBranding(
-          data.club
-        );
-
-      } catch (_) {}
-
-    }
+    } catch (_) {}
 
 
-    /* ======================================================
-       CACHER LE FORMULAIRE DE CONNEXION COACH
-    ====================================================== */
+    try {
 
-    const coachLogin =
-      document.getElementById(
-        "coachLoginForm"
+      applyClubBranding(
+        data.club
       );
 
+    } catch (_) {}
 
-    if (coachLogin) {
-
-      coachLogin.style.display =
-        "none";
-
-    }
-
-
-    /*
-      Sécurité supplémentaire :
-      on cherche le bloc contenant
-      "Connexion coach".
-    */
-
-    Array.from(
-      document.querySelectorAll(
-        "form, article, .card, .dashboard-card"
-      )
-    )
-    .forEach(
-      function(element) {
-
-        const text =
-          String(
-            element.textContent || ""
-          );
-
-
-        if (
-          text.includes(
-            "Connexion coach"
-          )
-          &&
-          text.includes(
-            "Accéder à l'espace coach"
-          )
-        ) {
-
-          element.style.display =
-            "none";
-
-        }
-
-      }
-    );
-
-
-    /* ======================================================
-       PAGE CLUB
-    ====================================================== */
 
     showPage(
       "club"
     );
 
 
-    let page =
+    const page =
       document.getElementById(
         "page-club"
+      )
+
+      ||
+
+      document.querySelector(
+        '[data-page="club"]'
       );
 
 
     if (!page) {
 
-      page =
-        document.querySelector(
-          '[data-page="club"]'
-        );
-
-    }
-
-
-    if (!page) {
-
       throw new Error(
-        "La page Espace Club est introuvable."
+        "Page Espace Club introuvable."
       );
 
     }
 
 
     /* ======================================================
-       CONTENEUR CARTE COACH
+       CACHER ANCIEN LOGIN COACH
     ====================================================== */
+
+    page
+      .querySelectorAll(
+        "form"
+      )
+      .forEach(
+        function(form) {
+
+          const text =
+            String(
+              form.textContent ||
+              ""
+            );
+
+
+          if (
+            text.includes(
+              "Accéder à l'espace coach"
+            )
+            ||
+            text.includes(
+              "Mot de passe"
+            )
+          ) {
+
+            form.style.display =
+              "none";
+
+          }
+
+        }
+      );
+
 
     let workspace =
       document.getElementById(
@@ -13760,6 +13735,7 @@ async function ouvrirCarteCoachDirectementEAH(
 
 
     /* ======================================================
+       PREMIER SCAN
        CARTE NON ATTRIBUEE
     ====================================================== */
 
@@ -13782,38 +13758,81 @@ async function ouvrirCarteCoachDirectementEAH(
               CARTE COACH EAH
             </span>
 
+
             <h1>
-              Carte Coach n°${esc(slot)}
+              Activer la carte Coach n°${esc(slot)}
             </h1>
 
-            <p>
+
+            <p class="muted">
+
               ${esc(
                 data.club?.name ||
                 ""
               )}
+
             </p>
+
 
             <div class="notice">
 
-              <strong>
-                Carte à attribuer
-              </strong>
-
-              <br><br>
-
-              Cette URL fonctionne correctement.
+              Cette carte n'est pas encore attribuée.
 
               <br>
 
-              Tu peux maintenant programmer cette URL
-              dans une carte NFC.
-
-              <br><br>
-
-              Le profil Coach pourra ensuite être
-              associé à cette carte sans modifier son URL.
+              Renseigne ton profil une seule fois.
 
             </div>
+
+
+            <form
+              id="activateCoachCardForm"
+              style="margin-top:25px"
+            >
+
+              <label>
+
+                Nom et prénom
+
+                <input
+                  id="activateCoachName"
+                  type="text"
+                  placeholder="Ex : Emeric Goin"
+                  required
+                >
+
+              </label>
+
+
+              <label>
+
+                Adresse e-mail
+
+                <input
+                  id="activateCoachEmail"
+                  type="email"
+                  placeholder="coach@email.fr"
+                  required
+                >
+
+              </label>
+
+
+              <button
+                id="activateCoachCardButton"
+                type="submit"
+                class="primary-button"
+              >
+                Activer mon espace Coach
+              </button>
+
+
+              <div
+                id="activateCoachCardMessage"
+                style="margin-top:15px"
+              ></div>
+
+            </form>
 
           </div>
 
@@ -13822,17 +13841,218 @@ async function ouvrirCarteCoachDirectementEAH(
       `;
 
 
+      document
+        .getElementById(
+          "activateCoachCardForm"
+        )
+        ?.addEventListener(
+
+          "submit",
+
+          async function(event) {
+
+            event.preventDefault();
+
+
+            const name =
+              document
+                .getElementById(
+                  "activateCoachName"
+                )
+                ?.value
+                ?.trim()
+              ||
+              "";
+
+
+            const email =
+              document
+                .getElementById(
+                  "activateCoachEmail"
+                )
+                ?.value
+                ?.trim()
+                .toLowerCase()
+              ||
+              "";
+
+
+            const button =
+              document.getElementById(
+                "activateCoachCardButton"
+              );
+
+
+            if (
+              !name ||
+              !email
+            ) {
+
+              setMessage(
+
+                "activateCoachCardMessage",
+
+                `
+                  <div class="notice error">
+                    Nom et e-mail obligatoires.
+                  </div>
+                `
+
+              );
+
+
+              return;
+
+            }
+
+
+            setLoadingButton(
+
+              button,
+
+              true,
+
+              "Activation…",
+
+              "Activer mon espace Coach"
+
+            );
+
+
+            try {
+
+              const {
+                data: activation,
+                error: activationError
+              } =
+                await sb.rpc(
+
+                  "eah_activate_coach_card",
+
+                  {
+
+                    p_token:
+                      coachToken,
+
+                    p_name:
+                      name,
+
+                    p_email:
+                      email
+
+                  }
+
+                );
+
+
+              if (
+                activationError
+              ) {
+
+                throw activationError;
+
+              }
+
+
+              if (
+                !activation ||
+                activation.ok === false
+              ) {
+
+                throw new Error(
+
+                  activation?.error
+                  ||
+                  "Activation impossible."
+
+                );
+
+              }
+
+
+              setMessage(
+
+                "activateCoachCardMessage",
+
+                `
+                  <div class="notice success">
+
+                    <strong>
+                      Carte Coach activée.
+                    </strong>
+
+                    <br>
+
+                    Bienvenue ${esc(name)}.
+
+                  </div>
+                `
+
+              );
+
+
+              /*
+                OUVRIR IMMEDIATEMENT
+                L'ESPACE COACH
+              */
+
+              await ouvrirCarteCoachDirectementEAH(
+                coachToken
+              );
+
+
+            } catch(error) {
+
+              setMessage(
+
+                "activateCoachCardMessage",
+
+                `
+                  <div class="notice error">
+
+                    ${esc(
+                      error.message ||
+                      "Activation impossible."
+                    )}
+
+                  </div>
+                `
+
+              );
+
+
+            } finally {
+
+              setLoadingButton(
+
+                button,
+
+                false,
+
+                "",
+
+                "Activer mon espace Coach"
+
+              );
+
+            }
+
+          }
+
+        );
+
+
       return;
+
     }
 
 
     /* ======================================================
-       CARTE ATTRIBUEE
+       CARTE DEJA ATTRIBUEE
     ====================================================== */
 
     state.coach =
-      data.coach ||
-      null;
+      data.coach;
 
 
     state.coachCardToken =
@@ -13889,19 +14109,14 @@ async function ouvrirCarteCoachDirectementEAH(
       [];
 
 
-    const coachName =
-      data.coach?.name ||
-      "Coach";
-
-
     const requests =
       data.gradingRequests ||
       [];
 
 
-    const availableCards =
-      data.availableCards ||
-      [];
+    const coachName =
+      data.coach?.name ||
+      "Coach";
 
 
     workspace.innerHTML = `
@@ -13914,15 +14129,31 @@ async function ouvrirCarteCoachDirectementEAH(
             ESPACE COACH EAH
           </span>
 
+
           <h1>
             Bienvenue ${esc(coachName)}
           </h1>
 
+
           <p class="muted">
+
             ${esc(
               data.club?.name ||
               ""
             )}
+
+            ${
+              data.coach?.role
+              ?
+              " • "
+              +
+              esc(
+                data.coach.role
+              )
+              :
+              ""
+            }
+
           </p>
 
         </div>
@@ -13951,13 +14182,18 @@ async function ouvrirCarteCoachDirectementEAH(
           <article class="dashboard-card">
 
             <span class="overline">
-              CARTES LIBRES
+              CARTES PLONGEUR DISPONIBLES
             </span>
 
             <strong
               style="font-size:2rem"
             >
-              ${availableCards.length}
+              ${
+                (
+                  data.availableCards ||
+                  []
+                ).length
+              }
             </strong>
 
           </article>
@@ -13966,19 +14202,21 @@ async function ouvrirCarteCoachDirectementEAH(
           <article class="dashboard-card">
 
             <span class="overline">
-              DEMANDES GRADING
+              DEMANDES DE GRADING
             </span>
 
             <strong
               style="font-size:2rem"
             >
+
               ${
                 requests.filter(
                   function(request) {
 
                     return (
                       String(
-                        request.status
+                        request.status ||
+                        ""
                       )
                       .toUpperCase()
                       ===
@@ -13988,6 +14226,7 @@ async function ouvrirCarteCoachDirectementEAH(
                   }
                 ).length
               }
+
             </strong>
 
           </article>
@@ -14000,9 +14239,14 @@ async function ouvrirCarteCoachDirectementEAH(
           style="margin-top:20px"
         >
 
+          <span class="overline">
+            GRADING
+          </span>
+
           <h2>
-            Demandes de grading
+            Demandes reçues
           </h2>
+
 
           ${
             requests.length
@@ -14014,15 +14258,18 @@ async function ouvrirCarteCoachDirectementEAH(
 
                   <article
                     class="dashboard-card"
-                    style="margin-top:12px"
+                    style="margin-top:14px"
                   >
 
                     <span class="overline">
+
                       ${esc(
                         request.requestCode ||
                         ""
                       )}
+
                     </span>
+
 
                     <h3>
 
@@ -14041,6 +14288,7 @@ async function ouvrirCarteCoachDirectementEAH(
                       )}
 
                     </h3>
+
 
                     <p>
 
@@ -14067,17 +14315,34 @@ async function ouvrirCarteCoachDirectementEAH(
 
 
                     ${
+                      request.message
+                      ?
+                      `
+
+                        <p class="muted">
+                          ${esc(
+                            request.message
+                          )}
+                        </p>
+
+                      `
+                      :
+                      ""
+                    }
+
+
+                    ${
                       request.videoUrl
                       ?
                       `
 
                         <a
-                          class="primary-button"
                           href="${esc(
                             request.videoUrl
                           )}"
                           target="_blank"
                           rel="noopener"
+                          class="primary-button"
                         >
                           Voir la vidéo
                         </a>
@@ -14094,7 +14359,9 @@ async function ouvrirCarteCoachDirectementEAH(
               }
             )
             .join("")
+
             :
+
             `
 
               <div class="notice">
@@ -14111,10 +14378,6 @@ async function ouvrirCarteCoachDirectementEAH(
     `;
 
 
-    /*
-      Alimenter également le select d'évaluation.
-    */
-
     try {
 
       renderDiversSelect();
@@ -14125,52 +14388,19 @@ async function ouvrirCarteCoachDirectementEAH(
   } catch(error) {
 
     console.error(
-      "CARTE COACH :",
+      "COACH CARD",
       error
     );
 
 
-    showPage(
-      "club"
+    showToast(
+
+      error.message ||
+      "Impossible d'ouvrir la carte Coach.",
+
+      "error"
+
     );
-
-
-    const page =
-      document.getElementById(
-        "page-club"
-      )
-      ||
-      document.querySelector(
-        '[data-page="club"]'
-      );
-
-
-    if (page) {
-
-      page.innerHTML = `
-
-        <div class="container">
-
-          <div class="notice error">
-
-            <strong>
-              Impossible d'ouvrir la carte Coach.
-            </strong>
-
-            <br><br>
-
-            ${esc(
-              error.message ||
-              "Erreur inconnue."
-            )}
-
-          </div>
-
-        </div>
-
-      `;
-
-    }
 
   }
 
