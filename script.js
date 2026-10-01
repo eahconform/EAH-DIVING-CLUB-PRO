@@ -13485,12 +13485,13 @@ async function init() {
 
   if (coachToken) {
 
-    await ouvrirCarteCoachDirectementEAH(
-      coachToken
-    );
+  /*
+    coach-card.js prend entièrement
+    en charge les cartes Coach.
+  */
 
-    return;
-  }
+  return;
+}
 
 
   /* ========================================================
