@@ -6272,3 +6272,59 @@ select option {
   }
 
 }
+/* ============================================================
+   FIX AFFICHAGE FOND WATER PREMIUM
+============================================================ */
+
+html,
+body {
+  background: #03131f !important;
+}
+
+.site-background {
+  position: fixed !important;
+  inset: 0 !important;
+
+  width: 100vw !important;
+  height: 100vh !important;
+
+  background:
+    linear-gradient(
+      rgba(3, 19, 31, 0.48),
+      rgba(3, 19, 31, 0.68)
+    ),
+    url("site-water-premium-bg.jpg")
+    center center / cover
+    no-repeat !important;
+
+  opacity: 1 !important;
+
+  z-index: 0 !important;
+
+  pointer-events: none !important;
+}
+
+
+/* Le contenu du site reste au-dessus du fond */
+
+header,
+main,
+footer,
+.page,
+.view,
+section {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* Effets d'eau au-dessus du fond mais sous le contenu */
+
+.water-effects {
+  position: fixed;
+  inset: 0;
+
+  z-index: 0;
+
+  pointer-events: none;
+}
