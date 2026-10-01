@@ -6387,3 +6387,47 @@ section {
 
 /* On garde le texte lisible à gauche,
    mais l'image ressort beaucoup plus au centre et à droite */
+/* ============================================================
+   EAH DIVING PRO
+   PHOTOS DU SITE PLUS CLAIRES / PLUS PREMIUM
+============================================================ */
+
+/* Photos principales du site */
+img[src*="hero-"],
+img[src*="olympique"],
+img[src*="high-diving"],
+img[src*="freestyle"],
+img[src*="saut-ange"],
+img[src*="portrait-water"],
+img[src*="grading-takeoff"],
+img[src*="grading-trick"],
+img[src*="grading-entry"],
+img[src*="notation-levels"],
+img[src*="grade-report-example"] {
+
+  filter:
+    brightness(1.18)
+    contrast(1.03)
+    saturate(1.08) !important;
+}
+
+
+/* Effet doux pour les grandes photos */
+.hero img,
+.discipline-card img,
+.discipline-image img,
+.grading-card img {
+
+  filter:
+    brightness(1.18)
+    contrast(1.03)
+    saturate(1.08) !important;
+}
+
+
+/* On laisse les logos et blazons exactement comme ils sont */
+img[src*="eah-diving-logo"],
+img[src*="blazon-"] {
+
+  filter: none !important;
+}
