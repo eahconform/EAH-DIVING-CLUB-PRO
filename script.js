@@ -13440,73 +13440,80 @@ async function submitEvaluation(
    AVANT LE PROFIL.
 ============================================================ */
 
+/* ============================================================
+   EAH DIVING PRO
+   INIT FINAL - PRIORITE CARTES NFC
+============================================================ */
+
 async function init() {
 
   renderCriteria();
-
   renderDiveCodes();
-
   renderBlazons();
-
   renderPricing();
-
 
   initialRoute();
 
 
-  /*
-    ==========================================================
-    PRIORITE ABSOLUE : NFC
-    ==========================================================
-  */
-
-  if (
-    CARD_EAH_ID &&
-    CARD_TOKEN
-  ) {
-
-    /*
-      MASQUER LES BLOCS AJOUTES
-      PAR L'ANCIEN eah-pro.js / HTML PRO
-      SI ENCORE PRESENTS.
-    */
-
-    document
-      .querySelectorAll(
-        '.eah-pro-section'
-      )
-      .forEach(
-        element => {
-
-          element.style.display =
-            'none';
-
-        }
-      );
-
-
-    await loadPrivateProfileByCard(
-
-      CARD_EAH_ID,
-
-      CARD_TOKEN
-
+  const params =
+    new URLSearchParams(
+      window.location.search
     );
 
 
-    return;
+  const coachToken =
+    String(
+      params.get("coachToken") || ""
+    ).trim();
 
+
+  const diverId =
+    String(
+      params.get("id") || ""
+    ).trim();
+
+
+  const diverToken =
+    String(
+      params.get("token") || ""
+    ).trim();
+
+
+  /* ========================================================
+     1. PRIORITE ABSOLUE CARTE COACH
+  ======================================================== */
+
+  if (coachToken) {
+
+    await ouvrirCarteCoachDirectementEAH(
+      coachToken
+    );
+
+    return;
   }
 
 
-  /*
-    ==========================================================
-    SITE NORMAL
-    ==========================================================
+  /* ========================================================
+     2. CARTE PLONGEUR
+  ======================================================== */
 
-    LE SITE EST INTERACTIF TOUT DE SUITE.
-    LES DONNEES ARRIVENT ENSUITE.
-  */
+  if (
+    diverId &&
+    diverToken
+  ) {
+
+    await loadPrivateProfileByCard(
+      diverId,
+      diverToken
+    );
+
+    return;
+  }
+
+
+  /* ========================================================
+     3. SITE NORMAL
+  ======================================================== */
 
   loadPublicData()
     .catch(
@@ -13524,22 +13531,15 @@ async function init() {
   }
 
 
-  /*
-    SESSION COACH UNIQUEMENT SI NECESSAIRE.
-  */
-
   const page =
     window.location.hash
-      .replace(
-        '#',
-        ''
-      );
+      .replace("#", "");
 
 
   if (
-    page === 'club'
+    page === "club"
     ||
-    page === 'evaluation'
+    page === "evaluation"
   ) {
 
     restoreCoachSession()
@@ -13549,1165 +13549,43 @@ async function init() {
 
   }
 
-}/* ============================================================
-   EAH DIVING PRO
-   DEMANDE DE GRADING DEPUIS LE PROFIL
-============================================================ */
-
-const __EAH_PROFILE_RENDER =
-  renderProfileSummary;
-
-
-renderProfileSummary =
-  function(
-    profile,
-    privateAccess = false
-  ) {
-
-    __EAH_PROFILE_RENDER(
-      profile,
-      privateAccess
-    );
-
-
-    const view =
-      document.getElementById(
-        'profileView'
-      );
-
-
-    if (!view) {
-
-      return;
-
-    }
-
-
-    if (
-      document.getElementById(
-        'eahDiverGradingBox'
-      )
-    ) {
-
-      return;
-
-    }
-
-
-    const box =
-      document.createElement(
-        'section'
-      );
-
-
-    box.id =
-      'eahDiverGradingBox';
-
-
-    box.className =
-      'dashboard-card';
-
-
-    box.style.marginTop =
-      '22px';
-
-
-    box.innerHTML = `
-
-      <div class="eah-profile-grading-head">
-
-        <div>
-
-          <span class="overline">
-            GRADING
-          </span>
-
-          <h3>
-            Soumettre un plongeon
-          </h3>
-
-          <p class="muted">
-            Envoie directement ta vidéo à ton coach
-            ou à EAH Grading.
-          </p>
-
-        </div>
-
-        <button
-          type="button"
-          id="eahOpenGradingRequest"
-          class="primary-button"
-        >
-          Soumettre un plongeon
-        </button>
-
-      </div>
-
-
-      <form
-        id="eahDiverGradingForm"
-        class="hidden"
-        style="margin-top:22px"
-      >
-
-        <div class="form-grid">
-
-          <label>
-
-            Discipline
-
-            <select
-              id="eahRequestDiscipline"
-              required
-            >
-
-              <option value="Plongeon">
-                Plongeon
-              </option>
-
-              <option value="High Diving">
-                High Diving
-              </option>
-
-              <option value="Freestyle">
-                Freestyle
-              </option>
-
-              <option value="Dods">
-                Dods
-              </option>
-
-              <option value="Saut de l'ange">
-                Saut de l'ange
-              </option>
-
-            </select>
-
-          </label>
-
-
-          <label>
-
-            Code du plongeon
-
-            <input
-              id="eahRequestDiveCode"
-              type="text"
-              placeholder="Ex : 107B"
-              required
-            >
-
-          </label>
-
-
-          <label>
-
-            Nom du plongeon
-
-            <input
-              id="eahRequestDiveName"
-              type="text"
-              placeholder="Optionnel"
-            >
-
-          </label>
-
-
-          <label>
-
-            Hauteur
-
-            <input
-              id="eahRequestHeight"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              placeholder="Ex : 10"
-            >
-
-          </label>
-
-        </div>
-
-
-        <label>
-
-          Lien de la vidéo
-
-          <input
-            id="eahRequestVideo"
-            type="url"
-            placeholder="https://..."
-            required
-          >
-
-        </label>
-
-
-        <label>
-
-          Message pour l'évaluateur
-
-          <textarea
-            id="eahRequestMessage"
-            rows="4"
-            placeholder="Précision sur la hauteur, le plongeon, les conditions..."
-          ></textarea>
-
-        </label>
-
-
-        <div
-          class="eah-grading-destination"
-        >
-
-          <span>
-            Où envoyer la demande ?
-          </span>
-
-
-          <label>
-
-            <input
-              type="radio"
-              name="eahRequestDestination"
-              value="CLUB"
-              checked
-            >
-
-            À mon club / mon coach
-
-          </label>
-
-
-          <label>
-
-            <input
-              type="radio"
-              name="eahRequestDestination"
-              value="EAH"
-            >
-
-            EAH Grading
-
-          </label>
-
-        </div>
-
-
-        <button
-          type="submit"
-          id="eahSubmitGradingRequest"
-          class="primary-button"
-        >
-          Envoyer ma demande
-        </button>
-
-
-        <div
-          id="eahGradingRequestMessage"
-        ></div>
-
-      </form>
-
-    `;
-
-
-    view.appendChild(
-      box
-    );
-
-
-    document
-      .getElementById(
-        'eahOpenGradingRequest'
-      )
-      ?.addEventListener(
-        'click',
-        () => {
-
-          document
-            .getElementById(
-              'eahDiverGradingForm'
-            )
-            ?.classList
-            .toggle(
-              'hidden'
-            );
-
-        }
-      );
-
-
-    document
-      .getElementById(
-        'eahDiverGradingForm'
-      )
-      ?.addEventListener(
-        'submit',
-        submitDiverGradingRequestEAH
-      );
-
-  };
-
-
-
-/* ============================================================
-   ENVOYER LA DEMANDE
-============================================================ */
-
-async function submitDiverGradingRequestEAH(
-  event
-) {
-
-  event.preventDefault();
-
-
-  const button =
-    document.getElementById(
-      'eahSubmitGradingRequest'
-    );
-
-
-  const destination =
-    document.querySelector(
-      'input[name="eahRequestDestination"]:checked'
-    )
-    ?.value
-    ||
-    'CLUB';
-
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-
-  const token =
-    params.get(
-      'token'
-    )
-    ||
-    '';
-
-
-  const eahId =
-    state.profile?.eahId
-    ||
-    CARD_EAH_ID
-    ||
-    '';
-
-
-  if (!eahId) {
-
-    return;
-
-  }
-
-
-  setLoadingButton(
-    button,
-    true,
-    'Envoi…',
-    'Envoyer ma demande'
-  );
-
-
-  try {
-
-    let pinHash =
-      '';
-
-
-    /*
-      Si le plongeur a ouvert son profil sans carte,
-      on lui demande son PIN.
-    */
-
-    if (!token) {
-
-      const pin =
-        window.prompt(
-          'Entre ton code personnel pour confirmer la demande :'
-        );
-
-
-      if (!pin) {
-
-        throw new Error(
-          'Demande annulée.'
-        );
-
-      }
-
-
-      pinHash =
-        await eahFastSha256(
-          pin
-        );
-
-    }
-
-
-    const payload = {
-
-      discipline:
-        document
-          .getElementById(
-            'eahRequestDiscipline'
-          )
-          ?.value
-        ||
-        'Plongeon',
-
-      diveCode:
-        normalizeCode(
-          document
-            .getElementById(
-              'eahRequestDiveCode'
-            )
-            ?.value
-          ||
-          ''
-        ),
-
-      diveName:
-        document
-          .getElementById(
-            'eahRequestDiveName'
-          )
-          ?.value
-          ?.trim()
-        ||
-        '',
-
-      height:
-        document
-          .getElementById(
-            'eahRequestHeight'
-          )
-          ?.value
-        ||
-        '',
-
-      videoUrl:
-        document
-          .getElementById(
-            'eahRequestVideo'
-          )
-          ?.value
-          ?.trim()
-        ||
-        '',
-
-      message:
-        document
-          .getElementById(
-            'eahRequestMessage'
-          )
-          ?.value
-          ?.trim()
-        ||
-        ''
-
-    };
-
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'submit_diver_grading_request',
-
-          {
-
-            p_club_slug:
-              CLUB_SLUG,
-
-            p_eah_id:
-              eahId,
-
-            p_token:
-              token,
-
-            p_pin_hash:
-              pinHash,
-
-            p_destination:
-              destination,
-
-            p_payload:
-              payload
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (
-      !data ||
-      data.ok === false
-    ) {
-
-      throw new Error(
-        data?.error ||
-        'Impossible d’envoyer la demande.'
-      );
-
-    }
-
-
-    setMessage(
-
-      'eahGradingRequestMessage',
-
-      `
-        <div class="notice success">
-
-          <strong>
-            Demande envoyée.
-          </strong>
-
-          <br>
-
-          ${esc(
-            data.message ||
-            ''
-          )}
-
-          <br>
-
-          Référence :
-          ${esc(
-            data.requestCode ||
-            ''
-          )}
-
-        </div>
-      `
-
-    );
-
-
-    event.target.reset();
-
-
-  } catch(error) {
-
-    setMessage(
-
-      'eahGradingRequestMessage',
-
-      `
-        <div class="notice error">
-          ${esc(
-            error.message ||
-            'Envoi impossible.'
-          )}
-        </div>
-      `
-
-    );
-
-
-  } finally {
-
-    setLoadingButton(
-      button,
-      false,
-      '',
-      'Envoyer ma demande'
-    );
-
-  }
-
-}/* ============================================================
-   EAH DIVING PRO
-   CARTE NFC COACH
-============================================================ */
-
-const COACH_CARD_TOKEN =
-  new URLSearchParams(
-    window.location.search
-  )
-  .get(
-    'coachToken'
-  )
-  ||
-  '';
-
-
-/* ============================================================
-   OUVRIR ESPACE COACH PAR CARTE
-============================================================ */
-
-async function openCoachCardEAH() {
-
-  if (!COACH_CARD_TOKEN) {
-
-    return false;
-
-  }
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'eah_coach_card_workspace',
-
-          {
-
-            p_token:
-              COACH_CARD_TOKEN
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (
-      !data ||
-      data.ok === false
-    ) {
-
-      throw new Error(
-        data?.error ||
-        'Carte Coach invalide.'
-      );
-
-    }
-
-
-    state.coachCardToken =
-      COACH_CARD_TOKEN;
-
-
-    state.club =
-      data.club;
-
-
-    state.coach =
-      data.coach;
-
-
-    CLUB_SLUG =
-      data.club.slug;
-
-
-    state.divers =
-      (
-        data.divers ||
-        []
-      )
-      .map(
-        diver => ({
-
-          id:
-            diver.id,
-
-          eah_id:
-            diver.eahId,
-
-          first_name:
-            diver.firstName,
-
-          last_name:
-            diver.lastName,
-
-          photo_url:
-            diver.photoUrl,
-
-          group_name:
-            diver.group,
-
-          current_blazon:
-            diver.currentBlazon,
-
-          active:
-            true
-
-        })
-      );
-
-
-    state.coachAvailableCards =
-      data.availableCards ||
-      [];
-
-
-    state.coachGradingRequests =
-      data.gradingRequests ||
-      [];
-
-
-    applyClubBranding(
-      data.club
-    );
-
-
-    showPage(
-      'club'
-    );
-
-
-    renderCoachCardWorkspaceEAH(
-      data
-    );
-
-
-    renderDiversSelect();
-
-
-    return true;
-
-
-  } catch(error) {
-
-    console.error(
-      error
-    );
-
-
-    showToast(
-      error.message ||
-      'Impossible d’ouvrir la carte Coach.',
-      'error'
-    );
-
-
-    return false;
-
-  }
-
 }
 
 
 
 /* ============================================================
-   AFFICHAGE ESPACE COACH NFC
+   OUVERTURE DIRECTE D'UNE CARTE COACH
 ============================================================ */
 
-function renderCoachCardWorkspaceEAH(
-  data
+async function ouvrirCarteCoachDirectementEAH(
+  coachToken
 ) {
-
-  const page =
-    document.getElementById(
-      'page-club'
-    )
-    ||
-    document.querySelector(
-      '[data-page="club"]'
-    );
-
-
-  if (!page) {
-
-    return;
-
-  }
-
-
-  let container =
-    document.getElementById(
-      'eahCoachCardWorkspace'
-    );
-
-
-  if (!container) {
-
-    container =
-      document.createElement(
-        'section'
-      );
-
-
-    container.id =
-      'eahCoachCardWorkspace';
-
-
-    container.className =
-      'section';
-
-
-    page.prepend(
-      container
-    );
-
-  }
-
-
-  const requests =
-    data.gradingRequests ||
-    [];
-
-
-  const cards =
-    data.availableCards ||
-    [];
-
-
-  container.innerHTML = `
-
-    <div class="container">
-
-      <div class="dashboard-card">
-
-        <span class="overline">
-          CARTE COACH EAH
-        </span>
-
-        <h1>
-          Bienvenue
-          ${esc(
-            data.coach?.name ||
-            'Coach'
-          )}
-        </h1>
-
-        <p class="muted">
-
-          ${esc(
-            data.club?.name ||
-            ''
-          )}
-
-          ${
-            data.coach?.role
-            ?
-            ' • '
-            +
-            esc(
-              data.coach.role
-            )
-            :
-            ''
-          }
-
-        </p>
-
-      </div>
-
-
-      <div class="dashboard-grid">
-
-        <article class="dashboard-card">
-
-          <span class="overline">
-            PLONGEURS
-          </span>
-
-          <strong class="dashboard-number">
-            ${
-              (
-                data.divers ||
-                []
-              ).length
-            }
-          </strong>
-
-        </article>
-
-
-        <article class="dashboard-card">
-
-          <span class="overline">
-            CARTES DISPONIBLES
-          </span>
-
-          <strong class="dashboard-number">
-            ${cards.length}
-          </strong>
-
-        </article>
-
-
-        <article class="dashboard-card">
-
-          <span class="overline">
-            DEMANDES DE GRADING
-          </span>
-
-          <strong class="dashboard-number">
-            ${
-              requests.filter(
-                item =>
-                  item.status ===
-                  'PENDING'
-              ).length
-            }
-          </strong>
-
-        </article>
-
-      </div>
-
-
-      <div
-        class="dashboard-card"
-        style="margin-top:20px"
-      >
-
-        <h2>
-          Demandes de grading
-        </h2>
-
-
-        <div id="eahCoachRequests">
-
-          ${
-            !requests.length
-
-            ?
-
-            `
-              <div class="notice">
-                Aucune demande pour le moment.
-              </div>
-            `
-
-            :
-
-            requests.map(
-              request => `
-
-                <article
-                  class="dashboard-card"
-                  style="margin-top:12px"
-                >
-
-                  <span class="overline">
-                    ${esc(
-                      request.requestCode ||
-                      ''
-                    )}
-                  </span>
-
-                  <h3>
-                    ${esc(
-                      (
-                        request.firstName ||
-                        ''
-                      )
-                      +
-                      ' '
-                      +
-                      (
-                        request.lastName ||
-                        ''
-                      )
-                    )}
-                  </h3>
-
-                  <p>
-
-                    ${esc(
-                      request.diveCode ||
-                      ''
-                    )}
-
-                    ${
-                      request.height
-                      ?
-                      ' • '
-                      +
-                      esc(
-                        request.height
-                      )
-                      +
-                      ' m'
-                      :
-                      ''
-                    }
-
-                  </p>
-
-
-                  ${
-                    request.message
-                    ?
-                    `
-                      <p class="muted">
-                        ${esc(
-                          request.message
-                        )}
-                      </p>
-                    `
-                    :
-                    ''
-                  }
-
-
-                  ${
-                    request.videoUrl
-                    ?
-                    `
-                      <a
-                        href="${esc(
-                          request.videoUrl
-                        )}"
-                        target="_blank"
-                        rel="noopener"
-                        class="secondary-button"
-                      >
-                        Voir la vidéo
-                      </a>
-                    `
-                    :
-                    ''
-                  }
-
-                </article>
-
-              `
-            )
-            .join('')
-
-          }
-
-        </div>
-
-      </div>
-
-    </div>
-
-  `;
-
-}/* ============================================================
-   EAH DIVING PRO
-   CORRECTIF PROFIL / GRADING V3
-============================================================ */
-
-
-/* ============================================================
-   LOGIN PLONGEUR
-   PLUS BESOIN DE SELECTIONNER UN CLUB
-============================================================ */
-
-async function diverLogin(
-  event
-) {
-
-  event
-    ?.preventDefault();
-
-
-  const eahId =
-    normalizeCode(
-      val(
-        'diverEahId'
-      )
-    );
-
-
-  const pin =
-    val(
-      'diverPin'
-    )
-    .trim();
-
-
-  const button =
-    document.getElementById(
-      'diverLoginButton'
-    );
-
-
-  if (
-    !eahId ||
-    !pin
-  ) {
-
-    setMessage(
-
-      'diverLoginMsg',
-
-      `
-        <div class="notice error">
-          Numéro EAH et code personnel obligatoires.
-        </div>
-      `
-
-    );
-
-    return;
-
-  }
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Ouverture…',
-
-    'Ouvrir mon profil'
-
-  );
-
 
   try {
 
-    const pinHash =
-      await eahFastSha256(
-        pin
-      );
+    const sb =
+      requireSupabase();
 
 
     const {
       data,
       error
     } =
-      await requireSupabase()
-        .rpc(
+      await sb.rpc(
 
-          'eah_diver_login_global_fast',
+        "eah_coach_card_workspace",
 
-          {
+        {
+          p_token:
+            coachToken
+        }
 
-            p_eah_id:
-              eahId,
-
-            p_pin_hash:
-              pinHash
-
-          }
-
-        );
+      );
 
 
     if (error) {
 
       throw error;
-
     }
 
 
@@ -14717,19 +13595,15 @@ async function diverLogin(
     ) {
 
       throw new Error(
-
-        data?.error
-        ||
-        'Connexion impossible.'
-
+        data?.error ||
+        "Carte Coach invalide."
       );
 
     }
 
 
     /* ======================================================
-       LE CLUB VIENT DU PROFIL
-       ET NON PLUS D'UN CHOIX UTILISATEUR
+       CLUB
     ====================================================== */
 
     if (
@@ -14745,810 +13619,558 @@ async function diverLogin(
 
 
       localStorage.setItem(
-
-        'EAH_CLUB',
-
+        "EAH_CLUB",
         data.club.slug
-
       );
+
+
+      try {
+
+        applyClubBranding(
+          data.club
+        );
+
+      } catch (_) {}
 
     }
 
 
-    const profile =
-      data.profile ||
-      {};
+    /* ======================================================
+       CACHER LE FORMULAIRE DE CONNEXION COACH
+    ====================================================== */
+
+    const coachLogin =
+      document.getElementById(
+        "coachLoginForm"
+      );
 
 
-    state.profile = {
+    if (coachLogin) {
 
-      eahId:
-        profile.eahId,
+      coachLogin.style.display =
+        "none";
 
-      firstName:
-        profile.firstName || '',
-
-      lastName:
-        profile.lastName || '',
-
-      photoUrl:
-        profile.photoUrl || '',
-
-      group:
-        profile.group || '',
-
-      currentBlazon:
-        profile.currentBlazon || '',
-
-      clubSlug:
-        data.club?.slug || '',
-
-      clubName:
-        data.club?.name || ''
-
-    };
+    }
 
 
     /*
-      Conserver le hash durant la session navigateur
-      pour permettre d'envoyer une demande de grading
-      sans redemander le PIN.
+      Sécurité supplémentaire :
+      on cherche le bloc contenant
+      "Connexion coach".
     */
 
-    state.diverPinHash =
-      pinHash;
+    Array.from(
+      document.querySelectorAll(
+        "form, article, .card, .dashboard-card"
+      )
+    )
+    .forEach(
+      function(element) {
+
+        const text =
+          String(
+            element.textContent || ""
+          );
 
 
-    state.profileHistory = {
+        if (
+          text.includes(
+            "Connexion coach"
+          )
+          &&
+          text.includes(
+            "Accéder à l'espace coach"
+          )
+        ) {
 
-      evaluations:
-        data.evaluations || [],
+          element.style.display =
+            "none";
 
-      blazons:
-        data.blazons || []
+        }
 
-    };
+      }
+    );
 
+
+    /* ======================================================
+       PAGE CLUB
+    ====================================================== */
 
     showPage(
-      'profil'
+      "club"
     );
 
 
-    renderProfileSummary(
-
-      state.profile,
-
-      true
-
-    );
-
-
-    renderProfileHistory(
-
-      state.profileHistory
-
-    );
-
-
-    setMessage(
-      'diverLoginMsg',
-      ''
-    );
-
-
-  } catch(error) {
-
-    setMessage(
-
-      'diverLoginMsg',
-
-      `
-        <div class="notice error">
-          ${esc(
-            error.message ||
-            'Connexion impossible.'
-          )}
-        </div>
-      `
-
-    );
-
-
-  } finally {
-
-    setLoadingButton(
-
-      button,
-
-      false,
-
-      '',
-
-      'Ouvrir mon profil'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   REMPLACER L'ANCIEN FORMULAIRE DE GRADING
-============================================================ */
-
-const __EAH_PROFILE_V3 =
-  renderProfileSummary;
-
-
-renderProfileSummary =
-  function(
-    profile,
-    privateAccess = false
-  ) {
-
-    __EAH_PROFILE_V3(
-
-      profile,
-
-      privateAccess
-
-    );
-
-
-    /*
-      Supprimer l'ancien formulaire à radios.
-    */
-
-    document
-      .getElementById(
-        'eahDiverGradingBox'
-      )
-      ?.remove();
-
-
-    const view =
+    let page =
       document.getElementById(
-        'profileView'
+        "page-club"
       );
 
 
-    if (!view) {
+    if (!page) {
 
-      return;
+      page =
+        document.querySelector(
+          '[data-page="club"]'
+        );
 
     }
 
+
+    if (!page) {
+
+      throw new Error(
+        "La page Espace Club est introuvable."
+      );
+
+    }
+
+
+    /* ======================================================
+       CONTENEUR CARTE COACH
+    ====================================================== */
+
+    let workspace =
+      document.getElementById(
+        "eahCoachDirectWorkspace"
+      );
+
+
+    if (!workspace) {
+
+      workspace =
+        document.createElement(
+          "section"
+        );
+
+
+      workspace.id =
+        "eahCoachDirectWorkspace";
+
+
+      workspace.className =
+        "section";
+
+
+      page.prepend(
+        workspace
+      );
+
+    }
+
+
+    /* ======================================================
+       CARTE NON ATTRIBUEE
+    ====================================================== */
 
     if (
-      document.getElementById(
-        'eahDiverGradingV3'
-      )
+      data.assigned === false
     ) {
 
-      return;
-
-    }
-
-
-    const clubName =
-      state.club?.name
-      ||
-      profile.clubName
-      ||
-      'mon club';
+      const slot =
+        data.card?.slot ||
+        "—";
 
 
-    const box =
-      document.createElement(
-        'section'
-      );
+      workspace.innerHTML = `
 
+        <div class="container">
 
-    box.id =
-      'eahDiverGradingV3';
+          <div class="dashboard-card">
 
+            <span class="overline">
+              CARTE COACH EAH
+            </span>
 
-    box.className =
-      'dashboard-card';
+            <h1>
+              Carte Coach n°${esc(slot)}
+            </h1>
 
+            <p>
+              ${esc(
+                data.club?.name ||
+                ""
+              )}
+            </p>
 
-    box.style.marginTop =
-      '24px';
+            <div class="notice">
 
+              <strong>
+                Carte à attribuer
+              </strong>
 
-    box.innerHTML = `
+              <br><br>
 
-      <span class="overline">
-        GRADING
-      </span>
+              Cette URL fonctionne correctement.
 
-      <h2>
-        Soumettre un plongeon
-      </h2>
+              <br>
 
-      <p class="muted">
-        Envoie ta vidéo directement à
-        ${esc(clubName)}
-        ou à EAH Grading.
-      </p>
+              Tu peux maintenant programmer cette URL
+              dans une carte NFC.
 
+              <br><br>
 
-      <button
-        type="button"
-        id="eahToggleRequestV3"
-        class="primary-button"
-      >
-        Soumettre un plongeon
-      </button>
+              Le profil Coach pourra ensuite être
+              associé à cette carte sans modifier son URL.
 
+            </div>
 
-      <form
-        id="eahRequestFormV3"
-        class="hidden"
-        style="margin-top:22px"
-      >
-
-        <div class="form-grid">
-
-          <label>
-
-            Discipline
-
-            <select
-              id="eahRequestDisciplineV3"
-            >
-
-              <option value="Plongeon">
-                Plongeon
-              </option>
-
-              <option value="High Diving">
-                High Diving
-              </option>
-
-              <option value="Freestyle">
-                Freestyle
-              </option>
-
-              <option value="Dods">
-                Dods
-              </option>
-
-              <option value="Saut de l'ange">
-                Saut de l'ange
-              </option>
-
-            </select>
-
-          </label>
-
-
-          <label>
-
-            Code du plongeon
-
-            <input
-              id="eahRequestDiveCodeV3"
-              type="text"
-              placeholder="Ex : 107B"
-              required
-            >
-
-          </label>
-
-
-          <label>
-
-            Nom du plongeon
-
-            <input
-              id="eahRequestDiveNameV3"
-              type="text"
-              placeholder="Optionnel"
-            >
-
-          </label>
-
-
-          <label>
-
-            Hauteur
-
-            <input
-              id="eahRequestHeightV3"
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              placeholder="Ex : 10"
-            >
-
-          </label>
+          </div>
 
         </div>
 
-
-        <label>
-
-          Lien de la vidéo
-
-          <input
-            id="eahRequestVideoV3"
-            type="url"
-            placeholder="https://..."
-            required
-          >
-
-        </label>
+      `;
 
 
-        <label>
-
-          Message pour l'évaluateur
-
-          <textarea
-            id="eahRequestMessageV3"
-            rows="4"
-            placeholder="Informations utiles..."
-          ></textarea>
-
-        </label>
+      return;
+    }
 
 
-        <div class="eah-request-buttons-v3">
+    /* ======================================================
+       CARTE ATTRIBUEE
+    ====================================================== */
 
-          <button
-            type="button"
-            id="eahSendClubV3"
-            class="primary-button"
-          >
-
-            Envoyer à
-            ${esc(clubName)}
-
-          </button>
+    state.coach =
+      data.coach ||
+      null;
 
 
-          <button
-            type="button"
-            id="eahSendEahV3"
-            class="secondary-button"
-          >
-            Envoyer à EAH Grading
-          </button>
+    state.coachCardToken =
+      coachToken;
+
+
+    state.divers =
+      (
+        data.divers ||
+        []
+      )
+      .map(
+        function(diver) {
+
+          return {
+
+            id:
+              diver.id,
+
+            eah_id:
+              diver.eahId,
+
+            first_name:
+              diver.firstName,
+
+            last_name:
+              diver.lastName,
+
+            photo_url:
+              diver.photoUrl,
+
+            group_name:
+              diver.group,
+
+            current_blazon:
+              diver.currentBlazon,
+
+            active:
+              true
+
+          };
+
+        }
+      );
+
+
+    state.coachAvailableCards =
+      data.availableCards ||
+      [];
+
+
+    state.coachGradingRequests =
+      data.gradingRequests ||
+      [];
+
+
+    const coachName =
+      data.coach?.name ||
+      "Coach";
+
+
+    const requests =
+      data.gradingRequests ||
+      [];
+
+
+    const availableCards =
+      data.availableCards ||
+      [];
+
+
+    workspace.innerHTML = `
+
+      <div class="container">
+
+        <div class="dashboard-card">
+
+          <span class="overline">
+            ESPACE COACH EAH
+          </span>
+
+          <h1>
+            Bienvenue ${esc(coachName)}
+          </h1>
+
+          <p class="muted">
+            ${esc(
+              data.club?.name ||
+              ""
+            )}
+          </p>
 
         </div>
 
 
         <div
-          id="eahRequestMessageV3Result"
-          style="margin-top:15px"
-        ></div>
+          class="dashboard-grid"
+          style="margin-top:20px"
+        >
 
-      </form>
+          <article class="dashboard-card">
+
+            <span class="overline">
+              PLONGEURS
+            </span>
+
+            <strong
+              style="font-size:2rem"
+            >
+              ${state.divers.length}
+            </strong>
+
+          </article>
+
+
+          <article class="dashboard-card">
+
+            <span class="overline">
+              CARTES LIBRES
+            </span>
+
+            <strong
+              style="font-size:2rem"
+            >
+              ${availableCards.length}
+            </strong>
+
+          </article>
+
+
+          <article class="dashboard-card">
+
+            <span class="overline">
+              DEMANDES GRADING
+            </span>
+
+            <strong
+              style="font-size:2rem"
+            >
+              ${
+                requests.filter(
+                  function(request) {
+
+                    return (
+                      String(
+                        request.status
+                      )
+                      .toUpperCase()
+                      ===
+                      "PENDING"
+                    );
+
+                  }
+                ).length
+              }
+            </strong>
+
+          </article>
+
+        </div>
+
+
+        <div
+          class="dashboard-card"
+          style="margin-top:20px"
+        >
+
+          <h2>
+            Demandes de grading
+          </h2>
+
+          ${
+            requests.length
+            ?
+            requests.map(
+              function(request) {
+
+                return `
+
+                  <article
+                    class="dashboard-card"
+                    style="margin-top:12px"
+                  >
+
+                    <span class="overline">
+                      ${esc(
+                        request.requestCode ||
+                        ""
+                      )}
+                    </span>
+
+                    <h3>
+
+                      ${esc(
+                        (
+                          request.firstName ||
+                          ""
+                        )
+                        +
+                        " "
+                        +
+                        (
+                          request.lastName ||
+                          ""
+                        )
+                      )}
+
+                    </h3>
+
+                    <p>
+
+                      ${esc(
+                        request.diveCode ||
+                        ""
+                      )}
+
+                      ${
+                        request.height
+                        ?
+                        " • "
+                        +
+                        esc(
+                          request.height
+                        )
+                        +
+                        " m"
+                        :
+                        ""
+                      }
+
+                    </p>
+
+
+                    ${
+                      request.videoUrl
+                      ?
+                      `
+
+                        <a
+                          class="primary-button"
+                          href="${esc(
+                            request.videoUrl
+                          )}"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          Voir la vidéo
+                        </a>
+
+                      `
+                      :
+                      ""
+                    }
+
+                  </article>
+
+                `;
+
+              }
+            )
+            .join("")
+            :
+            `
+
+              <div class="notice">
+                Aucune demande de grading.
+              </div>
+
+            `
+          }
+
+        </div>
+
+      </div>
 
     `;
 
 
-    view.appendChild(
-      box
-    );
+    /*
+      Alimenter également le select d'évaluation.
+    */
 
+    try {
 
-    document
-      .getElementById(
-        'eahToggleRequestV3'
-      )
-      ?.addEventListener(
+      renderDiversSelect();
 
-        'click',
-
-        () => {
-
-          document
-            .getElementById(
-              'eahRequestFormV3'
-            )
-            ?.classList
-            .toggle(
-              'hidden'
-            );
-
-        }
-
-      );
-
-
-    document
-      .getElementById(
-        'eahSendClubV3'
-      )
-      ?.addEventListener(
-
-        'click',
-
-        () =>
-          submitGradingV3(
-            'CLUB'
-          )
-
-      );
-
-
-    document
-      .getElementById(
-        'eahSendEahV3'
-      )
-      ?.addEventListener(
-
-        'click',
-
-        () =>
-          submitGradingV3(
-            'EAH'
-          )
-
-      );
-
-  };
-
-
-
-/* ============================================================
-   ENVOI CLUB OU EAH
-============================================================ */
-
-async function submitGradingV3(
-  destination
-) {
-
-  const clubButton =
-    document.getElementById(
-      'eahSendClubV3'
-    );
-
-
-  const eahButton =
-    document.getElementById(
-      'eahSendEahV3'
-    );
-
-
-  const eahId =
-    state.profile?.eahId
-    ||
-    CARD_EAH_ID
-    ||
-    '';
-
-
-  if (!eahId) {
-
-    return;
-
-  }
-
-
-  const diveCode =
-    normalizeCode(
-
-      document
-        .getElementById(
-          'eahRequestDiveCodeV3'
-        )
-        ?.value
-      ||
-      ''
-
-    );
-
-
-  const videoUrl =
-    document
-      .getElementById(
-        'eahRequestVideoV3'
-      )
-      ?.value
-      ?.trim()
-    ||
-    '';
-
-
-  if (
-    !diveCode ||
-    !videoUrl
-  ) {
-
-    setMessage(
-
-      'eahRequestMessageV3Result',
-
-      `
-        <div class="notice error">
-          Code du plongeon et vidéo obligatoires.
-        </div>
-      `
-
-    );
-
-    return;
-
-  }
-
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-
-  const token =
-    params.get(
-      'token'
-    )
-    ||
-    '';
-
-
-  let pinHash =
-    state.diverPinHash
-    ||
-    '';
-
-
-  /*
-    Si ouvert sans carte et qu'on n'a plus le PIN en session.
-  */
-
-  if (
-    !token &&
-    !pinHash
-  ) {
-
-    const pin =
-      window.prompt(
-        'Entre ton code personnel pour confirmer :'
-      );
-
-
-    if (!pin) {
-
-      return;
-
-    }
-
-
-    pinHash =
-      await eahFastSha256(
-        pin
-      );
-
-  }
-
-
-  setLoadingButton(
-
-    destination ===
-      'CLUB'
-      ?
-      clubButton
-      :
-      eahButton,
-
-    true,
-
-    'Envoi…',
-
-    destination ===
-      'CLUB'
-      ?
-      'Envoyer à mon club'
-      :
-      'Envoyer à EAH Grading'
-
-  );
-
-
-  try {
-
-    const {
-
-      data,
-      error
-
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'submit_diver_grading_request',
-
-          {
-
-            /*
-              Peut être vide :
-              Supabase retrouvera désormais
-              automatiquement le club.
-            */
-
-            p_club_slug:
-              state.club?.slug
-              ||
-              state.profile?.clubSlug
-              ||
-              CLUB_SLUG
-              ||
-              '',
-
-            p_eah_id:
-              eahId,
-
-            p_token:
-              token,
-
-            p_pin_hash:
-              pinHash,
-
-            p_destination:
-              destination,
-
-            p_payload: {
-
-              discipline:
-                document
-                  .getElementById(
-                    'eahRequestDisciplineV3'
-                  )
-                  ?.value
-                ||
-                'Plongeon',
-
-              diveCode:
-                diveCode,
-
-              diveName:
-                document
-                  .getElementById(
-                    'eahRequestDiveNameV3'
-                  )
-                  ?.value
-                  ?.trim()
-                ||
-                '',
-
-              height:
-                document
-                  .getElementById(
-                    'eahRequestHeightV3'
-                  )
-                  ?.value
-                ||
-                '',
-
-              videoUrl:
-                videoUrl,
-
-              message:
-                document
-                  .getElementById(
-                    'eahRequestMessageV3'
-                  )
-                  ?.value
-                  ?.trim()
-                ||
-                ''
-
-            }
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (
-      !data ||
-      data.ok === false
-    ) {
-
-      throw new Error(
-
-        data?.error
-        ||
-        'Envoi impossible.'
-
-      );
-
-    }
-
-
-    setMessage(
-
-      'eahRequestMessageV3Result',
-
-      `
-        <div class="notice success">
-
-          <strong>
-            Demande envoyée.
-          </strong>
-
-          <br>
-
-          ${esc(
-            data.message
-            ||
-            ''
-          )}
-
-          <br>
-
-          Référence :
-          ${esc(
-            data.requestCode
-            ||
-            ''
-          )}
-
-        </div>
-      `
-
-    );
+    } catch (_) {}
 
 
   } catch(error) {
 
-    setMessage(
+    console.error(
+      "CARTE COACH :",
+      error
+    );
 
-      'eahRequestMessageV3Result',
 
-      `
-        <div class="notice error">
-          ${esc(
-            error.message
-            ||
-            'Envoi impossible.'
-          )}
+    showPage(
+      "club"
+    );
+
+
+    const page =
+      document.getElementById(
+        "page-club"
+      )
+      ||
+      document.querySelector(
+        '[data-page="club"]'
+      );
+
+
+    if (page) {
+
+      page.innerHTML = `
+
+        <div class="container">
+
+          <div class="notice error">
+
+            <strong>
+              Impossible d'ouvrir la carte Coach.
+            </strong>
+
+            <br><br>
+
+            ${esc(
+              error.message ||
+              "Erreur inconnue."
+            )}
+
+          </div>
+
         </div>
-      `
 
-    );
+      `;
 
-
-  } finally {
-
-    setLoadingButton(
-
-      clubButton,
-
-      false,
-
-      '',
-
-      'Envoyer à mon club'
-
-    );
-
-
-    setLoadingButton(
-
-      eahButton,
-
-      false,
-
-      '',
-
-      'Envoyer à EAH Grading'
-
-    );
+    }
 
   }
 
