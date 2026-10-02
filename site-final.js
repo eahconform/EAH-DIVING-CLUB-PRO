@@ -1,16 +1,16 @@
 /* ============================================================
    EAH DIVING PRO
-   SITE FINAL V1
+   MEDIA FIX FINAL V2
+   02/10/2026
 
-   CORRECTIONS :
-   - Hero accueil sans voile sombre
-   - Heroes disciplines sans doublon
-   - Images desktop / mobile immédiatement au changement de page
-   - Suppression des overlays noirs
-   - Espace Club masqué hors de sa page
-   - Actualités Supabase en cartes cliquables
-   - Spots Supabase en cartes cliquables
-   - Fenêtre détail Actualité / Spot
+   - Ne cache plus les images
+   - Corrige les heroes des disciplines
+   - Corrige le hero Blazons
+   - Protège les 11 blazons
+   - Protège les photos Actualités
+   - Protège les photos Spots
+   - Desktop / tablette / téléphone
+   - Pas besoin d'actualiser après navigation
 ============================================================ */
 
 (() => {
@@ -19,48 +19,108 @@
 
 
   /* ============================================================
-     CONFIGURATION IMAGES
+     FICHIERS
   ============================================================ */
 
-  const IMAGES = {
+  const FILES = {
 
-    accueil: {
-      desktop: "hero-divers-group.png",
-      mobile: "hero-divers-group.png"
-    },
+    accueil:
+      "hero-divers-group.png",
+
+    blazons:
+      "hero-blazons.png",
 
     olympique: {
-      desktop: "olympique-desktop.jpg",
-      mobile: "olympique-mobile.jpg"
+      desktop:
+        "olympique-desktop.jpg",
+
+      mobile:
+        "olympique-mobile.jpg"
     },
 
     freestyle: {
-      desktop: "freestyle-desktop.jpg",
-      mobile: "freestyle-mobile.jpg"
+      desktop:
+        "freestyle-desktop.jpg",
+
+      mobile:
+        "freestyle-mobile.jpg"
     },
 
     highdiving: {
-      desktop: "high-diving-desktop.png",
-      mobile: "high-diving-mobile.jpg"
+      desktop:
+        "high-diving-desktop.png",
+
+      mobile:
+        "high-diving-mobile.jpg"
     },
 
     ange: {
-      desktop: "saut-ange-desktop.jpg",
-      mobile: "saut-ange-mobile.jpg"
+      desktop:
+        "saut-ange-desktop.jpg",
+
+      mobile:
+        "saut-ange-mobile.jpg"
     }
 
   };
 
 
+  const BLAZONS = {
+
+    "blazon blanc":
+      "blazon-blanc.png",
+
+    "blazon orange":
+      "blazon-orange.png",
+
+    "blazon vert":
+      "blazon-vert.png",
+
+    "blazon bleu":
+      "blazon-bleu.png",
+
+    "blazon rouge":
+      "blazon-rouge.png",
+
+    "blazon bronze":
+      "blazon-bronze.png",
+
+    "blazon argent":
+      "blazon-argent.png",
+
+    "blazon silver":
+      "blazon-argent.png",
+
+    "blazon or":
+      "blazon-or.png",
+
+    "blazon gold":
+      "blazon-or.png",
+
+    "blazon noir":
+      "blazon-noir.png",
+
+    "blazon legend":
+      "blazon-legend.png",
+
+    "blazon legende":
+      "blazon-legend.png",
+
+    "blazon titan":
+      "blazon-titan.png"
+
+  };
+
+
   /* ============================================================
-     CSS INJECTE
+     CSS
   ============================================================ */
 
-  function installStyles() {
+  function installerCSS() {
 
     if (
       document.getElementById(
-        "eah-final-style"
+        "eah-media-v2-css"
       )
     ) {
       return;
@@ -68,66 +128,168 @@
 
 
     const style =
-      document.createElement("style");
+      document.createElement(
+        "style"
+      );
 
 
     style.id =
-      "eah-final-style";
+      "eah-media-v2-css";
 
 
     style.textContent = `
 
       /* ======================================================
-         HERO : AUCUN VOILE NOIR
+         AUCUN VOILE SOMBRE SUR LES HEROES
       ====================================================== */
 
-      .eah-final-hero {
+      .eah-v2-hero {
         position: relative !important;
 
-        background-size: cover !important;
-        background-position: center center !important;
-        background-repeat: no-repeat !important;
-        background-blend-mode: normal !important;
+        background-size:
+          cover !important;
 
-        isolation: isolate;
+        background-position:
+          center center !important;
+
+        background-repeat:
+          no-repeat !important;
+
+        background-blend-mode:
+          normal !important;
+
+        background-color:
+          transparent !important;
       }
 
 
-      .eah-final-hero::before,
-      .eah-final-hero::after {
-        content: none !important;
+      .eah-v2-hero::before,
+      .eah-v2-hero::after {
+        display:
+          none !important;
 
-        display: none !important;
+        content:
+          none !important;
 
-        background: none !important;
+        opacity:
+          0 !important;
 
-        background-image: none !important;
+        background:
+          none !important;
 
-        opacity: 0 !important;
+        background-image:
+          none !important;
       }
 
 
-      .eah-final-hero img.eah-hidden-hero-image {
-        display: none !important;
+      /* IMPORTANT :
+         on ne cache plus les images */
+
+      .eah-v2-hero img {
+        opacity:
+          1 !important;
+
+        visibility:
+          visible !important;
       }
 
 
-      .eah-final-hero h1,
-      .eah-final-hero h2,
-      .eah-final-hero p,
-      .eah-final-hero span {
-        position: relative;
+      /* Texte lisible sans voile noir */
 
-        z-index: 3;
+      .eah-v2-hero h1,
+      .eah-v2-hero h2,
+      .eah-v2-hero p,
+      .eah-v2-hero span {
+        position:
+          relative;
+
+        z-index:
+          3;
 
         text-shadow:
-          0 2px 12px rgba(0,0,0,.45);
+          0 3px 16px rgba(0,0,0,.55);
       }
 
 
       /* ======================================================
-         FOND WATER PREMIUM
+         IMAGES DE DISCIPLINE
       ====================================================== */
+
+      .eah-discipline-photo {
+        display:
+          block !important;
+
+        width:
+          100% !important;
+
+        height:
+          100% !important;
+
+        object-fit:
+          cover !important;
+
+        object-position:
+          center !important;
+
+        opacity:
+          1 !important;
+
+        visibility:
+          visible !important;
+
+        filter:
+          brightness(1.12)
+          contrast(1.02)
+          saturate(1.07)
+          !important;
+      }
+
+
+      /* ======================================================
+         BLAZONS
+      ====================================================== */
+
+      .eah-blazon-image {
+        display:
+          block !important;
+
+        opacity:
+          1 !important;
+
+        visibility:
+          visible !important;
+
+        object-fit:
+          contain !important;
+
+        filter:
+          none !important;
+      }
+
+
+      /* ======================================================
+         ACTUALITES / SPOTS
+      ====================================================== */
+
+      .eah-cms-image {
+        display:
+          block !important;
+
+        width:
+          100% !important;
+
+        object-fit:
+          cover !important;
+
+        opacity:
+          1 !important;
+
+        visibility:
+          visible !important;
+      }
+
+
+      /* Fond premium général */
 
       .site-background {
         background-image:
@@ -145,11 +307,6 @@
 
         opacity:
           1 !important;
-
-        filter:
-          brightness(1.16)
-          saturate(1.05)
-          !important;
       }
 
 
@@ -158,459 +315,20 @@
         display:
           none !important;
 
-        background:
+        content:
           none !important;
 
         opacity:
           0 !important;
       }
 
-
-      /* ======================================================
-         ACTUALITES / SPOTS
-      ====================================================== */
-
-      .eah-public-grid {
-        display: grid;
-
-        grid-template-columns:
-          repeat(
-            auto-fit,
-            minmax(280px,1fr)
-          );
-
-        gap: 24px;
-
-        width: 100%;
-
-        max-width: 1240px;
-
-        margin:
-          40px auto 80px;
-
-        padding:
-          0 24px;
-      }
-
-
-      .eah-public-card {
-        overflow: hidden;
-
-        border:
-          1px solid
-          rgba(90,190,255,.24);
-
-        border-radius:
-          28px;
-
-        background:
-          rgba(3,20,35,.88);
-
-        box-shadow:
-          0 24px 70px
-          rgba(0,0,0,.28);
-
-        cursor: pointer;
-
-        transition:
-          transform .18s ease,
-          border-color .18s ease;
-      }
-
-
-      .eah-public-card:hover {
-        transform:
-          translateY(-4px);
-
-        border-color:
-          rgba(48,207,255,.62);
-      }
-
-
-      .eah-public-card-image {
-        width:
-          100%;
-
-        aspect-ratio:
-          16 / 9;
-
-        object-fit:
-          cover;
-
-        display:
-          block;
-      }
-
-
-      .eah-public-card-body {
-        padding:
-          24px;
-      }
-
-
-      .eah-public-kicker {
-        color:
-          #30cfff;
-
-        font-size:
-          13px;
-
-        font-weight:
-          800;
-
-        letter-spacing:
-          .14em;
-
-        text-transform:
-          uppercase;
-
-        margin-bottom:
-          10px;
-      }
-
-
-      .eah-public-card h3 {
-        margin:
-          0 0 10px;
-
-        color:
-          #f5f9ff;
-
-        font-size:
-          clamp(
-            24px,
-            3vw,
-            32px
-          );
-      }
-
-
-      .eah-public-card p {
-        color:
-          #b9cede;
-
-        line-height:
-          1.65;
-
-        margin:
-          0;
-      }
-
-
-      .eah-public-button {
-        display:
-          inline-flex;
-
-        align-items:
-          center;
-
-        justify-content:
-          center;
-
-        margin-top:
-          20px;
-
-        min-height:
-          48px;
-
-        padding:
-          0 20px;
-
-        border:
-          0;
-
-        border-radius:
-          14px;
-
-        background:
-          linear-gradient(
-            135deg,
-            #0b6bff,
-            #30cfff
-          );
-
-        color:
-          white;
-
-        font-weight:
-          800;
-
-        font-size:
-          15px;
-
-        cursor:
-          pointer;
-      }
-
-
-      /* ======================================================
-         MODALE ACTUALITE / SPOT
-      ====================================================== */
-
-      .eah-detail-overlay {
-        position:
-          fixed;
-
-        inset:
-          0;
-
-        z-index:
-          999999;
-
-        display:
-          flex;
-
-        align-items:
-          center;
-
-        justify-content:
-          center;
-
-        padding:
-          20px;
-
-        background:
-          rgba(0,7,14,.82);
-
-        backdrop-filter:
-          blur(12px);
-      }
-
-
-      .eah-detail-modal {
-        position:
-          relative;
-
-        width:
-          min(900px,100%);
-
-        max-height:
-          90vh;
-
-        overflow-y:
-          auto;
-
-        border:
-          1px solid
-          rgba(48,207,255,.32);
-
-        border-radius:
-          30px;
-
-        background:
-          #061b2d;
-
-        box-shadow:
-          0 40px 120px
-          rgba(0,0,0,.65);
-      }
-
-
-      .eah-detail-image {
-        width:
-          100%;
-
-        max-height:
-          460px;
-
-        object-fit:
-          cover;
-
-        display:
-          block;
-      }
-
-
-      .eah-detail-content {
-        padding:
-          clamp(
-            24px,
-            5vw,
-            48px
-          );
-      }
-
-
-      .eah-detail-content h2 {
-        margin:
-          0 0 18px;
-
-        color:
-          white;
-
-        font-size:
-          clamp(
-            34px,
-            6vw,
-            58px
-          );
-
-        line-height:
-          1.02;
-      }
-
-
-      .eah-detail-text {
-        color:
-          #c3d8e8;
-
-        font-size:
-          18px;
-
-        line-height:
-          1.75;
-
-        white-space:
-          pre-line;
-      }
-
-
-      .eah-detail-info {
-        display:
-          grid;
-
-        grid-template-columns:
-          repeat(
-            auto-fit,
-            minmax(180px,1fr)
-          );
-
-        gap:
-          12px;
-
-        margin:
-          24px 0;
-      }
-
-
-      .eah-detail-info > div {
-        padding:
-          16px;
-
-        border:
-          1px solid
-          rgba(48,207,255,.18);
-
-        border-radius:
-          16px;
-
-        background:
-          rgba(255,255,255,.035);
-      }
-
-
-      .eah-detail-close {
-        position:
-          sticky;
-
-        float:
-          right;
-
-        top:
-          16px;
-
-        right:
-          16px;
-
-        z-index:
-          10;
-
-        width:
-          48px;
-
-        height:
-          48px;
-
-        margin:
-          16px;
-
-        border:
-          1px solid
-          rgba(255,255,255,.18);
-
-        border-radius:
-          50%;
-
-        background:
-          rgba(3,19,31,.82);
-
-        color:
-          white;
-
-        font-size:
-          28px;
-
-        cursor:
-          pointer;
-      }
-
-
-      .eah-detail-video {
-        width:
-          100%;
-
-        aspect-ratio:
-          16 / 9;
-
-        margin-top:
-          26px;
-
-        border:
-          0;
-
-        border-radius:
-          18px;
-
-        background:
-          #000;
-      }
-
-
-      @media (max-width:700px) {
-
-        .eah-public-grid {
-          grid-template-columns:
-            1fr;
-
-          gap:
-            18px;
-
-          padding:
-            0 18px;
-
-          margin-top:
-            28px;
-        }
-
-
-        .eah-detail-overlay {
-          padding:
-            0;
-        }
-
-
-        .eah-detail-modal {
-          width:
-            100%;
-
-          max-height:
-            100vh;
-
-          min-height:
-            100vh;
-
-          border-radius:
-            0;
-        }
-
-      }
-
     `;
 
 
-    document.head.appendChild(
-      style
-    );
+    document.head
+      .appendChild(
+        style
+      );
 
   }
 
@@ -620,7 +338,7 @@
      OUTILS
   ============================================================ */
 
-  function normalize(value) {
+  function normaliser(value) {
 
     return String(
       value || ""
@@ -649,286 +367,330 @@
   }
 
 
-  function currentHash() {
+  function fichierDiscipline(
+    key
+  ) {
 
-    return normalize(
-      window.location.hash ||
+    if (!FILES[key]) {
+      return "";
+    }
+
+
+    return mobile()
+      ? FILES[key].mobile
+      : FILES[key].desktop;
+
+  }
+
+
+  function hashActuel() {
+
+    return normaliser(
+      window.location.hash
+      ||
       "#accueil"
     );
 
   }
 
 
-  function imageFor(
-    discipline
-  ) {
-
-    const data =
-      IMAGES[
-        discipline
-      ];
-
-
-    if (!data) {
-      return "";
-    }
-
-
-    return mobile()
-      ? data.mobile
-      : data.desktop;
-
-  }
-
-
 
   /* ============================================================
-     DISCIPLINE ACTUELLE
+     TROUVER UN TITRE VISIBLE
   ============================================================ */
 
-  function disciplineFromHash() {
-
-    const hash =
-      currentHash();
-
-
-    if (
-      hash.includes(
-        "olympique"
-      )
-    ) {
-      return "olympique";
-    }
-
-
-    if (
-      hash.includes(
-        "freestyle"
-      )
-      ||
-      hash.includes(
-        "dods"
-      )
-    ) {
-      return "freestyle";
-    }
-
-
-    if (
-      hash.includes(
-        "high"
-      )
-    ) {
-      return "highdiving";
-    }
-
-
-    if (
-      hash.includes(
-        "ange"
-      )
-    ) {
-      return "ange";
-    }
-
-
-    return null;
-
-  }
-
-
-
-  /* ============================================================
-     TROUVER LE HERO A PARTIR DU TITRE
-  ============================================================ */
-
-  function visibleHeading(
-    text
+  function trouverTitre(
+    textes
   ) {
 
-    const expected =
-      normalize(
-        text
-      );
+    const recherches =
+      Array.isArray(
+        textes
+      )
+        ? textes
+        : [
+            textes
+          ];
 
 
     return Array
       .from(
         document.querySelectorAll(
-          "h1,h2"
+          "h1,h2,h3"
         )
       )
       .find(
-        heading => {
+        element => {
+
+          const texte =
+            normaliser(
+              element.textContent
+            );
+
 
           const rect =
-            heading
+            element
               .getBoundingClientRect();
 
 
           return (
-            normalize(
-              heading.textContent
-            )
-            .includes(
-              expected
-            )
-
-            &&
-
             rect.width > 0
-
             &&
-
             rect.height > 0
+            &&
+            recherches.some(
+              recherche =>
+                texte.includes(
+                  normaliser(
+                    recherche
+                  )
+                )
+            )
           );
 
         }
-      );
-
-  }
-
-
-  function heroFromHeading(
-    heading
-  ) {
-
-    if (!heading) {
-      return null;
-    }
-
-
-    let node =
-      heading.parentElement;
-
-
-    let candidate =
+      )
+      ||
       null;
-
-
-    for (
-      let i = 0;
-      i < 7 && node;
-      i++
-    ) {
-
-      const rect =
-        node
-          .getBoundingClientRect();
-
-
-      if (
-        rect.width >=
-          window.innerWidth * .75
-
-        &&
-
-        rect.height >= 280
-
-        &&
-
-        rect.height <= 900
-      ) {
-
-        candidate =
-          node;
-
-      }
-
-
-      node =
-        node.parentElement;
-
-    }
-
-
-    return candidate;
 
   }
 
 
 
   /* ============================================================
-     HERO UNIQUE
+     TROUVER LE CONTENEUR HERO
   ============================================================ */
 
-  function applyHero(
+  function trouverHeroDepuisTitre(
+    titre
+  ) {
+
+    if (!titre) {
+      return null;
+    }
+
+
+    /*
+      Priorité à la section contenant le titre.
+    */
+
+    const section =
+      titre.closest(
+        "section"
+      );
+
+
+    if (section) {
+
+      const rect =
+        section
+          .getBoundingClientRect();
+
+
+      if (
+        rect.width >
+          window.innerWidth * .60
+        &&
+        rect.height > 180
+      ) {
+
+        return section;
+
+      }
+
+    }
+
+
+    /*
+      Sinon remontée progressive.
+    */
+
+    let parent =
+      titre.parentElement;
+
+
+    let meilleur =
+      null;
+
+
+    for (
+      let i = 0;
+      i < 6 && parent;
+      i++
+    ) {
+
+      const rect =
+        parent
+          .getBoundingClientRect();
+
+
+      if (
+        rect.width >
+          window.innerWidth * .70
+        &&
+        rect.height >= 180
+        &&
+        rect.height < 900
+      ) {
+
+        meilleur =
+          parent;
+
+      }
+
+
+      parent =
+        parent.parentElement;
+
+    }
+
+
+    return meilleur;
+
+  }
+
+
+
+  /* ============================================================
+     RECHERCHER UNE IMAGE DANS LE HERO
+  ============================================================ */
+
+  function imageHero(
+    hero
+  ) {
+
+    if (!hero) {
+      return null;
+    }
+
+
+    const images =
+      Array.from(
+        hero.querySelectorAll(
+          "img"
+        )
+      );
+
+
+    /*
+      Ne jamais sélectionner logo / blazon.
+    */
+
+    return images.find(
+      img => {
+
+        const src =
+          normaliser(
+            img.getAttribute(
+              "src"
+            )
+          );
+
+
+        return (
+          !src.includes(
+            "logo"
+          )
+          &&
+          !src.includes(
+            "blazon"
+          )
+        );
+
+      }
+    )
+    ||
+    null;
+
+  }
+
+
+
+  /* ============================================================
+     APPLIQUER UNE PHOTO HERO
+  ============================================================ */
+
+  function appliquerPhotoHero(
     hero,
-    file
+    fichier
   ) {
 
     if (
-      !hero ||
-      !file
+      !hero
+      ||
+      !fichier
     ) {
       return;
     }
 
 
     hero.classList.add(
-      "eah-final-hero"
+      "eah-v2-hero"
     );
 
 
-    hero.style.setProperty(
-      "background-image",
-      `url("${file}")`,
-      "important"
-    );
-
-
-    hero.style.setProperty(
-      "background-color",
-      "transparent",
-      "important"
-    );
-
-
-    hero.style.setProperty(
-      "background-blend-mode",
-      "normal",
-      "important"
-    );
+    const img =
+      imageHero(
+        hero
+      );
 
 
     /*
-      Les anciennes images <img> qui provoquent
-      le doublon sont masquées dans le hero.
+      Si le HTML possède déjà une balise IMG,
+      on la corrige directement.
     */
 
-    hero
-      .querySelectorAll(
-        "img"
-      )
-      .forEach(
-        img => {
+    if (img) {
 
-          const src =
-            normalize(
-              img.getAttribute(
-                "src"
-              )
+      img.src =
+        fichier;
+
+
+      img.classList.add(
+        "eah-discipline-photo"
+      );
+
+
+      /*
+        En cas d'erreur navigateur :
+        fallback via background.
+      */
+
+      img.onerror =
+        function () {
+
+          this.style
+            .setProperty(
+              "display",
+              "none",
+              "important"
             );
 
 
-          /*
-            Ne jamais masquer logo / profil / blazons.
-          */
+          hero.style
+            .setProperty(
+              "background-image",
+              `url("${fichier}")`,
+              "important"
+            );
 
-          if (
-            src.includes("logo")
-            ||
-            src.includes("blazon")
-          ) {
-            return;
-          }
+        };
 
 
-          img.classList.add(
-            "eah-hidden-hero-image"
-          );
+      return;
 
-        }
+    }
+
+
+    /*
+      Sinon utiliser directement le background.
+    */
+
+    hero.style
+      .setProperty(
+        "background-image",
+        `url("${fichier}")`,
+        "important"
       );
 
   }
@@ -936,31 +698,41 @@
 
 
   /* ============================================================
-     ACCUEIL SANS VOILE SOMBRE
+     ACCUEIL
   ============================================================ */
 
-  function fixAccueil() {
+  function corrigerAccueil() {
 
-    const heading =
-      visibleHeading(
+    const hash =
+      hashActuel();
+
+
+    if (
+      hash !==
+      "#accueil"
+      &&
+      hash !==
+      ""
+    ) {
+      return;
+    }
+
+
+    const titre =
+      trouverTitre(
         "Le plongeon"
       );
 
 
     const hero =
-      heroFromHeading(
-        heading
+      trouverHeroDepuisTitre(
+        titre
       );
 
 
-    if (!hero) {
-      return;
-    }
-
-
-    applyHero(
+    appliquerPhotoHero(
       hero,
-      IMAGES.accueil.desktop
+      FILES.accueil
     );
 
   }
@@ -971,45 +743,162 @@
      DISCIPLINES
   ============================================================ */
 
-  function fixDiscipline() {
+  function corrigerDisciplines() {
 
-    const discipline =
-      disciplineFromHash();
+    const hash =
+      hashActuel();
 
 
-    if (!discipline) {
+    let config =
+      null;
+
+
+    if (
+      hash.includes(
+        "olympique"
+      )
+    ) {
+
+      config = {
+
+        titre: [
+          "Plongeon olympique"
+        ],
+
+        key:
+          "olympique"
+
+      };
+
+    }
+
+
+    else if (
+      hash.includes(
+        "freestyle"
+      )
+      ||
+      hash.includes(
+        "dods"
+      )
+    ) {
+
+      config = {
+
+        titre: [
+          "Freestyle",
+          "Døds",
+          "Dods"
+        ],
+
+        key:
+          "freestyle"
+
+      };
+
+    }
+
+
+    else if (
+      hash.includes(
+        "high"
+      )
+    ) {
+
+      config = {
+
+        titre: [
+          "High Diving"
+        ],
+
+        key:
+          "highdiving"
+
+      };
+
+    }
+
+
+    else if (
+      hash.includes(
+        "ange"
+      )
+    ) {
+
+      config = {
+
+        titre: [
+          "Saut de l'ange",
+          "Saut de lange"
+        ],
+
+        key:
+          "ange"
+
+      };
+
+    }
+
+
+    if (!config) {
       return;
     }
 
 
-    const names = {
-
-      olympique:
-        "Plongeon olympique",
-
-      freestyle:
-        "Freestyle",
-
-      highdiving:
-        "High Diving",
-
-      ange:
-        "Saut de l'ange"
-
-    };
-
-
-    const heading =
-      visibleHeading(
-        names[
-          discipline
-        ]
+    const titre =
+      trouverTitre(
+        config.titre
       );
 
 
     const hero =
-      heroFromHeading(
-        heading
+      trouverHeroDepuisTitre(
+        titre
+      );
+
+
+    appliquerPhotoHero(
+
+      hero,
+
+      fichierDiscipline(
+        config.key
+      )
+
+    );
+
+  }
+
+
+
+  /* ============================================================
+     HERO BLAZONS
+  ============================================================ */
+
+  function corrigerHeroBlazons() {
+
+    const hash =
+      hashActuel();
+
+
+    if (
+      !hash.includes(
+        "blazon"
+      )
+    ) {
+      return;
+    }
+
+
+    const titre =
+      trouverTitre(
+        "Les blazons"
+      );
+
+
+    const hero =
+      trouverHeroDepuisTitre(
+        titre
       );
 
 
@@ -1018,748 +907,149 @@
     }
 
 
-    applyHero(
-      hero,
-      imageFor(
-        discipline
-      )
+    hero.classList.add(
+      "eah-v2-hero"
     );
 
-  }
 
+    /*
+      Pour cette page :
+      utilisation explicite de hero-blazons.png
+    */
 
-
-  /* ============================================================
-     MASQUER ESPACE CLUB HORS DE SA PAGE
-  ============================================================ */
-
-  function fixClubVisibility() {
-
-    const params =
-      new URLSearchParams(
-        window.location.search
+    hero.style
+      .setProperty(
+        "background-image",
+        `url("${FILES.blazons}")`,
+        "important"
       );
 
 
-    const cardMode =
-      params.has(
-        "coachToken"
-      )
-      ||
-      params.has(
-        "token"
-      )
-      ||
-      params.has(
-        "id"
+    hero.style
+      .setProperty(
+        "background-size",
+        "cover",
+        "important"
       );
 
 
-    const hash =
-      currentHash();
-
-
-    const shouldShow =
-      hash.includes(
-        "club"
-      )
-      ||
-      cardMode;
-
-
-    const selectors = [
-
-      "#club",
-
-      "#espace-club",
-
-      ".club-page",
-
-      ".club-space",
-
-      "[data-page='club']",
-
-      "[data-view='club']"
-
-    ];
-
-
-    selectors
-      .forEach(
-        selector => {
-
-          document
-            .querySelectorAll(
-              selector
-            )
-            .forEach(
-              element => {
-
-                element.style
-                  .setProperty(
-
-                    "display",
-
-                    shouldShow
-                      ? ""
-                      : "none",
-
-                    "important"
-
-                  );
-
-              }
-            );
-
-        }
+    hero.style
+      .setProperty(
+        "background-position",
+        "center center",
+        "important"
       );
 
 
     /*
-      Recherche supplémentaire par titre
+      Si le hero contient une ancienne image,
+      elle ne doit pas masquer le background.
     */
 
-    document
-      .querySelectorAll(
-        "h1,h2"
+    const img =
+      imageHero(
+        hero
+      );
+
+
+    if (img) {
+
+      img.style
+        .setProperty(
+          "display",
+          "none",
+          "important"
+        );
+
+    }
+
+  }
+
+
+
+  /* ============================================================
+     11 BLAZONS INDIVIDUELS
+  ============================================================ */
+
+  function corrigerBlazons() {
+
+    Object
+      .entries(
+        BLAZONS
       )
       .forEach(
-        heading => {
+        ([
+          nom,
+          fichier
+        ]) => {
 
-          if (
-            normalize(
-              heading.textContent
-            )
-            !==
-            "espace club"
-          ) {
+          const titre =
+            Array
+              .from(
+                document.querySelectorAll(
+                  "h2,h3,h4"
+                )
+              )
+              .find(
+                element => {
 
+                  return (
+                    normaliser(
+                      element.textContent
+                    )
+                    ===
+                    normaliser(
+                      nom
+                    )
+                  );
+
+                }
+              );
+
+
+          if (!titre) {
             return;
-
           }
 
 
-          const section =
-            heading.closest(
-              "section"
+          const card =
+            titre.closest(
+              "article"
             )
             ||
-            heading.parentElement
+            titre.closest(
+              "[class*='blazon']"
+            )
+            ||
+            titre.parentElement
               ?.parentElement;
 
 
-          if (!section) {
+          if (!card) {
             return;
           }
 
 
-          section.style
-            .setProperty(
-
-              "display",
-
-              shouldShow
-                ? ""
-                : "none",
-
-              "important"
-
-            );
-
-        }
-      );
-
-  }
-
-
-
-  /* ============================================================
-     ECHAPPEMENT HTML
-  ============================================================ */
-
-  function esc(value) {
-
-    return String(
-      value || ""
-    )
-
-      .replace(
-        /&/g,
-        "&amp;"
-      )
-
-      .replace(
-        /</g,
-        "&lt;"
-      )
-
-      .replace(
-        />/g,
-        "&gt;"
-      )
-
-      .replace(
-        /"/g,
-        "&quot;"
-      )
-
-      .replace(
-        /'/g,
-        "&#039;"
-      );
-
-  }
-
-
-
-  /* ============================================================
-     TROUVER SECTION ACTUALITES / SPOTS
-  ============================================================ */
-
-  function pageSectionFromTitle(
-    titleText
-  ) {
-
-    const heading =
-      visibleHeading(
-        titleText
-      );
-
-
-    if (!heading) {
-      return null;
-    }
-
-
-    return (
-      heading.closest(
-        "section"
-      )
-      ||
-      heading.parentElement
-        ?.parentElement
-      ||
-      heading.parentElement
-    );
-
-  }
-
-
-
-  /* ============================================================
-     SUPPRIMER MESSAGE "AUCUN..."
-  ============================================================ */
-
-  function hideEmptyMessages(
-    root,
-    words
-  ) {
-
-    if (!root) {
-      return;
-    }
-
-
-    root
-      .querySelectorAll(
-        "div,p"
-      )
-      .forEach(
-        element => {
-
-          const text =
-            normalize(
-              element.textContent
+          const img =
+            card.querySelector(
+              "img"
             );
 
 
-          if (
-            words.some(
-              word =>
-                text.includes(
-                  normalize(
-                    word
-                  )
-                )
-            )
-          ) {
-
-            if (
-              text.length < 150
-            ) {
-
-              element.style
-                .setProperty(
-                  "display",
-                  "none",
-                  "important"
-                );
-
-            }
-
+          if (!img) {
+            return;
           }
+
+
+          img.src =
+            fichier;
+
+
+          img.classList.add(
+            "eah-blazon-image"
+          );
 
         }
-      );
-
-  }
-
-
-
-  /* ============================================================
-     MODALE
-  ============================================================ */
-
-  function closeModal() {
-
-    document
-      .getElementById(
-        "eahDetailOverlay"
-      )
-      ?.remove();
-
-
-    document.body
-      .style
-      .removeProperty(
-        "overflow"
-      );
-
-  }
-
-
-  window.eahCloseDetail =
-    closeModal;
-
-
-  function videoHtml(
-    url
-  ) {
-
-    const value =
-      String(
-        url || ""
-      ).trim();
-
-
-    if (!value) {
-      return "";
-    }
-
-
-    const youtube =
-      value.match(
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/
-      );
-
-
-    if (youtube) {
-
-      return `
-
-        <iframe
-          class="eah-detail-video"
-          src="https://www.youtube.com/embed/${esc(
-            youtube[1]
-          )}"
-          allowfullscreen
-        ></iframe>
-
-      `;
-
-    }
-
-
-    if (
-      /\.(mp4|webm|ogg)(\?.*)?$/i
-      .test(
-        value
-      )
-    ) {
-
-      return `
-
-        <video
-          class="eah-detail-video"
-          controls
-          src="${esc(value)}"
-        ></video>
-
-      `;
-
-    }
-
-
-    return `
-
-      <a
-        class="eah-public-button"
-        href="${esc(value)}"
-        target="_blank"
-        rel="noopener"
-      >
-        Voir la vidéo
-      </a>
-
-    `;
-
-  }
-
-
-
-  /* ============================================================
-     MODALE ACTUALITE
-  ============================================================ */
-
-  function openNews(
-    item
-  ) {
-
-    closeModal();
-
-
-    const overlay =
-      document.createElement(
-        "div"
-      );
-
-
-    overlay.id =
-      "eahDetailOverlay";
-
-
-    overlay.className =
-      "eah-detail-overlay";
-
-
-    overlay.innerHTML = `
-
-      <article
-        class="eah-detail-modal"
-      >
-
-        <button
-          class="eah-detail-close"
-          type="button"
-          onclick="eahCloseDetail()"
-        >
-          ×
-        </button>
-
-
-        <img
-          class="eah-detail-image"
-          src="${esc(
-            item.image_url
-            ||
-            "news-default.jpg"
-          )}"
-          alt="${esc(
-            item.title
-          )}"
-          onerror="
-            this.onerror=null;
-            this.src='news-default.jpg';
-          "
-        >
-
-
-        <div
-          class="eah-detail-content"
-        >
-
-          <div
-            class="eah-public-kicker"
-          >
-            ${esc(
-              item.category
-              ||
-              "Actualité EAH"
-            )}
-          </div>
-
-
-          <h2>
-            ${esc(
-              item.title
-            )}
-          </h2>
-
-
-          ${
-            item.summary
-              ? `
-                <p
-                  class="eah-detail-text"
-                >
-                  <strong>
-                    ${esc(
-                      item.summary
-                    )}
-                  </strong>
-                </p>
-              `
-              : ""
-          }
-
-
-          ${
-            item.content
-              ? `
-                <div
-                  class="eah-detail-text"
-                >
-                  ${esc(
-                    item.content
-                  )}
-                </div>
-              `
-              : ""
-          }
-
-
-          ${videoHtml(
-            item.video_url
-          )}
-
-
-          ${
-            item.link_url
-              ? `
-
-                <a
-                  class="eah-public-button"
-                  href="${esc(
-                    item.link_url
-                  )}"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  En savoir plus
-                </a>
-
-              `
-              : ""
-          }
-
-        </div>
-
-      </article>
-
-    `;
-
-
-    overlay.addEventListener(
-      "click",
-      event => {
-
-        if (
-          event.target ===
-          overlay
-        ) {
-
-          closeModal();
-
-        }
-
-      }
-    );
-
-
-    document.body.appendChild(
-      overlay
-    );
-
-
-    document.body.style
-      .setProperty(
-        "overflow",
-        "hidden"
-      );
-
-  }
-
-
-
-  /* ============================================================
-     MODALE SPOT
-  ============================================================ */
-
-  function openSpot(
-    spot
-  ) {
-
-    closeModal();
-
-
-    const overlay =
-      document.createElement(
-        "div"
-      );
-
-
-    overlay.id =
-      "eahDetailOverlay";
-
-
-    overlay.className =
-      "eah-detail-overlay";
-
-
-    overlay.innerHTML = `
-
-      <article
-        class="eah-detail-modal"
-      >
-
-        <button
-          class="eah-detail-close"
-          type="button"
-          onclick="eahCloseDetail()"
-        >
-          ×
-        </button>
-
-
-        <img
-          class="eah-detail-image"
-          src="${esc(
-            spot.photo_url
-            ||
-            "spot-default.jpg"
-          )}"
-          alt="${esc(
-            spot.name
-          )}"
-          onerror="
-            this.onerror=null;
-            this.src='spot-default.jpg';
-          "
-        >
-
-
-        <div
-          class="eah-detail-content"
-        >
-
-          <div
-            class="eah-public-kicker"
-          >
-            SPOT EAH
-          </div>
-
-
-          <h2>
-            ${esc(
-              spot.name
-            )}
-          </h2>
-
-
-          <div
-            class="eah-detail-info"
-          >
-
-            ${
-              spot.city
-                ? `
-                  <div>
-                    <strong>
-                      Ville
-                    </strong>
-                    <br>
-                    ${esc(
-                      spot.city
-                    )}
-                  </div>
-                `
-                : ""
-            }
-
-
-            ${
-              spot.heights
-                ? `
-                  <div>
-                    <strong>
-                      Hauteurs
-                    </strong>
-                    <br>
-                    ${esc(
-                      spot.heights
-                    )}
-                  </div>
-                `
-                : ""
-            }
-
-
-            ${
-              spot.address
-                ? `
-                  <div>
-                    <strong>
-                      Adresse
-                    </strong>
-                    <br>
-                    ${esc(
-                      spot.address
-                    )}
-                  </div>
-                `
-                : ""
-            }
-
-          </div>
-
-
-          ${
-            spot.description
-              ? `
-                <div
-                  class="eah-detail-text"
-                >
-                  ${esc(
-                    spot.description
-                  )}
-                </div>
-              `
-              : ""
-          }
-
-        </div>
-
-      </article>
-
-    `;
-
-
-    overlay.addEventListener(
-      "click",
-      event => {
-
-        if (
-          event.target ===
-          overlay
-        ) {
-
-          closeModal();
-
-        }
-
-      }
-    );
-
-
-    document.body.appendChild(
-      overlay
-    );
-
-
-    document.body.style
-      .setProperty(
-        "overflow",
-        "hidden"
       );
 
   }
@@ -1770,21 +1060,10 @@
      ACTUALITES
   ============================================================ */
 
-  let newsLoading =
-    false;
-
-
-  async function renderNews() {
-
-    if (
-      newsLoading
-    ) {
-      return;
-    }
-
+  function corrigerActualites() {
 
     const hash =
-      currentHash();
+      hashActuel();
 
 
     if (
@@ -1796,258 +1075,43 @@
     }
 
 
-    const section =
-      pageSectionFromTitle(
-        "Actualités"
-      );
+    document
+      .querySelectorAll(
+        "article img, .eah-public-card img"
+      )
+      .forEach(
+        img => {
+
+          /*
+            Ne remplace jamais une photo valide.
+          */
+
+          img.classList.add(
+            "eah-cms-image"
+          );
 
 
-    if (!section) {
-      return;
-    }
+          img.addEventListener(
+
+            "error",
+
+            function fallbackNews() {
+
+              this.removeEventListener(
+                "error",
+                fallbackNews
+              );
 
 
-    hideEmptyMessages(
+              this.src =
+                "news-default.jpg";
 
-      section,
-
-      [
-        "Aucune actualité"
-      ]
-
-    );
-
-
-    let grid =
-      section.querySelector(
-        "#eahNewsGrid"
-      );
-
-
-    if (!grid) {
-
-      grid =
-        document.createElement(
-          "div"
-        );
-
-
-      grid.id =
-        "eahNewsGrid";
-
-
-      grid.className =
-        "eah-public-grid";
-
-
-      section.appendChild(
-        grid
-      );
-
-    }
-
-
-    grid.innerHTML =
-      "<p>Chargement des actualités…</p>";
-
-
-    newsLoading =
-      true;
-
-
-    try {
-
-      const sb =
-        requireSupabase();
-
-
-      const {
-        data,
-        error
-      } =
-        await sb
-          .from(
-            "news"
-          )
-          .select(
-            "id,title,summary,content,image_url,video_url,link_url,category,featured,published_at,sort_order,active"
-          )
-          .eq(
-            "active",
-            true
-          )
-          .order(
-            "sort_order",
-            {
-              ascending:
-                true
             }
-          );
 
-
-      if (error) {
-        throw error;
-      }
-
-
-      const items =
-        Array.isArray(data)
-          ? data
-          : [];
-
-
-      if (
-        !items.length
-      ) {
-
-        grid.innerHTML = `
-
-          <div
-            class="eah-public-card"
-          >
-            <div
-              class="eah-public-card-body"
-            >
-              <p>
-                Aucune actualité publiée actuellement.
-              </p>
-            </div>
-          </div>
-
-        `;
-
-
-        return;
-
-      }
-
-
-      grid.innerHTML =
-        "";
-
-
-      items.forEach(
-        item => {
-
-          const card =
-            document.createElement(
-              "article"
-            );
-
-
-          card.className =
-            "eah-public-card";
-
-
-          card.innerHTML = `
-
-            <img
-              class="eah-public-card-image"
-              src="${esc(
-                item.image_url
-                ||
-                "news-default.jpg"
-              )}"
-              alt="${esc(
-                item.title
-              )}"
-              onerror="
-                this.onerror=null;
-                this.src='news-default.jpg';
-              "
-            >
-
-
-            <div
-              class="eah-public-card-body"
-            >
-
-              <div
-                class="eah-public-kicker"
-              >
-                ${esc(
-                  item.category
-                  ||
-                  "Actualité"
-                )}
-              </div>
-
-
-              <h3>
-                ${esc(
-                  item.title
-                )}
-              </h3>
-
-
-              <p>
-                ${esc(
-                  item.summary
-                  ||
-                  ""
-                )}
-              </p>
-
-
-              <button
-                class="eah-public-button"
-                type="button"
-              >
-                Voir l'actualité
-              </button>
-
-            </div>
-
-          `;
-
-
-          card.addEventListener(
-            "click",
-            () =>
-              openNews(
-                item
-              )
-          );
-
-
-          grid.appendChild(
-            card
           );
 
         }
       );
-
-
-    } catch(error) {
-
-      console.error(
-        "EAH Actualités :",
-        error
-      );
-
-
-      grid.innerHTML = `
-
-        <div
-          class="eah-public-card"
-        >
-          <div
-            class="eah-public-card-body"
-          >
-            <p>
-              Impossible de charger les actualités.
-            </p>
-          </div>
-        </div>
-
-      `;
-
-    } finally {
-
-      newsLoading =
-        false;
-
-    }
 
   }
 
@@ -2057,21 +1121,10 @@
      SPOTS
   ============================================================ */
 
-  let spotsLoading =
-    false;
-
-
-  async function renderSpots() {
-
-    if (
-      spotsLoading
-    ) {
-      return;
-    }
-
+  function corrigerSpots() {
 
     const hash =
-      currentHash();
+      hashActuel();
 
 
     if (
@@ -2083,348 +1136,94 @@
     }
 
 
-    const section =
-      pageSectionFromTitle(
-        "Où plonger"
+    document
+      .querySelectorAll(
+        "article img, .eah-public-card img"
       )
-      ||
-      pageSectionFromTitle(
-        "Spots"
-      );
+      .forEach(
+        img => {
+
+          img.classList.add(
+            "eah-cms-image"
+          );
 
 
-    if (!section) {
-      return;
-    }
+          img.addEventListener(
+
+            "error",
+
+            function fallbackSpot() {
+
+              this.removeEventListener(
+                "error",
+                fallbackSpot
+              );
 
 
-    hideEmptyMessages(
+              this.src =
+                "spot-default.jpg";
 
-      section,
-
-      [
-        "Aucun spot"
-      ]
-
-    );
-
-
-    let grid =
-      section.querySelector(
-        "#eahSpotsGrid"
-      );
-
-
-    if (!grid) {
-
-      grid =
-        document.createElement(
-          "div"
-        );
-
-
-      grid.id =
-        "eahSpotsGrid";
-
-
-      grid.className =
-        "eah-public-grid";
-
-
-      section.appendChild(
-        grid
-      );
-
-    }
-
-
-    grid.innerHTML =
-      "<p>Chargement des spots…</p>";
-
-
-    spotsLoading =
-      true;
-
-
-    try {
-
-      const sb =
-        requireSupabase();
-
-
-      const {
-        data,
-        error
-      } =
-        await sb
-          .from(
-            "spots"
-          )
-          .select(
-            "id,name,city,address,heights,photo_url,description,active"
-          )
-          .eq(
-            "active",
-            true
-          )
-          .order(
-            "name",
-            {
-              ascending:
-                true
             }
-          );
 
-
-      if (error) {
-        throw error;
-      }
-
-
-      const items =
-        Array.isArray(data)
-          ? data
-          : [];
-
-
-      if (
-        !items.length
-      ) {
-
-        grid.innerHTML = `
-
-          <div
-            class="eah-public-card"
-          >
-            <div
-              class="eah-public-card-body"
-            >
-              <p>
-                Aucun spot EAH publié actuellement.
-              </p>
-            </div>
-          </div>
-
-        `;
-
-
-        return;
-
-      }
-
-
-      grid.innerHTML =
-        "";
-
-
-      items.forEach(
-        spot => {
-
-          const card =
-            document.createElement(
-              "article"
-            );
-
-
-          card.className =
-            "eah-public-card";
-
-
-          card.innerHTML = `
-
-            <img
-              class="eah-public-card-image"
-              src="${esc(
-                spot.photo_url
-                ||
-                "spot-default.jpg"
-              )}"
-              alt="${esc(
-                spot.name
-              )}"
-              onerror="
-                this.onerror=null;
-                this.src='spot-default.jpg';
-              "
-            >
-
-
-            <div
-              class="eah-public-card-body"
-            >
-
-              <div
-                class="eah-public-kicker"
-              >
-                ${esc(
-                  spot.city
-                  ||
-                  "SPOT EAH"
-                )}
-              </div>
-
-
-              <h3>
-                ${esc(
-                  spot.name
-                )}
-              </h3>
-
-
-              ${
-                spot.heights
-                  ? `
-                    <p>
-                      Hauteurs :
-                      ${esc(
-                        spot.heights
-                      )}
-                    </p>
-                  `
-                  : ""
-              }
-
-
-              <button
-                class="eah-public-button"
-                type="button"
-              >
-                Voir le spot
-              </button>
-
-            </div>
-
-          `;
-
-
-          card.addEventListener(
-            "click",
-            () =>
-              openSpot(
-                spot
-              )
-          );
-
-
-          grid.appendChild(
-            card
           );
 
         }
       );
 
-
-    } catch(error) {
-
-      console.error(
-        "EAH Spots :",
-        error
-      );
+  }
 
 
-      grid.innerHTML = `
 
-        <div
-          class="eah-public-card"
-        >
-          <div
-            class="eah-public-card-body"
-          >
-            <p>
-              Impossible de charger les spots.
-            </p>
-          </div>
-        </div>
+  /* ============================================================
+     APPLICATION
+  ============================================================ */
 
-      `;
+  function appliquer() {
 
-    } finally {
+    installerCSS();
 
-      spotsLoading =
-        false;
+    corrigerAccueil();
 
-    }
+    corrigerDisciplines();
+
+    corrigerHeroBlazons();
+
+    corrigerBlazons();
+
+    corrigerActualites();
+
+    corrigerSpots();
 
   }
 
 
 
   /* ============================================================
-     APPLICATION COMPLETE
+     NAVIGATION SANS ACTUALISATION MANUELLE
   ============================================================ */
 
-  function applyImmediately() {
-
-    installStyles();
-
-    fixClubVisibility();
-
-
-    const hash =
-      currentHash();
-
-
-    if (
-      hash ===
-      "#accueil"
-      ||
-      !hash
-    ) {
-
-      fixAccueil();
-
-    }
-
-
-    fixDiscipline();
-
-  }
-
-
-  async function applyAsync() {
-
-    await renderNews();
-
-    await renderSpots();
-
-  }
-
-
-
-  /* ============================================================
-     ROUTAGE
-     IMPORTANT :
-     CORRIGE LES PHOTOS SANS ACTUALISER
-  ============================================================ */
-
-  function routeChanged() {
+  function routeChange() {
 
     /*
-      Première passe immédiatement.
+      Dès le clic.
     */
 
-    applyImmediately();
+    appliquer();
 
 
     /*
-      Ensuite on laisse script.js afficher
-      la nouvelle page et on recommence.
+      Après reconstruction de la page
+      par ton script principal.
     */
 
     requestAnimationFrame(
       () => {
 
-        applyImmediately();
+        appliquer();
 
 
         requestAnimationFrame(
-          () => {
-
-            applyImmediately();
-
-            applyAsync();
-
-          }
+          appliquer
         );
 
       }
@@ -2432,26 +1231,26 @@
 
 
     setTimeout(
-      () => {
-
-        applyImmediately();
-
-        applyAsync();
-
-      },
-      80
+      appliquer,
+      50
     );
 
 
     setTimeout(
-      () => {
+      appliquer,
+      150
+    );
 
-        applyImmediately();
 
-        applyAsync();
+    setTimeout(
+      appliquer,
+      400
+    );
 
-      },
-      250
+
+    setTimeout(
+      appliquer,
+      1000
     );
 
   }
@@ -2471,7 +1270,7 @@
 
       "DOMContentLoaded",
 
-      routeChanged,
+      routeChange,
 
       {
         once:
@@ -2482,23 +1281,22 @@
 
   } else {
 
-    routeChanged();
+    routeChange();
 
   }
 
 
   window.addEventListener(
     "hashchange",
-    routeChanged
+    routeChange
   );
 
 
   /*
-    MutationObserver :
-    uniquement pour les changements importants du routeur.
+    Observer les pages créées dynamiquement.
   */
 
-  let mutationTimer;
+  let timer;
 
 
   const observer =
@@ -2506,18 +1304,14 @@
       () => {
 
         clearTimeout(
-          mutationTimer
+          timer
         );
 
 
-        mutationTimer =
+        timer =
           setTimeout(
-            () => {
-
-              applyImmediately();
-
-            },
-            60
+            appliquer,
+            70
           );
 
       }
@@ -2540,7 +1334,7 @@
 
 
   /*
-    changement orientation / écran
+    Mobile <-> tablette.
   */
 
   let resizeTimer;
@@ -2557,8 +1351,8 @@
 
       resizeTimer =
         setTimeout(
-          routeChanged,
-          150
+          routeChange,
+          160
         );
 
     }
