@@ -6511,3 +6511,170 @@ img[src*="blazon-"] {
     contrast(1.02)
     saturate(1.08) !important;
 }
+/* ============================================================
+   CORRECTIFS VISUELS EAH DIVING - 02/10/2026
+============================================================ */
+
+/* ------------------------------
+   Fond premium eau
+   -> un peu moins lumineux
+------------------------------ */
+.site-background {
+  opacity: 0.42 !important;
+  filter: brightness(0.78) saturate(1.02) contrast(1.02) !important;
+}
+
+.site-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 10, 22, 0.14);
+  pointer-events: none;
+}
+
+/* ------------------------------
+   Suppression du voile noir
+------------------------------ */
+.hero::before,
+.hero::after,
+.home-hero::before,
+.home-hero::after,
+.page-hero::before,
+.page-hero::after,
+.section-hero::before,
+.section-hero::after,
+.discipline-hero::before,
+.discipline-hero::after,
+.discipline-card::before,
+.discipline-card::after,
+.disciplines-card::before,
+.disciplines-card::after,
+.hero-banner::before,
+.hero-banner::after {
+  content: none !important;
+  display: none !important;
+  background: transparent !important;
+  opacity: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ------------------------------
+   Les zones photo restent visibles
+------------------------------ */
+.hero,
+.home-hero,
+.page-hero,
+.section-hero,
+.discipline-hero,
+.discipline-card,
+.disciplines-card,
+.hero-banner,
+.card-visual {
+  background-color: transparent !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* ------------------------------
+   Images chargées proprement
+------------------------------ */
+.hero img,
+.home-hero img,
+.page-hero img,
+.section-hero img,
+.discipline-card img,
+.disciplines-card img,
+.card-visual img {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ------------------------------
+   Lisibilité du texte sans voile noir
+------------------------------ */
+.hero h1,
+.hero h2,
+.hero h3,
+.home-hero h1,
+.home-hero h2,
+.home-hero h3,
+.page-hero h1,
+.page-hero h2,
+.page-hero h3,
+.discipline-card h1,
+.discipline-card h2,
+.discipline-card h3,
+.disciplines-card h1,
+.disciplines-card h2,
+.disciplines-card h3,
+.hero p,
+.home-hero p,
+.page-hero p,
+.discipline-card p,
+.disciplines-card p {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+}
+
+/* ------------------------------
+   Cartes disciplines : rendu mobile
+------------------------------ */
+.discipline-card,
+.disciplines-card {
+  overflow: hidden;
+  border-radius: 28px;
+  position: relative;
+}
+
+.discipline-card .content,
+.disciplines-card .content,
+.discipline-card__content,
+.disciplines-card__content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ------------------------------
+   Enlève le formulaire club flottant
+   si tu ne le veux plus partout
+------------------------------ */
+.club-floating-panel,
+.club-floating-form,
+.club-sticky-form,
+.floating-club-form,
+.floating-eah-club,
+.coach-floating-panel,
+#floating-club-form,
+#club-floating-form,
+#club-sticky-widget {
+  display: none !important;
+}
+
+/* ------------------------------
+   Header propre
+------------------------------ */
+.site-header,
+header.site-header,
+.header,
+.topbar {
+  z-index: 9999;
+}
+
+/* ------------------------------
+   Mobile
+------------------------------ */
+@media (max-width: 768px) {
+  .hero,
+  .home-hero {
+    min-height: auto;
+  }
+
+  .discipline-card,
+  .disciplines-card {
+    min-height: 520px;
+  }
+}
