@@ -1,7 +1,15 @@
 /* ============================================================
    EAH DIVING PRO
-   PHOTOS FINAL
-   Remplit automatiquement tous les espaces photos publics
+   PHOTOS FINAL V3
+   03/10/2026
+
+   CORRECTIONS :
+   - plus de Blazon Or sur Plongeon olympique
+   - photos disciplines forcées correctement
+   - heroes visibles dès l'ouverture
+   - navigation SPA sans rafraîchissement
+   - Blazons corrigés uniquement sur leurs vraies cartes
+   - ne touche pas aux photos Coach / Plongeur / Actualités / Spots
 ============================================================ */
 
 (() => {
@@ -9,47 +17,60 @@
   "use strict";
 
 
-  /* ============================================================
-     PHOTOS DU SITE
-  ============================================================ */
+  /* ==========================================================
+     CONFIGURATION DES PHOTOS
+  ========================================================== */
 
-  const PHOTO = {
+  const EAH_PHOTOS = {
 
-    accueil:
-      "hero-divers-group.png",
+    /* Accueil */
+    accueil: "hero-divers-group.png",
 
-    olympique:
-      "olympique-desktop.jpg",
+    /* Cartes disciplines de l'accueil */
+    cardOlympique: "olympique-desktop.jpg",
+    cardFreestyle: "hero-divers-group.png",
+    cardHighDiving: "hero-high-diving.png",
+    cardSautAnge: "portrait-water-diver.jpg",
 
-    freestyle:
-      "hero-divers-group.png",
+    /* Haut des pages disciplines */
+    heroOlympique: "olympique-desktop.jpg",
+    heroFreestyle: "hero-divers-group.png",
+    heroHighDiving: "high-diving-desktop.png",
+    heroSautAnge: "portrait-water-diver.jpg",
 
-    highDiving:
-      "high-diving-desktop.png",
+    /* Haut de la page Blazons */
+    heroBlazons: "hero-blazons.png",
 
-    sautAnge:
-      "portrait-water-diver.jpg",
-
-    blazons:
-      "hero-blazons.png",
-
-    actualites:
-      "actualites-hero.jpg",
-
-    spots:
-      "spots-hero.jpg",
-
-    fallback:
-      "site-water-premium-bg.jpg"
+    /* Secours uniquement */
+    fallback: "site-water-premium-bg.jpg"
 
   };
 
 
-  /* ============================================================
-     NORMALISATION
-  ============================================================ */
+  const BLAZON_FILES = {
 
-  function norm(value) {
+    "blazon blanc": "blazon-blanc.png",
+    "blazon orange": "blazon-orange.png",
+    "blazon vert": "blazon-vert.png",
+    "blazon bleu": "blazon-bleu.png",
+    "blazon rouge": "blazon-rouge.png",
+    "blazon bronze": "blazon-bronze.png",
+    "blazon argent": "blazon-argent.png",
+    "blazon silver": "blazon-argent.png",
+    "blazon or": "blazon-or.png",
+    "blazon noir": "blazon-noir.png",
+    "blazon legend": "blazon-legend.png",
+    "blazon légende": "blazon-legend.png",
+    "blazon titan": "blazon-titan.png"
+
+  };
+
+
+  /* ==========================================================
+     OUTILS
+  ========================================================== */
+
+  function normalize(value) {
 
     return String(value || "")
       .toLowerCase()
@@ -61,366 +82,307 @@
   }
 
 
-  /* ============================================================
-     PRECHARGEMENT
-  ============================================================ */
+  function currentHash() {
 
-  function preloadPhotos() {
-
-    Object.values(PHOTO).forEach(src => {
-
-      const img =
-        new Image();
-
-      img.src =
-        src;
-
-    });
-
-  }
-
-
-  /* ============================================================
-     NE PAS TOUCHER AUX PHOTOS PROFILS / LOGOS
-  ============================================================ */
-
-  function protectedImage(img) {
-
-    const source =
-      norm(
-        img.src ||
-        img.getAttribute("src")
-      );
-
-
-    const classes =
-      norm(
-        img.className
-      );
-
-
-    return (
-
-      source.includes("logo")
-
-      ||
-
-      classes.includes("profile")
-
-      ||
-
-      classes.includes("avatar")
-
-      ||
-
-      classes.includes("coach-photo")
-
-      ||
-
-      classes.includes("diver-photo")
-
+    return normalize(
+      window.location.hash || "#accueil"
     );
 
   }
 
 
-  /* ============================================================
-     REPARATION DES IMG
-  ============================================================ */
+  function preload(src) {
 
-  function repairImg(img) {
+    if (!src) return;
 
-    if (
-      !img ||
-      protectedImage(img)
-    ) {
-      return;
-    }
+    const image = new Image();
 
-
-    img.classList.add(
-      "eah-auto-photo"
-    );
-
-
-    img.loading =
-      "eager";
-
-
-    img.decoding =
-      "async";
-
+    image.decoding = "async";
 
     try {
+      image.fetchPriority = "high";
+    } catch (e) {}
 
-      img.fetchPriority =
-        "high";
-
-    } catch(e) {}
-
-
-    const src =
-      String(
-        img.getAttribute("src") || ""
-      ).trim();
-
-
-    /*
-      Une image vide obtient au minimum
-      le fond premium.
-    */
-
-    if (
-      !src ||
-      src === "#" ||
-      src.includes("undefined") ||
-      src.includes("null")
-    ) {
-
-      const alternative =
-        img.dataset.src ||
-        img.dataset.image ||
-        img.dataset.photo ||
-        PHOTO.fallback;
-
-
-      img.src =
-        alternative;
-
-    }
-
-
-    /*
-      Si l'image échoue :
-      on affiche toujours quelque chose.
-    */
-
-    img.onerror =
-      function() {
-
-        if (
-          this.dataset.eahFallbackDone ===
-          "1"
-        ) {
-          return;
-        }
-
-
-        this.dataset.eahFallbackDone =
-          "1";
-
-
-        this.src =
-          PHOTO.fallback;
-
-      };
+    image.src = src;
 
   }
 
 
+  function preloadCriticalImages() {
 
-  /* ============================================================
-     TROUVER PHOTO SELON LE CONTENU
-  ============================================================ */
+    Object.values(EAH_PHOTOS)
+      .forEach(preload);
 
-  function photoForElement(element) {
-
-    const text =
-      norm(
-        element.textContent
-      );
-
-
-    if (
-      text.includes(
-        "plongeon olympique"
-      )
-    ) {
-
-      return PHOTO.olympique;
-
-    }
-
-
-    if (
-      text.includes(
-        "freestyle"
-      )
-      ||
-      text.includes(
-        "dods"
-      )
-    ) {
-
-      return PHOTO.freestyle;
-
-    }
-
-
-    if (
-      text.includes(
-        "high diving"
-      )
-    ) {
-
-      return PHOTO.highDiving;
-
-    }
-
-
-    if (
-      text.includes(
-        "saut de l'ange"
-      )
-      ||
-      text.includes(
-        "saut de lange"
-      )
-    ) {
-
-      return PHOTO.sautAnge;
-
-    }
-
-
-    if (
-      text.includes(
-        "les blazons"
-      )
-    ) {
-
-      return PHOTO.blazons;
-
-    }
-
-
-    if (
-      text.includes(
-        "actualites"
-      )
-      ||
-      text.includes(
-        "actualités"
-      )
-    ) {
-
-      return PHOTO.actualites;
-
-    }
-
-
-    if (
-      text.includes(
-        "ou plonger"
-      )
-      ||
-      text.includes(
-        "où plonger"
-      )
-      ||
-      text.includes(
-        "spots eah"
-      )
-    ) {
-
-      return PHOTO.spots;
-
-    }
-
-
-    return "";
+    Object.values(BLAZON_FILES)
+      .forEach(preload);
 
   }
 
 
+  /* ==========================================================
+     CSS DE SECURITE
+  ========================================================== */
 
-  /* ============================================================
-     AJOUT PHOTO SUR UNE ZONE
-  ============================================================ */
-
-  function fillPhotoZone(element) {
-
-    if (!element) {
-      return;
-    }
-
-
-    const photo =
-      photoForElement(
-        element
-      );
-
-
-    if (!photo) {
-      return;
-    }
-
-
-    /*
-      Si la zone possède déjà une IMG :
-      on utilise l'IMG.
-    */
-
-    const img =
-      element.querySelector(
-        "img"
-      );
-
+  function installPhotoCSS() {
 
     if (
-      img &&
-      !protectedImage(img)
+      document.getElementById("eah-photo-final-v3")
     ) {
+      return;
+    }
 
-      const src =
-        String(
-          img.getAttribute("src") || ""
-        );
+    const style =
+      document.createElement("style");
 
+    style.id =
+      "eah-photo-final-v3";
 
-      /*
-        On remplace uniquement les images
-        vides / invalides / ancien fallback.
-      */
+    style.textContent = `
 
-      if (
-        !src
-        ||
-        src.includes("undefined")
-        ||
-        src.includes("null")
-        ||
-        src.includes(
-          "site-water-premium-bg"
-        )
-      ) {
+      /* HERO : pas de voile noir */
 
-        img.src =
-          photo;
+      .eah-photo-hero {
+        background-size: cover !important;
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-blend-mode: normal !important;
+      }
 
+      .eah-photo-hero::before,
+      .eah-photo-hero::after {
+        content: none !important;
+        display: none !important;
+        opacity: 0 !important;
+        background: transparent !important;
       }
 
 
-      repairImg(
-        img
+      /* Images forcées */
+
+      .eah-photo-forced {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+
+        width: 100% !important;
+        height: 100% !important;
+
+        object-fit: cover !important;
+        object-position: center center !important;
+      }
+
+
+      /* Blazons individuels */
+
+      .eah-blazon-forced {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+
+        object-fit: contain !important;
+
+        filter: none !important;
+      }
+
+
+      /* Texte sur les images */
+
+      .eah-photo-hero h1,
+      .eah-photo-hero h2,
+      .eah-photo-hero h3,
+      .eah-photo-hero p,
+      .eah-photo-hero span {
+        position: relative;
+        z-index: 3;
+      }
+
+    `;
+
+    document.head.appendChild(style);
+
+  }
+
+
+  /* ==========================================================
+     RECHERCHE D'UN TITRE
+  ========================================================== */
+
+  function findHeading(names) {
+
+    const wanted =
+      Array.isArray(names)
+        ? names.map(normalize)
+        : [normalize(names)];
+
+    return Array
+      .from(
+        document.querySelectorAll(
+          "h1,h2,h3,h4"
+        )
+      )
+      .find(el => {
+
+        const text =
+          normalize(el.textContent);
+
+        return wanted.some(
+          wantedText =>
+            text === wantedText ||
+            text.includes(wantedText)
+        );
+
+      }) || null;
+
+  }
+
+
+  /* ==========================================================
+     TROUVER UNE CARTE
+  ========================================================== */
+
+  function findCardFromHeading(heading) {
+
+    if (!heading) return null;
+
+    const direct =
+      heading.closest(
+        ".discipline-card, .disciplines-card, article"
       );
 
+    if (direct) return direct;
 
-      return;
+
+    let node =
+      heading.parentElement;
+
+
+    for (
+      let i = 0;
+      i < 6 && node;
+      i++
+    ) {
+
+      const rect =
+        node.getBoundingClientRect();
+
+      if (
+        rect.width > 250 &&
+        rect.height > 220 &&
+        rect.height < 1000
+      ) {
+
+        return node;
+
+      }
+
+      node =
+        node.parentElement;
 
     }
 
 
+    return heading.parentElement;
+
+  }
+
+
+  /* ==========================================================
+     TROUVER LE HERO
+  ========================================================== */
+
+  function findHeroFromHeading(heading) {
+
+    if (!heading) return null;
+
+
+    const section =
+      heading.closest("section");
+
+
+    if (section) {
+
+      const rect =
+        section.getBoundingClientRect();
+
+      if (
+        rect.width >
+          window.innerWidth * 0.6 &&
+        rect.height > 180
+      ) {
+
+        return section;
+
+      }
+
+    }
+
+
+    let node =
+      heading.parentElement;
+
+    let best =
+      null;
+
+
+    for (
+      let i = 0;
+      i < 7 && node;
+      i++
+    ) {
+
+      const rect =
+        node.getBoundingClientRect();
+
+      if (
+        rect.width >
+          window.innerWidth * 0.65 &&
+        rect.height > 180 &&
+        rect.height < 950
+      ) {
+
+        best =
+          node;
+
+      }
+
+      node =
+        node.parentElement;
+
+    }
+
+
+    return best;
+
+  }
+
+
+  /* ==========================================================
+     APPLIQUER UNE PHOTO
+  ========================================================== */
+
+  function forcePhoto(element, src) {
+
+    if (!element || !src) {
+      return false;
+    }
+
+
+    element.classList.add(
+      "eah-photo-hero"
+    );
+
+
     /*
-      Sinon photo en background.
+      Toujours mettre également le background :
+      l'image est donc visible même si le HTML
+      contient une ancienne balise IMG cassée.
     */
 
     element.style.setProperty(
       "background-image",
-      `url("${photo}")`,
+      `url("${src}")`,
       "important"
     );
-
 
     element.style.setProperty(
       "background-size",
@@ -428,13 +390,11 @@
       "important"
     );
 
-
     element.style.setProperty(
       "background-position",
       "center center",
       "important"
     );
-
 
     element.style.setProperty(
       "background-repeat",
@@ -442,597 +402,542 @@
       "important"
     );
 
-  }
 
+    /*
+      Si une balise IMG existe dans la zone,
+      on lui donne directement la bonne photo.
+    */
 
-
-  /* ============================================================
-     ACCUEIL
-  ============================================================ */
-
-  function fixHome() {
-
-    if (
-      window.location.hash &&
-      window.location.hash !==
-      "#accueil"
-    ) {
-      return;
-    }
-
-
-    const title =
-      [...document.querySelectorAll("h1,h2")]
-      .find(
-        el =>
-          norm(el.textContent)
-          .includes(
-            "le plongeon"
-          )
+    const imgs =
+      Array.from(
+        element.querySelectorAll("img")
       );
 
 
-    if (!title) {
-      return;
-    }
+    const img =
+      imgs.find(image => {
 
-
-    let zone =
-      title.closest("section")
-      ||
-      title.parentElement;
-
-
-    if (!zone) {
-      return;
-    }
-
-
-    zone.style.setProperty(
-      "background-image",
-      `url("${PHOTO.accueil}")`,
-      "important"
-    );
-
-
-    zone.style.setProperty(
-      "background-size",
-      "cover",
-      "important"
-    );
-
-
-    zone.style.setProperty(
-      "background-position",
-      "center center",
-      "important"
-    );
-
-  }
-
-
-
-  /* ============================================================
-     CARTES DISCIPLINES
-  ============================================================ */
-
-  function fixDisciplineCards() {
-
-    const candidates = [
-
-      ...document.querySelectorAll(
-        "article"
-      ),
-
-      ...document.querySelectorAll(
-        ".discipline-card"
-      ),
-
-      ...document.querySelectorAll(
-        ".disciplines-card"
-      )
-
-    ];
-
-
-    candidates.forEach(
-      element => {
-
-        const text =
-          norm(
-            element.textContent
+        const source =
+          normalize(
+            image.getAttribute("src")
           );
 
-
-        if (
-          text.includes(
-            "plongeon olympique"
-          )
-          ||
-          text.includes(
-            "freestyle"
-          )
-          ||
-          text.includes(
-            "high diving"
-          )
-          ||
-          text.includes(
-            "saut de l'ange"
-          )
-          ||
-          text.includes(
-            "saut de lange"
-          )
-        ) {
-
-          fillPhotoZone(
-            element
+        const classes =
+          normalize(
+            image.className
           );
 
-        }
+        return (
+          !source.includes("logo") &&
+          !source.includes("blazon") &&
+          !classes.includes("profile") &&
+          !classes.includes("coach") &&
+          !classes.includes("avatar")
+        );
+
+      });
+
+
+    if (img) {
+
+      if (
+        img.getAttribute("src") !== src
+      ) {
+
+        img.src =
+          src;
 
       }
-    );
+
+
+      img.loading =
+        "eager";
+
+      img.decoding =
+        "async";
+
+
+      try {
+
+        img.fetchPriority =
+          "high";
+
+      } catch (e) {}
+
+
+      img.classList.add(
+        "eah-photo-forced"
+      );
+
+
+      img.onerror =
+        function () {
+
+          if (
+            this.dataset.eahFallback === "1"
+          ) {
+            return;
+          }
+
+          this.dataset.eahFallback =
+            "1";
+
+          this.src =
+            EAH_PHOTOS.fallback;
+
+        };
+
+    }
+
+
+    return true;
 
   }
 
 
+  /* ==========================================================
+     ACCUEIL
+  ========================================================== */
 
-  /* ============================================================
-     HERO DES PAGES
-  ============================================================ */
-
-  function fixPageHero() {
+  function fixHomeHero() {
 
     const hash =
-      norm(
-        window.location.hash
-      );
-
-
-    let titleText =
-      "";
+      currentHash();
 
 
     if (
-      hash.includes(
-        "olympique"
-      )
+      hash !== "#accueil" &&
+      hash !== "#"
     ) {
-
-      titleText =
-        "plongeon olympique";
-
-    }
-
-    else if (
-      hash.includes(
-        "freestyle"
-      )
-    ) {
-
-      titleText =
-        "freestyle";
-
-    }
-
-    else if (
-      hash.includes(
-        "high"
-      )
-    ) {
-
-      titleText =
-        "high diving";
-
-    }
-
-    else if (
-      hash.includes(
-        "ange"
-      )
-    ) {
-
-      titleText =
-        "saut de l'ange";
-
-    }
-
-    else if (
-      hash.includes(
-        "blazon"
-      )
-    ) {
-
-      titleText =
-        "les blazons";
-
-    }
-
-    else if (
-      hash.includes(
-        "actualit"
-      )
-    ) {
-
-      titleText =
-        "actualites";
-
-    }
-
-    else if (
-      hash.includes(
-        "spots"
-      )
-    ) {
-
-      titleText =
-        "ou plonger";
-
-    }
-
-
-    if (!titleText) {
       return;
     }
 
 
     const heading =
-      [...document.querySelectorAll(
-        "h1,h2"
-      )]
-      .find(
-        el =>
+      findHeading([
+        "Le plongeon"
+      ]);
 
-          norm(
-            el.textContent
-          )
-          .includes(
-            titleText
-          )
 
+    const hero =
+      findHeroFromHeading(
+        heading
       );
 
 
-    if (!heading) {
+    forcePhoto(
+      hero,
+      EAH_PHOTOS.accueil
+    );
+
+  }
+
+
+  /* ==========================================================
+     CARTES DISCIPLINES ACCUEIL
+  ========================================================== */
+
+  function fixHomeDisciplineCards() {
+
+    const cards = [
+
+      {
+        titles: [
+          "Plongeon olympique"
+        ],
+        photo:
+          EAH_PHOTOS.cardOlympique
+      },
+
+      {
+        titles: [
+          "Freestyle / Døds",
+          "Freestyle / Dods",
+          "Freestyle"
+        ],
+        photo:
+          EAH_PHOTOS.cardFreestyle
+      },
+
+      {
+        titles: [
+          "High Diving"
+        ],
+        photo:
+          EAH_PHOTOS.cardHighDiving
+      },
+
+      {
+        titles: [
+          "Saut de l'ange",
+          "Saut de lange"
+        ],
+        photo:
+          EAH_PHOTOS.cardSautAnge
+      }
+
+    ];
+
+
+    cards.forEach(config => {
+
+      const heading =
+        findHeading(
+          config.titles
+        );
+
+
+      if (!heading) {
+        return;
+      }
+
+
+      const card =
+        findCardFromHeading(
+          heading
+        );
+
+
+      forcePhoto(
+        card,
+        config.photo
+      );
+
+    });
+
+  }
+
+
+  /* ==========================================================
+     HAUT DES PAGES
+  ========================================================== */
+
+  function fixCurrentPageHero() {
+
+    const hash =
+      currentHash();
+
+
+    let config =
+      null;
+
+
+    if (
+      hash.includes("olympique")
+    ) {
+
+      config = {
+        titles: [
+          "Plongeon olympique"
+        ],
+        photo:
+          EAH_PHOTOS.heroOlympique
+      };
+
+    }
+
+
+    else if (
+      hash.includes("freestyle") ||
+      hash.includes("dods")
+    ) {
+
+      config = {
+        titles: [
+          "Freestyle / Døds",
+          "Freestyle / Dods",
+          "Freestyle"
+        ],
+        photo:
+          EAH_PHOTOS.heroFreestyle
+      };
+
+    }
+
+
+    else if (
+      hash.includes("highdiving") ||
+      hash.includes("high-diving")
+    ) {
+
+      config = {
+        titles: [
+          "High Diving"
+        ],
+        photo:
+          EAH_PHOTOS.heroHighDiving
+      };
+
+    }
+
+
+    else if (
+      hash.includes("ange")
+    ) {
+
+      config = {
+        titles: [
+          "Saut de l'ange",
+          "Saut de lange"
+        ],
+        photo:
+          EAH_PHOTOS.heroSautAnge
+      };
+
+    }
+
+
+    else if (
+      hash.includes("blazon")
+    ) {
+
+      config = {
+        titles: [
+          "Les blazons"
+        ],
+        photo:
+          EAH_PHOTOS.heroBlazons
+      };
+
+    }
+
+
+    if (!config) {
       return;
     }
 
 
-    const zone =
-      heading.closest("section")
-      ||
-      heading.parentElement?.parentElement
-      ||
-      heading.parentElement;
+    const heading =
+      findHeading(
+        config.titles
+      );
 
 
-    fillPhotoZone(
-      zone
+    const hero =
+      findHeroFromHeading(
+        heading
+      );
+
+
+    forcePhoto(
+      hero,
+      config.photo
     );
 
   }
 
 
-
-  /* ============================================================
+  /* ==========================================================
      BLAZONS INDIVIDUELS
-  ============================================================ */
+     IMPORTANT :
+     comparaison du TITRE EXACT.
+     On ne cherche plus "or" dans tout le texte.
+  ========================================================== */
 
-  const blazons = {
-
-    blanc:
-      "blazon-blanc.png",
-
-    orange:
-      "blazon-orange.png",
-
-    vert:
-      "blazon-vert.png",
-
-    bleu:
-      "blazon-bleu.png",
-
-    rouge:
-      "blazon-rouge.png",
-
-    bronze:
-      "blazon-bronze.png",
-
-    argent:
-      "blazon-argent.png",
-
-    silver:
-      "blazon-argent.png",
-
-    or:
-      "blazon-or.png",
-
-    noir:
-      "blazon-noir.png",
-
-    legend:
-      "blazon-legend.png",
-
-    titan:
-      "blazon-titan.png"
-
-  };
-
-
-  function fixBlazons() {
+  function fixIndividualBlazons() {
 
     document
       .querySelectorAll(
-        "article, .blazon-card"
+        "h2,h3,h4"
       )
-      .forEach(
-        card => {
+      .forEach(heading => {
 
-          const text =
-            norm(
-              card.textContent
-            );
-
-
-          for (
-            const [
-              key,
-              src
-            ]
-            of Object.entries(
-              blazons
-            )
-          ) {
-
-            if (
-              !text.includes(
-                key
-              )
-            ) {
-              continue;
-            }
+        const title =
+          normalize(
+            heading.textContent
+          );
 
 
-            const img =
-              card.querySelector(
-                "img"
-              );
+        const file =
+          BLAZON_FILES[
+            title
+          ];
 
 
-            if (!img) {
-              continue;
-            }
-
-
-            img.src =
-              src;
-
-
-            img.style.setProperty(
-              "display",
-              "block",
-              "important"
-            );
-
-
-            img.style.setProperty(
-              "opacity",
-              "1",
-              "important"
-            );
-
-
-            img.style.setProperty(
-              "visibility",
-              "visible",
-              "important"
-            );
-
-
-            img.style.setProperty(
-              "object-fit",
-              "contain",
-              "important"
-            );
-
-
-            break;
-
-          }
-
+        if (!file) {
+          return;
         }
-      );
-
-  }
 
 
-
-  /* ============================================================
-     ACTUALITES / SPOTS
-     NE PAS REMPLACER LES URL SUPABASE VALIDES
-  ============================================================ */
-
-  function fixCmsPhotos() {
-
-    document
-      .querySelectorAll(
-        ".eah-public-card img, .news-card img, .spot-card img"
-      )
-      .forEach(
-        img => {
-
-          img.style.setProperty(
-            "display",
-            "block",
-            "important"
-          );
+        const card =
+          heading.closest(
+            ".blazon-card, article"
+          )
+          ||
+          heading.parentElement?.parentElement;
 
 
-          img.style.setProperty(
-            "opacity",
-            "1",
-            "important"
-          );
-
-
-          img.style.setProperty(
-            "visibility",
-            "visible",
-            "important"
-          );
-
-
-          img.style.setProperty(
-            "object-fit",
-            "cover",
-            "important"
-          );
-
-
-          repairImg(
-            img
-          );
-
+        if (!card) {
+          return;
         }
-      );
+
+
+        const img =
+          card.querySelector("img");
+
+
+        if (!img) {
+          return;
+        }
+
+
+        img.src =
+          file;
+
+
+        img.loading =
+          "eager";
+
+
+        img.classList.add(
+          "eah-blazon-forced"
+        );
+
+      });
 
   }
 
 
-
-  /* ============================================================
-     TOUTES LES IMAGES RESTANTES
-  ============================================================ */
-
-  function fixAllImgs() {
-
-    document
-      .querySelectorAll(
-        "main img, section img"
-      )
-      .forEach(
-        repairImg
-      );
-
-  }
-
-
-
-  /* ============================================================
+  /* ==========================================================
      EXECUTION
-  ============================================================ */
+  ========================================================== */
 
-  function applyPhotos() {
+  function applyAll() {
 
-    fixHome();
+    installPhotoCSS();
 
-    fixDisciplineCards();
+    fixHomeHero();
 
-    fixPageHero();
+    fixHomeDisciplineCards();
 
-    fixBlazons();
+    fixCurrentPageHero();
 
-    fixCmsPhotos();
-
-    fixAllImgs();
+    fixIndividualBlazons();
 
   }
 
 
+  /*
+    Exécution immédiate.
+  */
 
-  preloadPhotos();
+  preloadCriticalImages();
 
+  applyAll();
+
+
+  /*
+    DOM terminé.
+  */
 
   if (
-    document.readyState ===
-    "loading"
+    document.readyState === "loading"
   ) {
 
     document.addEventListener(
       "DOMContentLoaded",
-      applyPhotos
+      applyAll,
+      {
+        once: true
+      }
     );
 
-  } else {
+  }
 
-    applyPhotos();
+
+  /*
+    Navigation interne.
+  */
+
+  function refreshRoute() {
+
+    /*
+      Le premier passage permet d'avoir
+      immédiatement quelque chose.
+
+      Les suivants interceptent la fin du
+      rendu de script.js.
+    */
+
+    applyAll();
+
+    requestAnimationFrame(
+      applyAll
+    );
+
+    setTimeout(
+      applyAll,
+      20
+    );
+
+    setTimeout(
+      applyAll,
+      60
+    );
+
+    setTimeout(
+      applyAll,
+      120
+    );
+
+    setTimeout(
+      applyAll,
+      250
+    );
+
+    setTimeout(
+      applyAll,
+      500
+    );
 
   }
 
 
   window.addEventListener(
-    "load",
-    applyPhotos
+    "hashchange",
+    refreshRoute
   );
 
 
   window.addEventListener(
-    "hashchange",
-    () => {
-
-      /*
-        Ton routeur reconstruit les pages :
-        plusieurs passes très rapides.
-      */
-
-      requestAnimationFrame(
-        applyPhotos
-      );
-
-
-      setTimeout(
-        applyPhotos,
-        40
-      );
-
-
-      setTimeout(
-        applyPhotos,
-        150
-      );
-
-
-      setTimeout(
-        applyPhotos,
-        400
-      );
-
-    }
+    "load",
+    refreshRoute
   );
 
 
-  let timer;
+  /*
+    Le routeur EAH remplace certaines parties
+    du DOM après le changement de hash.
+
+    Dès qu'une nouvelle section est créée,
+    on réapplique les photos.
+  */
+
+  let mutationTimer = null;
 
 
   const observer =
-    new MutationObserver(
-      () => {
+    new MutationObserver(() => {
 
-        clearTimeout(
-          timer
+      clearTimeout(
+        mutationTimer
+      );
+
+
+      mutationTimer =
+        setTimeout(
+          applyAll,
+          15
         );
 
-
-        timer =
-          setTimeout(
-            applyPhotos,
-            50
-          );
-
-      }
-    );
+    });
 
 
   observer.observe(
     document.documentElement,
     {
-      childList:
-        true,
-
-      subtree:
-        true
+      childList: true,
+      subtree: true
     }
   );
 
