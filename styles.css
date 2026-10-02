@@ -6678,3 +6678,96 @@ header.site-header,
     min-height: 520px;
   }
 }
+/* ============================================================
+   EAH DIVING — CORRECTION COMPLETE DES ESPACES PHOTOS
+============================================================ */
+
+/* Toutes les zones visuelles doivent réellement afficher leur image */
+.hero,
+.home-hero,
+.page-hero,
+.section-hero,
+.hero-banner,
+.discipline-card,
+.disciplines-card,
+.card-visual,
+.eah-public-card,
+[class*="hero"],
+[class*="discipline-card"] {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Les images ne doivent plus être masquées par un ancien correctif */
+main img:not(.profile-photo):not(.coach-photo):not(.avatar):not(.logo),
+section img:not(.profile-photo):not(.coach-photo):not(.avatar):not(.logo) {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Image occupant réellement toute sa zone */
+.eah-auto-photo {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+
+  object-fit: cover !important;
+  object-position: center center !important;
+
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Photo dans les cartes de disciplines */
+.discipline-card img,
+.disciplines-card img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Photos Actualités / Spots */
+.eah-public-card img,
+.news-card img,
+.spot-card img {
+  display: block !important;
+  width: 100% !important;
+  aspect-ratio: 16 / 9;
+  object-fit: cover !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Blazons : ne pas les découper */
+.blazon-card img,
+[class*="blazon"] img {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+}
+
+/* On interdit aux anciens correctifs de cacher les photos */
+.eah-hidden-hero-image {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Téléphone */
+@media (max-width: 768px) {
+
+  .discipline-card,
+  .disciplines-card {
+    min-height: 540px;
+  }
+
+  .discipline-card img,
+  .disciplines-card img {
+    min-height: 540px;
+  }
+
+}
