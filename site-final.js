@@ -877,93 +877,40 @@
 
   function corrigerHeroBlazons() {
 
-    const hash =
-      hashActuel();
-
-
-    if (
-      !hash.includes(
-        "blazon"
-      )
-    ) {
-      return;
-    }
-
-
-    const titre =
-      trouverTitre(
-        "Les blazons"
-      );
-
-
-    const hero =
-      trouverHeroDepuisTitre(
-        titre
-      );
-
-
-    if (!hero) {
-      return;
-    }
-
-
-    hero.classList.add(
-      "eah-v2-hero"
+  const hero =
+    document.querySelector(
+      "#blazons .page-hero"
     );
 
+  if (!hero) return;
 
-    /*
-      Pour cette page :
-      utilisation explicite de hero-blazons.png
-    */
+  const img =
+    hero.querySelector(
+      ".page-hero-image"
+    );
 
-    hero.style
-      .setProperty(
-        "background-image",
-        `url("${FILES.blazons}")`,
-        "important"
-      );
+  if (!img) return;
 
+  img.src =
+    "hero-blazons.png";
 
-    hero.style
-      .setProperty(
-        "background-size",
-        "cover",
-        "important"
-      );
+  img.loading =
+    "eager";
 
+  img.decoding =
+    "async";
 
-    hero.style
-      .setProperty(
-        "background-position",
-        "center center",
-        "important"
-      );
+  img.style.display =
+    "block";
 
+  img.style.opacity =
+    "1";
 
-    /*
-      Si le hero contient une ancienne image,
-      elle ne doit pas masquer le background.
-    */
+  hero.style.removeProperty(
+    "background-image"
+  );
 
-    const img =
-      imageHero(
-        hero
-      );
-
-
-    if (img) {
-
-      img.style
-        .setProperty(
-          "display",
-          "none",
-          "important"
-        );
-
-    }
-
-  }
+}
 
 
 
