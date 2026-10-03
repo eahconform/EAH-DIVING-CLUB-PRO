@@ -4147,28 +4147,35 @@ function renderSpots() {
 
                 </div>
 
-                ${
-                  spot.address
-                  ?
-                  `
-                    <p>
-                      <strong>
-                        ${esc(
-                          spot.address
-                        )}
-                      </strong>
-                    </p>
-                  `
-                  :
-                  ''
-                }
+                <div class="spot-details" hidden>
 
-                <p>
-                  ${esc(
-                    spot.description ||
-                    ''
-                  )}
-                </p>
+  ${
+    spot.address
+      ? `
+        <div class="spot-detail-block">
+          <strong>Adresse</strong>
+          <p>${esc(spot.address)}</p>
+        </div>
+      `
+      : ''
+  }
+
+  ${
+    spot.description
+      ? `
+        <div class="spot-detail-block">
+          <strong>Description</strong>
+          <p>${esc(spot.description)}</p>
+        </div>
+      `
+      : ''
+  }
+
+</div>
+
+<div class="spot-open-label">
+  Voir les informations
+</div>
 
               </div>
 
