@@ -5403,7 +5403,34 @@
       min-width: 0;
     }
 
-  }
+  }/* ============================================================
+   HERO EAH — PHOTOS PLUS CLAIRES
+============================================================ */
+
+.page-hero-image {
+  filter:
+    brightness(1.18)
+    saturate(1.05)
+    contrast(1.02) !important;
+}
+
+/* voile devant les grandes images : beaucoup plus léger */
+.page-hero::after,
+.page-hero-overlay {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(1, 15, 28, 0.30) 0%,
+      rgba(1, 15, 28, 0.16) 45%,
+      rgba(1, 15, 28, 0.06) 100%
+    ) !important;
+}
+
+/* ne pas assombrir l'image elle-même */
+.page-hero picture,
+.page-hero picture img {
+  opacity: 1 !important;
+}
 
 </style>
 </body>
