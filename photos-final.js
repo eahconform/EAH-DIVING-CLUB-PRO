@@ -23,10 +23,12 @@
   /* ACCUEIL */
   "hero-divers-group.png",
 
-  /* BLAZONS / AUTRES HERO */
+  /* PAGES PRINCIPALES */
+  "grading-hero.jpg",
   "hero-blazons.png",
-  "actualites-hero.jpg",
+  "population-hero.jpg",
   "spots-hero.jpg",
+  "actualites-hero.jpg",
 
   /* PLONGEON OLYMPIQUE */
   "olympique-desktop.jpg",
