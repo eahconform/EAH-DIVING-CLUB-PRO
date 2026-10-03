@@ -1,5 +1,20 @@
 <!DOCTYPE html>
 <html lang="fr" class="eah-images-loading">
+  <style id="eah-club-visibility-guard">
+
+  html:not(.eah-page-club) #eah-club-pro,
+  html:not(.eah-page-club) #eah-club-divers,
+  html:not(.eah-page-club) #eah-club-groups,
+  html:not(.eah-page-club) #eah-coach-evaluation,
+  html:not(.eah-page-club) #eah-evaluations,
+  html:not(.eah-page-club) #eah-actualites,
+  html:not(.eah-page-club) #eah-spots,
+  html:not(.eah-page-club) #eah-blazons,
+  html:not(.eah-page-club) #eah-tarifs {
+    display: none !important;
+  }
+
+</style>
   <head>
 <link rel="preload" as="image" href="site-water-premium-bg.jpg">
 <link rel="preload" as="image" href="hero-divers-group.png">
@@ -1419,33 +1434,7 @@
         </div>
 
       </section>
-<!-- =========================================================
-     PAGE DETAIL ACTUALITE
-========================================================= -->
 
-<section
-  id="actualite-detail"
-  class="page actualite-detail-page"
-  hidden
->
-
-  <div class="actualite-detail-container">
-
-    <button
-      type="button"
-      id="actualite-back"
-      class="actualite-back"
-    >
-      ← Retour aux actualités
-    </button>
-
-
-    <div id="actualite-detail-content">
-    </div>
-
-  </div>
-
-</section>
 
       <section class="section">
 
@@ -5458,13 +5447,34 @@
   opacity: 1 !important;
 }
 /* ============================================================
-   CACHER L'ESPACE CLUB SUR LE SITE PUBLIC
+   EAH DIVING
+   ESPACE CLUB VISIBLE UNIQUEMENT SUR #club
 ============================================================ */
 
-html:not(.eah-page-club) #club,
-html:not(.eah-page-club) .eah-pro-workspace,
-html:not(.eah-page-club) #clubWorkspace {
+
+/*
+   Toutes les extensions de l'espace Club sont masquées
+   par défaut sur le site public.
+*/
+
+html:not(.eah-page-club) #eah-club-pro,
+html:not(.eah-page-club) #eah-club-divers,
+html:not(.eah-page-club) #eah-club-groups,
+html:not(.eah-page-club) #eah-coach-evaluation,
+html:not(.eah-page-club) #eah-evaluations,
+html:not(.eah-page-club) #eah-actualites,
+html:not(.eah-page-club) #eah-spots,
+html:not(.eah-page-club) #eah-blazons,
+html:not(.eah-page-club) #eah-tarifs {
   display: none !important;
+}
+
+
+/*
+   Le profil NFC n'est PAS inclus ici.
+   Il doit pouvoir fonctionner indépendamment
+   de l'espace Club.
+*/
 }/* ============================================================
    SPOTS — CARTE CLIQUABLE
 ============================================================ */
