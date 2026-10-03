@@ -1,337 +1,651 @@
 /* ============================================================
    EAH DIVING PRO
-   CHARGEMENT PHOTOS FINAL
-   - préchargement immédiat
-   - aucune image "lazy"
-   - correction images injectées après Supabase
-   - correction changement de club sans refresh
+   PHOTOS-FINAL.JS
+   VERSION FINAL
+   03/10/2026
+
+   - Précharge uniquement les images importantes
+   - Heroes prioritaires
+   - Pas de blocage de 7 secondes
+   - Images Supabase prises en charge
+   - Navigation SPA prise en charge
 ============================================================ */
 
 (() => {
 
-  const HTML = document.documentElement;
+  "use strict";
+
+
+  const HTML =
+    document.documentElement;
+
 
   /* ============================================================
-     IMAGES PRINCIPALES À PRÉCHARGER
+     HEROES A PRECHARGER
   ============================================================ */
 
   const PRELOAD_IMAGES = [
 
-  /* FOND */
-  "site-water-premium-bg.jpg",
+    /* FOND */
 
-  /* ACCUEIL */
-  "hero-divers-group.png",
+    "site-water-premium-bg.jpg",
 
-  /* PAGES PRINCIPALES */
-  "grading-hero.jpg",
-  "hero-blazons.png",
-  "population-hero.jpg",
-  "spots-hero.jpg",
-  "actualites-hero.jpg",
 
-  /* PLONGEON OLYMPIQUE */
-  "olympique-desktop.jpg",
-  "olympique-mobile.jpg",
-  "portrait-water-diver.jpg",
+    /* ACCUEIL */
 
-  /* FREESTYLE / DØDS */
-  "freestyle-desktop.jpg",
-  "freestyle-mobile.jpg",
+    "hero-divers-group.png",
 
-  /* HIGH DIVING */
-  "high-diving-desktop.png",
-  "high-diving-mobile.jpg",
 
-  /* SAUT DE L'ANGE */
-  "saut-ange-desktop.jpg",
-  "saut-ange-mobile.jpg"
+    /* CATEGORIES */
 
-];
+    "grading-hero.jpg",
+
+    "hero-blazons.png",
+
+    "population-hero.jpg",
+
+    "spots-hero.jpg",
+
+    "actualites-hero.jpg",
+
+    "pricing-hero.jpg",
+
+    "grading-request-hero.jpg",
+
+    "club-dashboard-hero.jpg",
+
+    "evaluation-hero.jpg",
+
+
+    /* OLYMPIQUE */
+
+    "olympique-desktop.jpg",
+
+    "olympique-mobile.jpg",
+
+    "portrait-water-diver.jpg",
+
+
+    /* FREESTYLE */
+
+    "freestyle-desktop.jpg",
+
+    "freestyle-mobile.jpg",
+
+
+    /* HIGH DIVING */
+
+    "high-diving-desktop.png",
+
+    "high-diving-mobile.jpg",
+
+
+    /* SAUT DE L'ANGE */
+
+    "saut-ange-desktop.jpg",
+
+    "saut-ange-mobile.jpg"
+
+  ];
 
 
   /* ============================================================
      URL ABSOLUE
   ============================================================ */
 
-  function absoluteUrl(url) {
+  function absoluteUrl(
+    url
+  ) {
 
-    if (!url) return "";
+    if (!url) {
+
+      return "";
+
+    }
+
 
     try {
-      return new URL(url, document.baseURI).href;
-    } catch (e) {
+
+      return new URL(
+
+        url,
+
+        document.baseURI
+
+      ).href;
+
+    } catch (_) {
+
       return url;
+
     }
 
   }
 
 
-  /* ============================================================
-     CHARGER UNE IMAGE
-  ============================================================ */
-
-  function preloadUrl(url) {
-
-    return new Promise(resolve => {
-
-      if (!url) {
-        resolve();
-        return;
-      }
-
-      const image = new Image();
-
-      image.decoding = "async";
-
-      try {
-        image.fetchPriority = "high";
-      } catch (e) {}
-
-      image.onload = resolve;
-      image.onerror = resolve;
-
-      image.src = absoluteUrl(url);
-
-      if (image.complete) {
-        resolve();
-      }
-
-    });
-
-  }
-
 
   /* ============================================================
-     FORCE LE CHARGEMENT IMMÉDIAT
+     PRELOAD IMAGE
   ============================================================ */
 
-  function forceEager(root = document) {
+  function preloadUrl(
+    url
+  ) {
 
-    root
-      .querySelectorAll("img")
-      .forEach(img => {
+    return new Promise(
+      resolve => {
 
-        img.loading = "eager";
-        img.decoding = "async";
+        if (!url) {
+
+          resolve();
+
+          return;
+
+        }
+
+
+        const image =
+          new Image();
+
+
+        image.decoding =
+          "async";
+
 
         try {
-          img.fetchPriority = "high";
-        } catch (e) {}
 
-      });
+          image.fetchPriority =
+            "high";
 
-  }
-
-
-  /* ============================================================
-     RÉCUPÉRER LES URL DES IMAGES
-  ============================================================ */
-
-  function collectImages(root = document) {
-
-    const urls = new Set();
-
-    PRELOAD_IMAGES.forEach(url => {
-      urls.add(absoluteUrl(url));
-    });
+        } catch (_) {}
 
 
-    root.querySelectorAll("img").forEach(img => {
-
-      const url =
-        img.currentSrc ||
-        img.getAttribute("src");
-
-      if (url) {
-        urls.add(absoluteUrl(url));
-      }
-
-    });
+        image.onload =
+          resolve;
 
 
-    root.querySelectorAll("source[srcset]").forEach(source => {
+        image.onerror =
+          resolve;
 
-      const srcset = source.getAttribute("srcset");
 
-      if (!srcset) return;
+        image.src =
+          absoluteUrl(
+            url
+          );
 
-      srcset.split(",").forEach(item => {
 
-        const url = item
-          .trim()
-          .split(/\s+/)[0];
+        if (
+          image.complete
+        ) {
 
-        if (url) {
-          urls.add(absoluteUrl(url));
+          resolve();
+
         }
 
-      });
-
-    });
-
-
-    return Array.from(urls);
+      }
+    );
 
   }
 
 
-  /* ============================================================
-     ATTENDRE LES IMAGES AVANT AFFICHAGE
-  ============================================================ */
-
-  async function prepare(root = document) {
-
-    forceEager(root);
-
-    const images = root.querySelectorAll("img");
-
-    images.forEach(img => {
-      img.classList.add("eah-image-wait");
-    });
-
-    const urls = collectImages(root);
-
-    await Promise.race([
-
-      Promise.allSettled(
-        urls.map(preloadUrl)
-      ),
-
-      new Promise(resolve =>
-        setTimeout(resolve, 7000)
-      )
-
-    ]);
-
-
-    images.forEach(img => {
-
-      img.classList.remove("eah-image-wait");
-      img.classList.add("eah-image-ready");
-
-    });
-
-  }
-
 
   /* ============================================================
-     IMAGE AJOUTÉE APRÈS CHARGEMENT
-     CLUB / ACTUALITÉS / SPOTS / SUPABASE
+     LINK PRELOAD
   ============================================================ */
 
-  function prepareNewImage(img) {
+  function ajouterPreloadLink(
+    url
+  ) {
 
-    if (!img || img.tagName !== "IMG") return;
+    if (!url) {
 
-    img.loading = "eager";
-    img.decoding = "async";
-
-    try {
-      img.fetchPriority = "high";
-    } catch (e) {}
-
-    img.classList.add("eah-image-wait");
-
-    const src =
-      img.currentSrc ||
-      img.getAttribute("src");
-
-    if (!src) {
-      img.classList.remove("eah-image-wait");
       return;
+
     }
 
-    preloadUrl(src).then(() => {
 
-      img.classList.remove("eah-image-wait");
-      img.classList.add("eah-image-ready");
+    const absolute =
+      absoluteUrl(
+        url
+      );
 
-    });
+
+    const existe =
+      Array
+        .from(
+          document.querySelectorAll(
+            'link[rel="preload"][as="image"]'
+          )
+        )
+        .some(
+          link =>
+            link.href ===
+            absolute
+        );
+
+
+    if (
+      existe
+    ) {
+
+      return;
+
+    }
+
+
+    const link =
+      document.createElement(
+        "link"
+      );
+
+
+    link.rel =
+      "preload";
+
+
+    link.as =
+      "image";
+
+
+    link.href =
+      url;
+
+
+    document.head
+      .appendChild(
+        link
+      );
 
   }
 
 
+
   /* ============================================================
-     SURVEILLANCE DOM
+     PRIORISER UNE IMAGE
   ============================================================ */
 
-  const observer = new MutationObserver(mutations => {
+  function prioriserImage(
+    img,
+    hautePriorite =
+      false
+  ) {
 
-    mutations.forEach(mutation => {
+    if (
+      !img
+      ||
+      img.tagName !==
+      "IMG"
+    ) {
 
-      /* Nouvelle image */
-      mutation.addedNodes.forEach(node => {
+      return;
 
-        if (!(node instanceof HTMLElement)) return;
+    }
 
 
-        if (node.tagName === "IMG") {
-          prepareNewImage(node);
+    img.loading =
+      "eager";
+
+
+    img.decoding =
+      "async";
+
+
+    if (
+      hautePriorite
+    ) {
+
+      try {
+
+        img.fetchPriority =
+          "high";
+
+      } catch (_) {}
+
+    }
+
+
+    img.style
+      .setProperty(
+        "visibility",
+        "visible",
+        "important"
+      );
+
+
+    img.style
+      .setProperty(
+        "opacity",
+        "1",
+        "important"
+      );
+
+  }
+
+
+
+  /* ============================================================
+     HERO ACTUEL
+  ============================================================ */
+
+  function prioriserPageActuelle() {
+
+    const hash =
+      String(
+        window.location.hash ||
+        "#accueil"
+      )
+      .replace(
+        "#",
+        ""
+      )
+      ||
+      "accueil";
+
+
+    const page =
+      document.getElementById(
+        hash
+      );
+
+
+    if (!page) {
+
+      return;
+
+    }
+
+
+    page
+      .querySelectorAll(
+        ".hero img, .page-hero img"
+      )
+      .forEach(
+        img => {
+
+          prioriserImage(
+            img,
+            true
+          );
+
+
+          const src =
+            img.currentSrc
+            ||
+            img.getAttribute(
+              "src"
+            );
+
+
+          if (
+            src
+          ) {
+
+            preloadUrl(
+              src
+            );
+
+          }
+
         }
+      );
+
+  }
 
 
-        node
-          .querySelectorAll?.("img")
-          .forEach(prepareNewImage);
 
-      });
+  /* ============================================================
+     CARTES DISCIPLINES ACCUEIL
+  ============================================================ */
+
+  function prioriserAccueil() {
+
+    document
+      .querySelectorAll(
+        "#accueil .discipline-card img"
+      )
+      .forEach(
+        img =>
+          prioriserImage(
+            img,
+            true
+          )
+      );
+
+  }
 
 
-      /* SRC MODIFIÉ */
+
+  /* ============================================================
+     IMAGE AJOUTEE APRES SUPABASE
+  ============================================================ */
+
+  function preparerNouvelleImage(
+    img
+  ) {
+
+    if (
+      !img
+      ||
+      img.tagName !==
+      "IMG"
+    ) {
+
+      return;
+
+    }
+
+
+    const importante =
+      Boolean(
+
+        img.closest(
+          ".hero, .page-hero, .discipline-card"
+        )
+
+      );
+
+
+    prioriserImage(
+
+      img,
+
+      importante
+
+    );
+
+
+    if (
+      importante
+    ) {
+
+      const src =
+        img.currentSrc
+        ||
+        img.getAttribute(
+          "src"
+        );
+
+
       if (
-        mutation.type === "attributes" &&
-        mutation.target instanceof HTMLImageElement
+        src
       ) {
 
-        prepareNewImage(mutation.target);
+        preloadUrl(
+          src
+        );
 
       }
 
-    });
-
-  });
-
-
-  observer.observe(
-    document.documentElement,
-    {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: [
-        "src",
-        "srcset"
-      ]
     }
-  );
+
+  }
+
 
 
   /* ============================================================
-     PREMIER CHARGEMENT
+     PRECHARGEMENT PRINCIPAL
   ============================================================ */
 
-  async function bootPhotos() {
+  function lancerPrechargement() {
 
-    await prepare(document);
+    PRELOAD_IMAGES
+      .forEach(
+        url => {
+
+          ajouterPreloadLink(
+            url
+          );
+
+
+          preloadUrl(
+            url
+          );
+
+        }
+      );
+
+  }
+
+
+
+  /* ============================================================
+     OBSERVER SUPABASE / DOM DYNAMIQUE
+  ============================================================ */
+
+  const observer =
+    new MutationObserver(
+      mutations => {
+
+        mutations
+          .forEach(
+            mutation => {
+
+              mutation
+                .addedNodes
+                .forEach(
+                  node => {
+
+                    if (
+                      !(
+                        node instanceof
+                        HTMLElement
+                      )
+                    ) {
+
+                      return;
+
+                    }
+
+
+                    if (
+                      node.tagName ===
+                      "IMG"
+                    ) {
+
+                      preparerNouvelleImage(
+                        node
+                      );
+
+                    }
+
+
+                    node
+                      .querySelectorAll
+                      ?.(
+                        "img"
+                      )
+                      .forEach(
+                        preparerNouvelleImage
+                      );
+
+                  }
+                );
+
+            }
+          );
+
+      }
+    );
+
+
+  /* ============================================================
+     BOOT
+  ============================================================ */
+
+  function bootPhotos() {
+
+    /*
+       On n'attend plus le téléchargement
+       de toutes les images avant d'afficher le site.
+    */
 
     HTML.classList.remove(
       "eah-images-loading"
     );
 
+
     HTML.classList.add(
       "eah-images-ready"
+    );
+
+
+    lancerPrechargement();
+
+
+    document
+      .querySelectorAll(
+        ".hero img, .page-hero img"
+      )
+      .forEach(
+        img =>
+          prioriserImage(
+            img,
+            true
+          )
+      );
+
+
+    prioriserAccueil();
+
+    prioriserPageActuelle();
+
+
+    observer.observe(
+
+      document.documentElement,
+
+      {
+
+        childList:
+          true,
+
+        subtree:
+          true
+
+      }
+
     );
 
   }
 
 
-  if (document.readyState === "loading") {
+
+  if (
+    document.readyState ===
+    "loading"
+  ) {
 
     document.addEventListener(
+
       "DOMContentLoaded",
+
       bootPhotos,
-      { once: true }
+
+      {
+        once:
+          true
+      }
+
     );
 
   } else {
@@ -341,32 +655,96 @@
   }
 
 
+
   /* ============================================================
-     RETOUR NAVIGATEUR / MOBILE
+     NAVIGATION
   ============================================================ */
 
-  window.addEventListener("pageshow", () => {
-    forceEager(document);
-  });
+  window.addEventListener(
+
+    "hashchange",
+
+    () => {
+
+      prioriserPageActuelle();
+
+    }
+
+  );
 
 
-  window.addEventListener("hashchange", () => {
-    forceEager(document);
-  });
+  document.addEventListener(
+
+    "click",
+
+    event => {
+
+      if (
+        !event.target.closest(
+          "[data-page], [data-page-button], [data-open]"
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      setTimeout(
+        prioriserPageActuelle,
+        0
+      );
+
+
+      setTimeout(
+        prioriserPageActuelle,
+        100
+      );
+
+    }
+
+  );
+
+
+  window.addEventListener(
+
+    "pageshow",
+
+    prioriserPageActuelle
+
+  );
 
 
   /* ============================================================
-     API ACCESSIBLE DEPUIS EAH-WORKSPACE
+     API PUBLIQUE
   ============================================================ */
 
   window.EAHPhotos = {
 
-    refresh(root = document) {
-      return prepare(root);
+    refresh(
+      root =
+        document
+    ) {
+
+      root
+        .querySelectorAll(
+          "img"
+        )
+        .forEach(
+          preparerNouvelleImage
+        );
+
     },
 
-    preload(url) {
-      return preloadUrl(url);
+
+    preload(
+      url
+    ) {
+
+      return preloadUrl(
+        url
+      );
+
     }
 
   };
