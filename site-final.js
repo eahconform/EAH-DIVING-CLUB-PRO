@@ -1306,3 +1306,37 @@
   );
 
 })();
+/* ============================================================
+   EAH DIVING
+   ESPACE CLUB UNIQUEMENT SUR LA PAGE CLUB
+============================================================ */
+
+function gererAffichageEspaceClub() {
+
+  const hash =
+    (window.location.hash || "#accueil")
+      .toLowerCase();
+
+  const estPageClub =
+    hash === "#club" ||
+    hash === "#espace-club" ||
+    hash === "#espaceclub" ||
+    hash.startsWith("#club-");
+
+  document.documentElement.classList.toggle(
+    "eah-page-club",
+    estPageClub
+  );
+
+}
+
+
+/* premier affichage */
+gererAffichageEspaceClub();
+
+
+/* changement de page */
+window.addEventListener(
+  "hashchange",
+  gererAffichageEspaceClub
+);
