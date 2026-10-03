@@ -5571,6 +5571,238 @@ html:not(.eah-page-club) #clubWorkspace {
     transform: translateY(0);
   }
 
+}/* ============================================================
+   EAH DIVING — PAGE DETAIL ACTUALITE
+============================================================ */
+
+#actualite-detail {
+  min-height: 100vh;
+  padding:
+    120px 24px 70px;
+
+  background:
+    rgba(2, 16, 29, .96);
+}
+
+
+.actualite-detail-container {
+  width: min(100%, 1050px);
+  margin: 0 auto;
+}
+
+
+.actualite-back {
+  border:
+    1px solid rgba(255,255,255,.16);
+
+  background:
+    rgba(6,30,51,.82);
+
+  color: #fff;
+
+  padding: 12px 18px;
+
+  border-radius: 12px;
+
+  font-size: .95rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  margin-bottom: 26px;
+}
+
+
+.actualite-back:hover {
+  background:
+    rgba(11,107,255,.22);
+}
+
+
+/* IMAGE PRINCIPALE */
+
+.actualite-detail-image {
+
+  display: block;
+
+  width: 100%;
+  max-height: 560px;
+
+  object-fit: cover;
+
+  border-radius: 26px;
+
+  margin-bottom: 32px;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0,0,0,.35);
+}
+
+
+/* EN-TETE */
+
+.actualite-detail-head {
+  margin-bottom: 28px;
+}
+
+
+.actualite-detail-category {
+
+  display: inline-block;
+
+  margin-bottom: 10px;
+
+  color: var(--cyan);
+
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: .12em;
+}
+
+
+.actualite-detail-head h1 {
+
+  margin:
+    0 0 12px;
+
+  color: #fff;
+
+  font-size:
+    clamp(2.3rem, 6vw, 5rem);
+
+  line-height: 1.02;
+}
+
+
+.actualite-detail-date {
+
+  color: var(--muted);
+
+  margin-bottom: 20px;
+}
+
+
+.actualite-detail-summary {
+
+  max-width: 850px;
+
+  font-size: 1.2rem;
+
+  line-height: 1.6;
+
+  color: #dceaf4;
+}
+
+
+/* TEXTE COMPLET */
+
+.actualite-detail-text {
+
+  margin-top: 30px;
+
+  padding: 28px;
+
+  border:
+    1px solid rgba(255,255,255,.12);
+
+  border-radius: 20px;
+
+  background:
+    rgba(5,23,42,.74);
+
+  color: var(--text);
+
+  font-size: 1.05rem;
+
+  line-height: 1.8;
+}
+
+
+/* VIDEO */
+
+.actualite-video {
+
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  margin:
+    30px 0;
+
+  border-radius: 24px;
+
+  background: #000;
+}
+
+
+.actualite-video iframe,
+.actualite-video video {
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+
+  object-fit: contain;
+}
+
+
+/* LIEN */
+
+.actualite-external-link {
+
+  display: inline-flex;
+
+  margin-top: 28px;
+
+  padding:
+    13px 20px;
+
+  border-radius: 12px;
+
+  background: var(--blue);
+
+  color: white;
+
+  text-decoration: none;
+
+  font-weight: 800;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  #actualite-detail {
+
+    padding:
+      95px 16px 50px;
+
+  }
+
+
+  .actualite-detail-image {
+
+    border-radius: 18px;
+    max-height: 400px;
+
+  }
+
+
+  .actualite-detail-text {
+
+    padding: 20px;
+
+  }
+
 }
 </style>
 </body>
