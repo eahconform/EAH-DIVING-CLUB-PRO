@@ -5464,6 +5464,87 @@ html:not(.eah-page-club) #clubWorkspace {
 #spots .spot-card[aria-expanded="true"]
 .spot-more {
   display: none;
+}/* ============================================================
+   SPOTS — CARTES CLIQUABLES
+============================================================ */
+
+#spots .eah-public-card,
+#spots article {
+  cursor: pointer;
+}
+
+
+/* détails fermés */
+
+#spots .spot-details[hidden] {
+  display: none !important;
+}
+
+
+/* détails ouverts */
+
+#spots .spot-details {
+  display: block;
+
+  margin-top: 18px;
+  padding-top: 18px;
+
+  border-top:
+    1px solid rgba(255,255,255,.14);
+
+  animation:
+    eahSpotOpen .22s ease;
+}
+
+
+#spots .spot-detail-block {
+  margin-bottom: 16px;
+}
+
+
+#spots .spot-detail-block strong {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #ffffff;
+  font-weight: 800;
+}
+
+
+#spots .spot-detail-block p {
+  margin: 0;
+
+  color: var(--text);
+  line-height: 1.6;
+}
+
+
+/* bouton texte */
+
+#spots .spot-open-label {
+  margin-top: 15px;
+
+  color: var(--cyan);
+  font-size: .92rem;
+  font-weight: 800;
+}
+
+
+/* petite animation */
+
+@keyframes eahSpotOpen {
+
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
 }
 </style>
 </body>
