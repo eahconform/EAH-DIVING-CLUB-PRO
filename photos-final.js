@@ -1,14 +1,18 @@
 /* ============================================================
    EAH DIVING PRO
    PHOTOS-FINAL.JS
-   VERSION FINAL
+   VERSION FINALE
    03/10/2026
 
-   - Précharge uniquement les images importantes
-   - Heroes prioritaires
-   - Pas de blocage de 7 secondes
-   - Images Supabase prises en charge
-   - Navigation SPA prise en charge
+   - Préchargement des images importantes
+   - Heroes
+   - Disciplines
+   - Actualités
+   - Spots
+   - Offres
+   - Faire grader
+   - Espace Club
+   - Aucun lazy loading
 ============================================================ */
 
 (() => {
@@ -21,7 +25,7 @@
 
 
   /* ============================================================
-     HEROES A PRECHARGER
+     IMAGES A PRECHARGER
   ============================================================ */
 
   const PRELOAD_IMAGES = [
@@ -36,7 +40,7 @@
     "hero-divers-group.png",
 
 
-    /* CATEGORIES */
+    /* PAGES PRINCIPALES */
 
     "grading-hero.jpg",
 
@@ -53,8 +57,6 @@
     "grading-request-hero.jpg",
 
     "club-dashboard-hero.jpg",
-
-    "evaluation-hero.jpg",
 
 
     /* OLYMPIQUE */
@@ -87,6 +89,7 @@
     "saut-ange-mobile.jpg"
 
   ];
+
 
 
   /* ============================================================
@@ -125,7 +128,7 @@
 
 
   /* ============================================================
-     PRELOAD IMAGE
+     PRELOAD URL
   ============================================================ */
 
   function preloadUrl(
@@ -190,70 +193,36 @@
 
 
   /* ============================================================
-     LINK PRELOAD
+     EAGER
   ============================================================ */
 
-  function ajouterPreloadLink(
-    url
+  function forceEager(
+    root = document
   ) {
 
-    if (!url) {
+    root
+      .querySelectorAll(
+        "img"
+      )
+      .forEach(
+        img => {
 
-      return;
-
-    }
-
-
-    const absolute =
-      absoluteUrl(
-        url
-      );
+          img.loading =
+            "eager";
 
 
-    const existe =
-      Array
-        .from(
-          document.querySelectorAll(
-            'link[rel="preload"][as="image"]'
-          )
-        )
-        .some(
-          link =>
-            link.href ===
-            absolute
-        );
+          img.decoding =
+            "async";
 
 
-    if (
-      existe
-    ) {
+          try {
 
-      return;
+            img.fetchPriority =
+              "high";
 
-    }
+          } catch (_) {}
 
-
-    const link =
-      document.createElement(
-        "link"
-      );
-
-
-    link.rel =
-      "preload";
-
-
-    link.as =
-      "image";
-
-
-    link.href =
-      url;
-
-
-    document.head
-      .appendChild(
-        link
+        }
       );
 
   }
@@ -261,20 +230,204 @@
 
 
   /* ============================================================
-     PRIORISER UNE IMAGE
+     RECUPERER LES URL
   ============================================================ */
 
-  function prioriserImage(
-    img,
-    hautePriorite =
-      false
+  function collectImages(
+    root = document
+  ) {
+
+    const urls =
+      new Set();
+
+
+    PRELOAD_IMAGES
+      .forEach(
+        url => {
+
+          urls.add(
+            absoluteUrl(
+              url
+            )
+          );
+
+        }
+      );
+
+
+    root
+      .querySelectorAll(
+        "img"
+      )
+      .forEach(
+        img => {
+
+          const url =
+
+            img.currentSrc
+
+            ||
+
+            img.getAttribute(
+              "src"
+            );
+
+
+          if (url) {
+
+            urls.add(
+              absoluteUrl(
+                url
+              )
+            );
+
+          }
+
+        }
+      );
+
+
+    root
+      .querySelectorAll(
+        "source[srcset]"
+      )
+      .forEach(
+        source => {
+
+          const srcset =
+            source.getAttribute(
+              "srcset"
+            );
+
+
+          if (!srcset) {
+
+            return;
+
+          }
+
+
+          srcset
+            .split(
+              ","
+            )
+            .forEach(
+              item => {
+
+                const url =
+                  item
+                    .trim()
+                    .split(
+                      /\s+/
+                    )[
+                      0
+                    ];
+
+
+                if (url) {
+
+                  urls.add(
+                    absoluteUrl(
+                      url
+                    )
+                  );
+
+                }
+
+              }
+            );
+
+        }
+      );
+
+
+    return Array.from(
+      urls
+    );
+
+  }
+
+
+
+  /* ============================================================
+     PREPARATION
+  ============================================================ */
+
+  async function prepare(
+    root = document
+  ) {
+
+    forceEager(
+      root
+    );
+
+
+    const urls =
+      collectImages(
+        root
+      );
+
+
+    await Promise.race([
+
+      Promise.allSettled(
+
+        urls.map(
+          preloadUrl
+        )
+
+      ),
+
+      new Promise(
+        resolve => {
+
+          setTimeout(
+            resolve,
+            5000
+          );
+
+        }
+      )
+
+    ]);
+
+
+    root
+      .querySelectorAll(
+        "img"
+      )
+      .forEach(
+        img => {
+
+          img.classList.remove(
+            "eah-image-wait"
+          );
+
+
+          img.classList.add(
+            "eah-image-ready"
+          );
+
+        }
+      );
+
+  }
+
+
+
+  /* ============================================================
+     NOUVELLE IMAGE
+  ============================================================ */
+
+  function prepareNewImage(
+    img
   ) {
 
     if (
       !img
       ||
       img.tagName !==
-      "IMG"
+        "IMG"
     ) {
 
       return;
@@ -290,294 +443,166 @@
       "async";
 
 
-    if (
-      hautePriorite
-    ) {
+    try {
 
-      try {
+      img.fetchPriority =
+        "high";
 
-        img.fetchPriority =
-          "high";
-
-      } catch (_) {}
-
-    }
+    } catch (_) {}
 
 
-    img.style
-      .setProperty(
-        "visibility",
-        "visible",
-        "important"
-      );
+    const src =
 
+      img.currentSrc
 
-    img.style
-      .setProperty(
-        "opacity",
-        "1",
-        "important"
-      );
-
-  }
-
-
-
-  /* ============================================================
-     HERO ACTUEL
-  ============================================================ */
-
-  function prioriserPageActuelle() {
-
-    const hash =
-      String(
-        window.location.hash ||
-        "#accueil"
-      )
-      .replace(
-        "#",
-        ""
-      )
       ||
-      "accueil";
 
-
-    const page =
-      document.getElementById(
-        hash
+      img.getAttribute(
+        "src"
       );
 
 
-    if (!page) {
+    if (!src) {
 
       return;
 
     }
 
 
-    page
-      .querySelectorAll(
-        ".hero img, .page-hero img"
-      )
-      .forEach(
-        img => {
+    preloadUrl(
+      src
+    )
+    .then(
+      () => {
 
-          prioriserImage(
-            img,
-            true
-          );
-
-
-          const src =
-            img.currentSrc
-            ||
-            img.getAttribute(
-              "src"
-            );
-
-
-          if (
-            src
-          ) {
-
-            preloadUrl(
-              src
-            );
-
-          }
-
-        }
-      );
-
-  }
-
-
-
-  /* ============================================================
-     CARTES DISCIPLINES ACCUEIL
-  ============================================================ */
-
-  function prioriserAccueil() {
-
-    document
-      .querySelectorAll(
-        "#accueil .discipline-card img"
-      )
-      .forEach(
-        img =>
-          prioriserImage(
-            img,
-            true
-          )
-      );
-
-  }
-
-
-
-  /* ============================================================
-     IMAGE AJOUTEE APRES SUPABASE
-  ============================================================ */
-
-  function preparerNouvelleImage(
-    img
-  ) {
-
-    if (
-      !img
-      ||
-      img.tagName !==
-      "IMG"
-    ) {
-
-      return;
-
-    }
-
-
-    const importante =
-      Boolean(
-
-        img.closest(
-          ".hero, .page-hero, .discipline-card"
-        )
-
-      );
-
-
-    prioriserImage(
-
-      img,
-
-      importante
-
-    );
-
-
-    if (
-      importante
-    ) {
-
-      const src =
-        img.currentSrc
-        ||
-        img.getAttribute(
-          "src"
+        img.classList.remove(
+          "eah-image-wait"
         );
 
 
-      if (
-        src
-      ) {
-
-        preloadUrl(
-          src
+        img.classList.add(
+          "eah-image-ready"
         );
 
       }
-
-    }
-
-  }
-
-
-
-  /* ============================================================
-     PRECHARGEMENT PRINCIPAL
-  ============================================================ */
-
-  function lancerPrechargement() {
-
-    PRELOAD_IMAGES
-      .forEach(
-        url => {
-
-          ajouterPreloadLink(
-            url
-          );
-
-
-          preloadUrl(
-            url
-          );
-
-        }
-      );
+    );
 
   }
 
 
 
   /* ============================================================
-     OBSERVER SUPABASE / DOM DYNAMIQUE
+     MUTATION OBSERVER
   ============================================================ */
 
   const observer =
     new MutationObserver(
       mutations => {
 
-        mutations
-          .forEach(
-            mutation => {
+        mutations.forEach(
+          mutation => {
 
-              mutation
-                .addedNodes
-                .forEach(
-                  node => {
+            mutation
+              .addedNodes
+              .forEach(
+                node => {
 
-                    if (
-                      !(
-                        node instanceof
-                        HTMLElement
-                      )
-                    ) {
+                  if (
+                    !(
+                      node instanceof
+                      HTMLElement
+                    )
+                  ) {
 
-                      return;
-
-                    }
-
-
-                    if (
-                      node.tagName ===
-                      "IMG"
-                    ) {
-
-                      preparerNouvelleImage(
-                        node
-                      );
-
-                    }
-
-
-                    node
-                      .querySelectorAll
-                      ?.(
-                        "img"
-                      )
-                      .forEach(
-                        preparerNouvelleImage
-                      );
+                    return;
 
                   }
-                );
+
+
+                  if (
+                    node.tagName ===
+                    "IMG"
+                  ) {
+
+                    prepareNewImage(
+                      node
+                    );
+
+                  }
+
+
+                  node
+                    .querySelectorAll?.(
+                      "img"
+                    )
+                    .forEach(
+                      prepareNewImage
+                    );
+
+                }
+              );
+
+
+            if (
+              mutation.type ===
+                "attributes"
+              &&
+              mutation.target instanceof
+                HTMLImageElement
+            ) {
+
+              prepareNewImage(
+                mutation.target
+              );
 
             }
-          );
+
+          }
+        );
 
       }
     );
 
 
+  observer.observe(
+
+    document.documentElement,
+
+    {
+
+      childList:
+        true,
+
+      subtree:
+        true,
+
+      attributes:
+        true,
+
+      attributeFilter: [
+
+        "src",
+
+        "srcset"
+
+      ]
+
+    }
+
+  );
+
+
+
   /* ============================================================
-     BOOT
+     DEMARRAGE
   ============================================================ */
 
-  function bootPhotos() {
+  async function bootPhotos() {
 
-    /*
-       On n'attend plus le téléchargement
-       de toutes les images avant d'afficher le site.
-    */
+    await prepare(
+      document
+    );
+
 
     HTML.classList.remove(
       "eah-images-loading"
@@ -588,46 +613,7 @@
       "eah-images-ready"
     );
 
-
-    lancerPrechargement();
-
-
-    document
-      .querySelectorAll(
-        ".hero img, .page-hero img"
-      )
-      .forEach(
-        img =>
-          prioriserImage(
-            img,
-            true
-          )
-      );
-
-
-    prioriserAccueil();
-
-    prioriserPageActuelle();
-
-
-    observer.observe(
-
-      document.documentElement,
-
-      {
-
-        childList:
-          true,
-
-        subtree:
-          true
-
-      }
-
-    );
-
   }
-
 
 
   if (
@@ -662,43 +648,12 @@
 
   window.addEventListener(
 
-    "hashchange",
+    "pageshow",
 
     () => {
 
-      prioriserPageActuelle();
-
-    }
-
-  );
-
-
-  document.addEventListener(
-
-    "click",
-
-    event => {
-
-      if (
-        !event.target.closest(
-          "[data-page], [data-page-button], [data-open]"
-        )
-      ) {
-
-        return;
-
-      }
-
-
-      setTimeout(
-        prioriserPageActuelle,
-        0
-      );
-
-
-      setTimeout(
-        prioriserPageActuelle,
-        100
+      forceEager(
+        document
       );
 
     }
@@ -708,31 +663,33 @@
 
   window.addEventListener(
 
-    "pageshow",
+    "hashchange",
 
-    prioriserPageActuelle
+    () => {
+
+      forceEager(
+        document
+      );
+
+    }
 
   );
 
 
+
   /* ============================================================
-     API PUBLIQUE
+     API
   ============================================================ */
 
   window.EAHPhotos = {
 
     refresh(
-      root =
-        document
+      root = document
     ) {
 
-      root
-        .querySelectorAll(
-          "img"
-        )
-        .forEach(
-          preparerNouvelleImage
-        );
+      return prepare(
+        root
+      );
 
     },
 
