@@ -1,19 +1,21 @@
 /* ============================================================
    EAH DIVING PRO
    SITE-FINAL.JS
-   VERSION CORRIGEE
+   VERSION FINAL VISUEL
    03/10/2026
 
-   - Corrige les images heroes
-   - Corrige les disciplines
-   - Corrige le hero Blazons
-   - Protège les 11 blazons
-   - Protège les photos Actualités
-   - Protège les photos Spots
-   - Gestion desktop / tablette / mobile
+   - Heroes catégories
+   - Photos entières sur ordinateur / tablette
+   - Photos légèrement moins lumineuses
+   - Accueil plus lumineux
+   - Uniquement le nom de la catégorie sur les heroes
+   - Offres / Faire grader / Espace Club prêts pour leurs photos
+   - Disciplines desktop / mobile
+   - Blazons sécurisés
+   - Actualités / Spots sécurisés
    - Spots dépliables
-   - Gestion affichage Espace Club
-   - Aucun ancien code Actualités cassé
+   - Espace Club rangé uniquement dans #club
+   - Profil dynamique rangé uniquement dans #profil
 ============================================================ */
 
 (() => {
@@ -30,48 +32,83 @@
     accueil:
       "hero-divers-group.png",
 
-    blazons:
-      "hero-blazons.png",
+    pages: {
 
-    olympique: {
+      grading:
+        "grading-hero.jpg",
 
-      desktop:
-        "olympique-desktop.jpg",
+      blazons:
+        "hero-blazons.png",
 
-      mobile:
-        "olympique-mobile.jpg"
+      population:
+        "population-hero.jpg",
 
-    },
+      spots:
+        "spots-hero.jpg",
 
-    freestyle: {
+      actualites:
+        "actualites-hero.jpg",
 
-      desktop:
-        "freestyle-desktop.jpg",
+      tarifs:
+        "pricing-hero.jpg",
 
-      mobile:
-        "freestyle-mobile.jpg"
+      "faire-grader":
+        "grading-request-hero.jpg",
 
-    },
+      club:
+        "club-dashboard-hero.jpg",
 
-    highdiving: {
-
-      desktop:
-        "high-diving-desktop.png",
-
-      mobile:
-        "high-diving-mobile.jpg"
+      evaluation:
+        "evaluation-hero.jpg"
 
     },
 
-    ange: {
+    disciplines: {
 
-      desktop:
-        "saut-ange-desktop.jpg",
+      olympique: {
 
-      mobile:
-        "saut-ange-mobile.jpg"
+        desktop:
+          "olympique-desktop.jpg",
 
-    }
+        mobile:
+          "olympique-mobile.jpg"
+
+      },
+
+      freestyle: {
+
+        desktop:
+          "freestyle-desktop.jpg",
+
+        mobile:
+          "freestyle-mobile.jpg"
+
+      },
+
+      highdiving: {
+
+        desktop:
+          "high-diving-desktop.png",
+
+        mobile:
+          "high-diving-mobile.jpg"
+
+      },
+
+      ange: {
+
+        desktop:
+          "saut-ange-desktop.jpg",
+
+        mobile:
+          "saut-ange-mobile.jpg"
+
+      }
+
+    },
+
+    fallback:
+      "site-water-premium-bg.jpg"
 
   };
 
@@ -123,15 +160,94 @@
   };
 
 
+  const CLUB_SECTIONS = [
+
+    "eah-club-pro",
+
+    "eah-club-divers",
+
+    "eah-club-groups",
+
+    "eah-coach-evaluation",
+
+    "eah-evaluations",
+
+    "eah-actualites",
+
+    "eah-spots",
+
+    "eah-blazons",
+
+    "eah-tarifs"
+
+  ];
+
+
   /* ============================================================
-     CSS MEDIA
+     OUTILS
   ============================================================ */
 
-  function installerCSS() {
+  function normaliser(
+    value
+  ) {
+
+    return String(
+      value || ""
+    )
+      .toLowerCase()
+      .normalize(
+        "NFD"
+      )
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /ø/g,
+        "o"
+      )
+      .trim();
+
+  }
+
+
+  function estMobile() {
+
+    return (
+      window.innerWidth <= 700
+    );
+
+  }
+
+
+  function pageActuelle() {
+
+    return String(
+      window.location.hash ||
+      "#accueil"
+    )
+      .replace(
+        "#",
+        ""
+      )
+      .toLowerCase()
+      .trim()
+      ||
+      "accueil";
+
+  }
+
+
+  /* ============================================================
+     CSS FINAL
+     AJOUTÉ EN DERNIER POUR ÉCRASER LES ANCIENS CORRECTIFS
+  ============================================================ */
+
+  function installerCSSFinal() {
 
     if (
       document.getElementById(
-        "eah-media-v2-css"
+        "eah-site-final-css"
       )
     ) {
 
@@ -147,102 +263,316 @@
 
 
     style.id =
-      "eah-media-v2-css";
+      "eah-site-final-css";
 
 
     style.textContent = `
 
       /* ======================================================
-         HEROES
+         FOND GENERAL
       ====================================================== */
 
-      .eah-v2-hero {
-
-        position:
-          relative !important;
-
-        background-size:
-          cover !important;
-
-        background-position:
-          center center !important;
-
-        background-repeat:
-          no-repeat !important;
-
-        background-blend-mode:
-          normal !important;
-
-        background-color:
-          transparent !important;
-
-      }
-
-
-      /*
-        Pas de voile sombre ajouté
-        par site-final.js
-      */
-
-      .eah-v2-hero::before,
-      .eah-v2-hero::after {
-
-        display:
-          none !important;
-
-        content:
-          none !important;
+      .site-background {
 
         opacity:
-          0 !important;
+          .50 !important;
 
-        background:
-          none !important;
-
-        background-image:
-          none !important;
-
-      }
-
-
-      .eah-v2-hero img {
-
-        opacity:
-          1 !important;
-
-        visibility:
-          visible !important;
-
-      }
-
-
-      /* Texte lisible */
-
-      .eah-v2-hero h1,
-      .eah-v2-hero h2,
-      .eah-v2-hero p,
-      .eah-v2-hero span {
-
-        position:
-          relative;
-
-        z-index:
-          3;
-
-        text-shadow:
-          0 3px 14px
-          rgba(
-            0,
-            0,
-            0,
-            .42
-          );
+        filter:
+          brightness(.86)
+          contrast(1.02)
+          saturate(1.04)
+          !important;
 
       }
 
 
       /* ======================================================
-         IMAGES DISCIPLINES
+         ACCUEIL
+         PLUS LUMINEUX QUE LA VERSION ACTUELLE
+      ====================================================== */
+
+      #accueil .hero-background-image {
+
+        display:
+          block !important;
+
+        visibility:
+          visible !important;
+
+        opacity:
+          1 !important;
+
+        filter:
+          brightness(1.20)
+          contrast(1.01)
+          saturate(1.05)
+          !important;
+
+      }
+
+
+      #accueil .hero-overlay {
+
+        display:
+          block !important;
+
+        opacity:
+          1 !important;
+
+        background:
+
+          linear-gradient(
+            90deg,
+
+            rgba(
+              2,
+              12,
+              23,
+              .61
+            )
+            0%,
+
+            rgba(
+              3,
+              19,
+              31,
+              .32
+            )
+            42%,
+
+            rgba(
+              3,
+              19,
+              31,
+              .10
+            )
+            72%,
+
+            rgba(
+              3,
+              19,
+              31,
+              .12
+            )
+            100%
+
+          ),
+
+          linear-gradient(
+            180deg,
+
+            rgba(
+              3,
+              19,
+              31,
+              .04
+            ),
+
+            rgba(
+              3,
+              19,
+              31,
+              .30
+            )
+          )
+
+          !important;
+
+      }
+
+
+      /* ======================================================
+         HEROES DES CATEGORIES
+      ====================================================== */
+
+      .eah-category-hero {
+
+        position:
+          relative !important;
+
+        overflow:
+          hidden !important;
+
+        background:
+          #03131f !important;
+
+      }
+
+
+      /*
+         On privilégie l'image entière
+         sur ordinateur / tablette.
+      */
+
+      .eah-category-hero
+      .page-hero-image {
+
+        position:
+          absolute !important;
+
+        inset:
+          0 !important;
+
+        display:
+          block !important;
+
+        width:
+          100% !important;
+
+        height:
+          100% !important;
+
+        object-fit:
+          contain !important;
+
+        object-position:
+          center center !important;
+
+        visibility:
+          visible !important;
+
+        opacity:
+          1 !important;
+
+        filter:
+          brightness(1.07)
+          contrast(1.015)
+          saturate(1.04)
+          !important;
+
+        background:
+          #03131f !important;
+
+      }
+
+
+      /*
+         Petit voile uniquement pour
+         conserver le titre lisible.
+      */
+
+      .eah-category-hero
+      .page-hero-overlay {
+
+        display:
+          block !important;
+
+        opacity:
+          1 !important;
+
+        background:
+
+          linear-gradient(
+            90deg,
+
+            rgba(
+              2,
+              13,
+              25,
+              .28
+            )
+            0%,
+
+            rgba(
+              2,
+              13,
+              25,
+              .12
+            )
+            42%,
+
+            rgba(
+              2,
+              13,
+              25,
+              .02
+            )
+            100%
+
+          )
+
+          !important;
+
+      }
+
+
+      /*
+         On retire les pseudo-voiles
+         ajoutés par les anciens CSS.
+      */
+
+      .eah-category-hero::before,
+      .eah-category-hero::after {
+
+        content:
+          none !important;
+
+        display:
+          none !important;
+
+        background:
+          none !important;
+
+        opacity:
+          0 !important;
+
+      }
+
+
+      /* ======================================================
+         UNIQUEMENT LE NOM DE LA CATEGORIE
+      ====================================================== */
+
+      .eah-category-hero
+      .overline,
+
+      .eah-category-hero
+      .container > p {
+
+        display:
+          none !important;
+
+      }
+
+
+      .eah-category-hero
+      .container {
+
+        position:
+          relative !important;
+
+        z-index:
+          5 !important;
+
+        padding-bottom:
+          48px !important;
+
+      }
+
+
+      .eah-category-hero
+      h1 {
+
+        margin:
+          0 !important;
+
+        text-shadow:
+          0
+          4px
+          20px
+          rgba(
+            0,
+            0,
+            0,
+            .52
+          )
+          !important;
+
+      }
+
+
+      /* ======================================================
+         DISCIPLINES
       ====================================================== */
 
       .eah-discipline-photo {
@@ -256,29 +586,17 @@
         height:
           100% !important;
 
-        object-fit:
-          cover !important;
-
-        object-position:
-          center !important;
-
-        opacity:
-          1 !important;
-
         visibility:
           visible !important;
 
-        filter:
-          brightness(1.16)
-          contrast(1.01)
-          saturate(1.06)
-          !important;
+        opacity:
+          1 !important;
 
       }
 
 
       /* ======================================================
-         BLAZONS
+         BLAZONS INDIVIDUELS
       ====================================================== */
 
       .eah-blazon-image {
@@ -313,61 +631,267 @@
         width:
           100% !important;
 
-        object-fit:
-          cover !important;
-
         opacity:
           1 !important;
 
         visibility:
           visible !important;
 
+        object-fit:
+          cover !important;
+
       }
 
 
       /* ======================================================
-         FOND GENERAL
+         ESPACE CLUB
       ====================================================== */
 
-      .site-background {
+      html:not(.eah-page-club)
+      #eah-club-pro,
 
-        background-image:
-          url("site-water-premium-bg.jpg")
-          !important;
+      html:not(.eah-page-club)
+      #eah-club-divers,
 
-        background-size:
-          cover !important;
+      html:not(.eah-page-club)
+      #eah-club-groups,
 
-        background-position:
-          center !important;
+      html:not(.eah-page-club)
+      #eah-coach-evaluation,
 
-        background-repeat:
-          no-repeat !important;
+      html:not(.eah-page-club)
+      #eah-evaluations,
 
-        opacity:
-          1 !important;
+      html:not(.eah-page-club)
+      #eah-actualites,
 
-      }
+      html:not(.eah-page-club)
+      #eah-spots,
 
+      html:not(.eah-page-club)
+      #eah-blazons,
 
-      .site-background::before,
-      .site-background::after {
+      html:not(.eah-page-club)
+      #eah-tarifs {
 
         display:
           none !important;
 
-        content:
+      }
+
+
+      html:not(.eah-page-profil)
+      #eah-profile-section {
+
+        display:
           none !important;
 
-        opacity:
-          0 !important;
+      }
+
+
+      /* ======================================================
+         SPOTS
+      ====================================================== */
+
+      #spots .spot,
+      #spots .eah-public-card,
+      #spots article {
+
+        cursor:
+          pointer;
+
+      }
+
+
+      #spots
+      .spot-details[hidden] {
+
+        display:
+          none !important;
+
+      }
+
+
+      #spots
+      .spot-details {
+
+        margin-top:
+          18px;
+
+        padding-top:
+          18px;
+
+        border-top:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .14
+          );
+
+        animation:
+          eahSpotOpen
+          .22s
+          ease;
+
+      }
+
+
+      #spots
+      .spot-detail-block {
+
+        margin-bottom:
+          16px;
+
+      }
+
+
+      #spots
+      .spot-detail-block
+      strong {
+
+        display:
+          block;
+
+        margin-bottom:
+          6px;
+
+        color:
+          #ffffff;
+
+      }
+
+
+      #spots
+      .spot-detail-block
+      p {
+
+        display:
+          block !important;
+
+        margin:
+          0;
+
+        color:
+          var(--text);
+
+        line-height:
+          1.6;
+
+      }
+
+
+      #spots
+      .spot-open-label {
+
+        margin-top:
+          15px;
+
+        color:
+          var(--cyan);
+
+        font-size:
+          .92rem;
+
+        font-weight:
+          800;
+
+      }
+
+
+      @keyframes
+      eahSpotOpen {
+
+        from {
+
+          opacity:
+            0;
+
+          transform:
+            translateY(
+              -6px
+            );
+
+        }
+
+        to {
+
+          opacity:
+            1;
+
+          transform:
+            translateY(
+              0
+            );
+
+        }
+
+      }
+
+
+      /* ======================================================
+         MOBILE
+      ====================================================== */
+
+      @media (
+        max-width:
+        700px
+      ) {
+
+        /*
+           Sur téléphone le ratio est très différent.
+           Les photos mobiles sont prévues pour remplir
+           correctement le hero.
+        */
+
+        .eah-category-hero
+        .page-hero-image {
+
+          object-fit:
+            cover !important;
+
+          object-position:
+            center center !important;
+
+        }
+
+
+        .eah-category-hero
+        .container {
+
+          padding-bottom:
+            38px !important;
+
+        }
+
+
+        .eah-category-hero
+        h1 {
+
+          font-size:
+            clamp(
+              2.4rem,
+              12vw,
+              4rem
+            )
+            !important;
+
+        }
 
       }
 
     `;
 
 
-    document.head
+    /*
+      IMPORTANT :
+      placé en dernier dans le BODY,
+      après les anciens styles,
+      afin que ce CSS soit prioritaire.
+    */
+
+    document.body
       .appendChild(
         style
       );
@@ -377,659 +901,138 @@
 
 
   /* ============================================================
-     OUTILS
+     RANGER LES SECTIONS DYNAMIQUES
+
+     Elles sont actuellement après le footer dans index.html.
+     On les replace à l'intérieur de leur vraie page.
   ============================================================ */
 
-  function normaliser(
-    value
-  ) {
+  function rangerSectionsDynamiques() {
 
-    return String(
-      value || ""
-    )
-      .toLowerCase()
-      .normalize(
-        "NFD"
-      )
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      )
-      .replace(
-        /ø/g,
-        "o"
-      )
-      .trim();
+    const clubPage =
+      document.getElementById(
+        "club"
+      );
 
-  }
-
-
-  function mobile() {
-
-    return (
-      window.innerWidth <= 700
-    );
-
-  }
-
-
-  function fichierDiscipline(
-    key
-  ) {
 
     if (
-      !FILES[
-        key
-      ]
+      clubPage
     ) {
 
-      return "";
+      CLUB_SECTIONS
+        .forEach(
+          id => {
 
-    }
-
-
-    return mobile()
-      ?
-      FILES[
-        key
-      ].mobile
-      :
-      FILES[
-        key
-      ].desktop;
-
-  }
-
-
-  function hashActuel() {
-
-    return normaliser(
-      window.location.hash
-      ||
-      "#accueil"
-    );
-
-  }
-
-
-
-  /* ============================================================
-     TROUVER UN TITRE VISIBLE
-  ============================================================ */
-
-  function trouverTitre(
-    textes
-  ) {
-
-    const recherches =
-      Array.isArray(
-        textes
-      )
-      ?
-      textes
-      :
-      [
-        textes
-      ];
-
-
-    return (
-      Array
-        .from(
-          document.querySelectorAll(
-            "h1,h2,h3"
-          )
-        )
-        .find(
-          element => {
-
-            const texte =
-              normaliser(
-                element.textContent
+            const section =
+              document.getElementById(
+                id
               );
 
 
-            const rect =
-              element
-                .getBoundingClientRect();
-
-
-            return (
-
-              rect.width > 0
-
+            if (
+              section
               &&
-
-              rect.height > 0
-
-              &&
-
-              recherches.some(
-                recherche =>
-                  texte.includes(
-                    normaliser(
-                      recherche
-                    )
-                  )
+              !clubPage.contains(
+                section
               )
+            ) {
 
-            );
+              clubPage
+                .appendChild(
+                  section
+                );
+
+            }
 
           }
-        )
-      ||
-      null
-    );
-
-  }
-
-
-
-  /* ============================================================
-     TROUVER HERO DEPUIS TITRE
-  ============================================================ */
-
-  function trouverHeroDepuisTitre(
-    titre
-  ) {
-
-    if (!titre) {
-
-      return null;
+        );
 
     }
 
 
-    const section =
-      titre.closest(
-        "section"
+    const profilPage =
+      document.getElementById(
+        "profil"
       );
 
 
-    if (section) {
-
-      const rect =
-        section
-          .getBoundingClientRect();
-
-
-      if (
-
-        rect.width >
-          window.innerWidth * .60
-
-        &&
-
-        rect.height > 180
-
-      ) {
-
-        return section;
-
-      }
-
-    }
-
-
-    let parent =
-      titre.parentElement;
-
-
-    let meilleur =
-      null;
-
-
-    for (
-      let i = 0;
-      i < 6 && parent;
-      i++
-    ) {
-
-      const rect =
-        parent
-          .getBoundingClientRect();
-
-
-      if (
-
-        rect.width >
-          window.innerWidth * .70
-
-        &&
-
-        rect.height >= 180
-
-        &&
-
-        rect.height < 900
-
-      ) {
-
-        meilleur =
-          parent;
-
-      }
-
-
-      parent =
-        parent.parentElement;
-
-    }
-
-
-    return meilleur;
-
-  }
-
-
-
-  /* ============================================================
-     IMAGE HERO
-  ============================================================ */
-
-  function imageHero(
-    hero
-  ) {
-
-    if (!hero) {
-
-      return null;
-
-    }
-
-
-    const images =
-      Array.from(
-        hero.querySelectorAll(
-          "img"
-        )
+    const profilRuntime =
+      document.getElementById(
+        "eah-profile-section"
       );
-
-
-    return (
-      images.find(
-        img => {
-
-          const src =
-            normaliser(
-              img.getAttribute(
-                "src"
-              )
-            );
-
-
-          return (
-
-            !src.includes(
-              "logo"
-            )
-
-            &&
-
-            !src.includes(
-              "blazon"
-            )
-
-          );
-
-        }
-      )
-      ||
-      null
-    );
-
-  }
-
-
-
-  /* ============================================================
-     APPLIQUER PHOTO HERO
-  ============================================================ */
-
-  function appliquerPhotoHero(
-    hero,
-    fichier
-  ) {
-
-    if (
-      !hero
-      ||
-      !fichier
-    ) {
-
-      return;
-
-    }
-
-
-    hero.classList.add(
-      "eah-v2-hero"
-    );
-
-
-    const img =
-      imageHero(
-        hero
-      );
-
-
-    if (img) {
-
-      /*
-        Ne réattribuer src
-        que si nécessaire.
-      */
-
-      const srcActuel =
-        img.getAttribute(
-          "src"
-        )
-        ||
-        "";
-
-
-      if (
-        !srcActuel.endsWith(
-          fichier
-        )
-      ) {
-
-        img.src =
-          fichier;
-
-      }
-
-
-      img.loading =
-        "eager";
-
-
-      img.decoding =
-        "async";
-
-
-      img.classList.add(
-        "eah-discipline-photo"
-      );
-
-
-      img.onerror =
-        function () {
-
-          this.style
-            .setProperty(
-              "display",
-              "none",
-              "important"
-            );
-
-
-          hero.style
-            .setProperty(
-
-              "background-image",
-
-              `url("${fichier}")`,
-
-              "important"
-
-            );
-
-        };
-
-
-      return;
-
-    }
-
-
-    hero.style
-      .setProperty(
-
-        "background-image",
-
-        `url("${fichier}")`,
-
-        "important"
-
-      );
-
-  }
-
-
-
-  /* ============================================================
-     ACCUEIL
-  ============================================================ */
-
-  function corrigerAccueil() {
-
-    const hash =
-      hashActuel();
 
 
     if (
-      hash !==
-        "#accueil"
+      profilPage
       &&
-      hash !==
-        ""
+      profilRuntime
+      &&
+      !profilPage.contains(
+        profilRuntime
+      )
     ) {
 
-      return;
+      profilPage
+        .appendChild(
+          profilRuntime
+        );
 
     }
-
-
-    const titre =
-      trouverTitre(
-        "Le plongeon"
-      );
-
-
-    const hero =
-      trouverHeroDepuisTitre(
-        titre
-      );
-
-
-    appliquerPhotoHero(
-
-      hero,
-
-      FILES.accueil
-
-    );
 
   }
 
 
 
   /* ============================================================
-     DISCIPLINES
+     CLASSES DE PAGE
   ============================================================ */
 
-  function corrigerDisciplines() {
+  function gererClassesPage() {
 
-    const hash =
-      hashActuel();
-
-
-    let config =
-      null;
+    const page =
+      pageActuelle();
 
 
-    if (
-      hash.includes(
-        "olympique"
-      )
-    ) {
+    document
+      .documentElement
+      .classList
+      .toggle(
 
-      config = {
+        "eah-page-club",
 
-        titre: [
-          "Plongeon olympique"
-        ],
+        page ===
+          "club"
 
-        key:
-          "olympique"
-
-      };
-
-    }
-
-
-    else if (
-
-      hash.includes(
-        "freestyle"
-      )
-
-      ||
-
-      hash.includes(
-        "dods"
-      )
-
-    ) {
-
-      config = {
-
-        titre: [
-          "Freestyle",
-          "Døds",
-          "Dods"
-        ],
-
-        key:
-          "freestyle"
-
-      };
-
-    }
-
-
-    else if (
-      hash.includes(
-        "high"
-      )
-    ) {
-
-      config = {
-
-        titre: [
-          "High Diving"
-        ],
-
-        key:
-          "highdiving"
-
-      };
-
-    }
-
-
-    else if (
-      hash.includes(
-        "ange"
-      )
-    ) {
-
-      config = {
-
-        titre: [
-          "Saut de l'ange",
-          "Saut de lange"
-        ],
-
-        key:
-          "ange"
-
-      };
-
-    }
-
-
-    if (!config) {
-
-      return;
-
-    }
-
-
-    const titre =
-      trouverTitre(
-        config.titre
       );
 
 
-    const hero =
-      trouverHeroDepuisTitre(
-        titre
+    document
+      .documentElement
+      .classList
+      .toggle(
+
+        "eah-page-profil",
+
+        page ===
+          "profil"
+
       );
-
-
-    appliquerPhotoHero(
-
-      hero,
-
-      fichierDiscipline(
-        config.key
-      )
-
-    );
 
   }
 
 
 
   /* ============================================================
-     HERO BLAZONS
+     PREPARER UNE IMAGE
   ============================================================ */
 
-  function corrigerHeroBlazons() {
-
-    const hero =
-      document.querySelector(
-        "#blazons .page-hero"
-      );
-
-
-    if (!hero) {
-
-      return;
-
-    }
-
-
-    const img =
-      hero.querySelector(
-        ".page-hero-image"
-      );
-
+  function preparerImage(
+    img
+  ) {
 
     if (!img) {
 
       return;
-
-    }
-
-
-    if (
-      !String(
-        img.getAttribute(
-          "src"
-        )
-        ||
-        ""
-      )
-      .endsWith(
-        "hero-blazons.png"
-      )
-    ) {
-
-      img.src =
-        "hero-blazons.png";
 
     }
 
@@ -1042,21 +1045,35 @@
       "async";
 
 
-    img.style.display =
-      "block";
+    try {
+
+      img.fetchPriority =
+        "high";
+
+    } catch (_) {}
 
 
-    img.style.opacity =
-      "1";
+    img.style
+      .setProperty(
+        "display",
+        "block",
+        "important"
+      );
 
 
-    img.style.visibility =
-      "visible";
+    img.style
+      .setProperty(
+        "visibility",
+        "visible",
+        "important"
+      );
 
 
-    hero.style
-      .removeProperty(
-        "background-image"
+    img.style
+      .setProperty(
+        "opacity",
+        "1",
+        "important"
       );
 
   }
@@ -1064,7 +1081,364 @@
 
 
   /* ============================================================
-     11 BLAZONS INDIVIDUELS
+     ATTRIBUER UNE IMAGE
+  ============================================================ */
+
+  function attribuerImage(
+    img,
+    fichier,
+    fallback =
+      FILES.fallback
+  ) {
+
+    if (
+      !img ||
+      !fichier
+    ) {
+
+      return;
+
+    }
+
+
+    preparerImage(
+      img
+    );
+
+
+    /*
+       Si ce fichier a déjà échoué pendant cette page,
+       on ne déclenche pas une nouvelle requête 404.
+    */
+
+    if (
+      img.dataset.eahFailed ===
+      fichier
+    ) {
+
+      return;
+
+    }
+
+
+    const actuel =
+      String(
+        img.getAttribute(
+          "src"
+        )
+        ||
+        ""
+      );
+
+
+    if (
+      !actuel.endsWith(
+        fichier
+      )
+    ) {
+
+      img.src =
+        fichier;
+
+    }
+
+
+    img.onerror =
+      function () {
+
+        const failed =
+          fichier;
+
+
+        this.dataset.eahFailed =
+          failed;
+
+
+        this.onerror =
+          null;
+
+
+        if (
+          fallback
+          &&
+          !String(
+            this.getAttribute(
+              "src"
+            )
+            ||
+            ""
+          )
+          .endsWith(
+            fallback
+          )
+        ) {
+
+          this.src =
+            fallback;
+
+        }
+
+      };
+
+  }
+
+
+
+  /* ============================================================
+     ACCUEIL
+  ============================================================ */
+
+  function corrigerAccueil() {
+
+    const hero =
+      document.querySelector(
+        "#accueil .hero-home"
+      );
+
+
+    const img =
+      hero
+        ?.querySelector(
+          ".hero-background-image"
+        );
+
+
+    if (!img) {
+
+      return;
+
+    }
+
+
+    attribuerImage(
+
+      img,
+
+      FILES.accueil
+
+    );
+
+  }
+
+
+
+  /* ============================================================
+     HEROES DES PAGES
+  ============================================================ */
+
+  function corrigerHeroesPages() {
+
+    Object
+      .entries(
+        FILES.pages
+      )
+      .forEach(
+        ([
+          id,
+          fichier
+        ]) => {
+
+          const page =
+            document.getElementById(
+              id
+            );
+
+
+          if (!page) {
+
+            return;
+
+          }
+
+
+          const hero =
+            page.querySelector(
+              ":scope > .page-hero"
+            )
+            ||
+            page.querySelector(
+              ".page-hero"
+            );
+
+
+          if (!hero) {
+
+            return;
+
+          }
+
+
+          hero.classList.add(
+            "eah-category-hero"
+          );
+
+
+          const img =
+            hero.querySelector(
+              ".page-hero-image"
+            );
+
+
+          if (!img) {
+
+            return;
+
+          }
+
+
+          attribuerImage(
+
+            img,
+
+            fichier
+
+          );
+
+        }
+      );
+
+  }
+
+
+
+  /* ============================================================
+     DISCIPLINES
+  ============================================================ */
+
+  function corrigerDisciplines() {
+
+    Object
+      .entries(
+        FILES.disciplines
+      )
+      .forEach(
+        ([
+          id,
+          fichiers
+        ]) => {
+
+          const page =
+            document.getElementById(
+              id
+            );
+
+
+          if (!page) {
+
+            return;
+
+          }
+
+
+          const hero =
+            page.querySelector(
+              ".page-hero"
+            );
+
+
+          if (!hero) {
+
+            return;
+
+          }
+
+
+          hero.classList.add(
+            "eah-category-hero"
+          );
+
+
+          const picture =
+            hero.querySelector(
+              "picture"
+            );
+
+
+          const source =
+            picture
+              ?.querySelector(
+                "source"
+              );
+
+
+          const img =
+            hero.querySelector(
+              ".page-hero-image"
+            );
+
+
+          if (!img) {
+
+            return;
+
+          }
+
+
+          img.classList.add(
+            "eah-discipline-photo"
+          );
+
+
+          /*
+             Si un <picture> existe :
+             source mobile + img desktop.
+          */
+
+          if (
+            picture
+          ) {
+
+            if (
+              source
+              &&
+              fichiers.mobile
+            ) {
+
+              source.srcset =
+                fichiers.mobile;
+
+            }
+
+
+            attribuerImage(
+
+              img,
+
+              fichiers.desktop
+
+            );
+
+
+            return;
+
+          }
+
+
+          /*
+             Sinon changement direct selon l'écran.
+          */
+
+          attribuerImage(
+
+            img,
+
+            estMobile()
+              ?
+              fichiers.mobile
+              :
+              fichiers.desktop
+
+          );
+
+        }
+      );
+
+  }
+
+
+
+  /* ============================================================
+     BLAZONS INDIVIDUELS
   ============================================================ */
 
   function corrigerBlazons() {
@@ -1083,7 +1457,7 @@
             Array
               .from(
                 document.querySelectorAll(
-                  "h2,h3,h4"
+                  "#blazons h2, #blazons h3, #blazons h4"
                 )
               )
               .find(
@@ -1128,21 +1502,14 @@
 
             ||
 
-            titre.parentElement
-              ?.parentElement;
-
-
-          if (!card) {
-
-            return;
-
-          }
+            titre.parentElement;
 
 
           const img =
-            card.querySelector(
-              "img"
-            );
+            card
+              ?.querySelector(
+                "img"
+              );
 
 
           if (!img) {
@@ -1152,31 +1519,15 @@
           }
 
 
-          if (
-            !String(
-              img.getAttribute(
-                "src"
-              )
-              ||
-              ""
-            )
-            .endsWith(
-              fichier
-            )
-          ) {
+          attribuerImage(
 
-            img.src =
-              fichier;
+            img,
 
-          }
+            fichier,
 
+            ""
 
-          img.loading =
-            "eager";
-
-
-          img.decoding =
-            "async";
+          );
 
 
           img.classList.add(
@@ -1192,45 +1543,25 @@
 
   /* ============================================================
      ACTUALITES
-     UNIQUEMENT CORRECTION DES IMAGES
-     PAS DE GESTION DE PAGE DETAIL ICI
   ============================================================ */
 
   function corrigerActualites() {
 
-    const hash =
-      hashActuel();
-
-
-    if (
-      !hash.includes(
-        "actualit"
-      )
-    ) {
-
-      return;
-
-    }
-
-
     document
       .querySelectorAll(
-        "#actualites article img, #actualites .eah-public-card img"
+        "#actualites article img, #actualites .news-card img, #actualites .eah-public-card img"
       )
       .forEach(
         img => {
 
-          img.classList.add(
-            "eah-cms-image"
+          preparerImage(
+            img
           );
 
 
-          img.loading =
-            "eager";
-
-
-          img.decoding =
-            "async";
+          img.classList.add(
+            "eah-cms-image"
+          );
 
 
           if (
@@ -1260,11 +1591,6 @@
               );
 
 
-              /*
-                Evite boucle infinie
-                si news-default.jpg n'existe pas.
-              */
-
               if (
                 !String(
                   this.src
@@ -1292,44 +1618,25 @@
 
   /* ============================================================
      SPOTS
-     UNIQUEMENT CORRECTION DES IMAGES
   ============================================================ */
 
   function corrigerSpots() {
 
-    const hash =
-      hashActuel();
-
-
-    if (
-      !hash.includes(
-        "spots"
-      )
-    ) {
-
-      return;
-
-    }
-
-
     document
       .querySelectorAll(
-        "#spots article img, #spots .eah-public-card img"
+        "#spots article img, #spots .spot img, #spots .eah-public-card img"
       )
       .forEach(
         img => {
 
-          img.classList.add(
-            "eah-cms-image"
+          preparerImage(
+            img
           );
 
 
-          img.loading =
-            "eager";
-
-
-          img.decoding =
-            "async";
+          img.classList.add(
+            "eah-cms-image"
+          );
 
 
           if (
@@ -1390,13 +1697,15 @@
 
   function appliquer() {
 
-    installerCSS();
+    rangerSectionsDynamiques();
+
+    gererClassesPage();
 
     corrigerAccueil();
 
-    corrigerDisciplines();
+    corrigerHeroesPages();
 
-    corrigerHeroBlazons();
+    corrigerDisciplines();
 
     corrigerBlazons();
 
@@ -1418,40 +1727,25 @@
 
 
     requestAnimationFrame(
-      () => {
-
-        appliquer();
-
-
-        requestAnimationFrame(
-          appliquer
-        );
-
-      }
+      appliquer
     );
 
 
     setTimeout(
       appliquer,
-      50
+      60
     );
 
 
     setTimeout(
       appliquer,
-      150
+      180
     );
 
 
     setTimeout(
       appliquer,
-      400
-    );
-
-
-    setTimeout(
-      appliquer,
-      1000
+      450
     );
 
   }
@@ -1462,6 +1756,15 @@
      DEMARRAGE
   ============================================================ */
 
+  function demarrer() {
+
+    installerCSSFinal();
+
+    routeChange();
+
+  }
+
+
   if (
     document.readyState ===
     "loading"
@@ -1471,7 +1774,7 @@
 
       "DOMContentLoaded",
 
-      routeChange,
+      demarrer,
 
       {
         once:
@@ -1482,22 +1785,25 @@
 
   } else {
 
-    routeChange();
+    demarrer();
 
   }
 
 
+
   window.addEventListener(
+
     "hashchange",
+
     routeChange
+
   );
 
 
+
   /*
-    IMPORTANT :
-    history.replaceState() ne déclenche pas hashchange.
-    On relance donc les corrections lorsqu'un bouton
-    de navigation du site est utilisé.
+     script.js utilise history.replaceState().
+     replaceState ne déclenche pas hashchange.
   */
 
   document.addEventListener(
@@ -1508,7 +1814,9 @@
 
       const navigation =
         event.target.closest(
+
           "[data-page], [data-page-button], [data-open]"
+
         );
 
 
@@ -1535,26 +1843,42 @@
   );
 
 
+
   /* ============================================================
-     OBSERVER LES ELEMENTS CREES PAR SUPABASE
+     ELEMENTS AJOUTES PAR SUPABASE
   ============================================================ */
 
-  let timer;
+  let mutationTimer;
 
 
   const observer =
     new MutationObserver(
-      () => {
+      mutations => {
+
+        const utile =
+          mutations.some(
+            mutation =>
+              mutation.addedNodes
+                ?.length
+          );
+
+
+        if (!utile) {
+
+          return;
+
+        }
+
 
         clearTimeout(
-          timer
+          mutationTimer
         );
 
 
-        timer =
+        mutationTimer =
           setTimeout(
             appliquer,
-            70
+            80
           );
 
       }
@@ -1584,8 +1908,9 @@
   }
 
 
+
   /* ============================================================
-     MOBILE / TABLETTE / DESKTOP
+     CHANGEMENT ORIENTATION / TAILLE
   ============================================================ */
 
   let resizeTimer;
@@ -1605,252 +1930,113 @@
       resizeTimer =
         setTimeout(
           routeChange,
-          160
+          180
         );
 
     }
 
   );
 
-})();
 
 
-
-/* ============================================================
-   EAH DIVING
-   ESPACE CLUB UNIQUEMENT SUR LA PAGE CLUB
-============================================================ */
-
-function gererAffichageEspaceClub() {
-
-  const hash =
-    (
-      window.location.hash
-      ||
-      "#accueil"
-    )
-    .toLowerCase();
-
-
-  const estPageClub =
-
-    hash ===
-      "#club"
-
-    ||
-
-    hash ===
-      "#espace-club"
-
-    ||
-
-    hash ===
-      "#espaceclub"
-
-    ||
-
-    hash.startsWith(
-      "#club-"
-    );
-
-
-  document
-    .documentElement
-    .classList
-    .toggle(
-
-      "eah-page-club",
-
-      estPageClub
-
-    );
-
-}
-
-
-
-/* Premier affichage */
-
-if (
-  document.readyState ===
-  "loading"
-) {
+  /* ============================================================
+     SPOTS — OUVERTURE / FERMETURE
+  ============================================================ */
 
   document.addEventListener(
 
-    "DOMContentLoaded",
+    "click",
 
-    gererAffichageEspaceClub,
+    event => {
 
-    {
-      once:
-        true
+      const card =
+        event.target.closest(
+
+          "#spots .spot, #spots .eah-public-card, #spots article"
+
+        );
+
+
+      if (!card) {
+
+        return;
+
+      }
+
+
+      if (
+        event.target.closest(
+          "a, button, input, select, textarea"
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      const details =
+        card.querySelector(
+          ".spot-details"
+        );
+
+
+      if (!details) {
+
+        return;
+
+      }
+
+
+      const label =
+        card.querySelector(
+          ".spot-open-label"
+        );
+
+
+      const ouvert =
+        !details.hidden;
+
+
+      details.hidden =
+        ouvert;
+
+
+      card.classList.toggle(
+
+        "spot-is-open",
+
+        !ouvert
+
+      );
+
+
+      card.setAttribute(
+
+        "aria-expanded",
+
+        String(
+          !ouvert
+        )
+
+      );
+
+
+      if (
+        label
+      ) {
+
+        label.textContent =
+          ouvert
+          ?
+          "Voir les informations"
+          :
+          "Masquer les informations";
+
+      }
+
     }
 
   );
 
-} else {
-
-  gererAffichageEspaceClub();
-
-}
-
-
-
-/* Changement manuel du hash */
-
-window.addEventListener(
-
-  "hashchange",
-
-  gererAffichageEspaceClub
-
-);
-
-
-
-/*
-  Le script principal utilise history.replaceState().
-  replaceState ne déclenche PAS l'événement hashchange.
-  Il faut donc également surveiller les clics de navigation.
-*/
-
-document.addEventListener(
-
-  "click",
-
-  event => {
-
-    const navigation =
-      event.target.closest(
-        "[data-page], [data-page-button], [data-open]"
-      );
-
-
-    if (!navigation) {
-
-      return;
-
-    }
-
-
-    setTimeout(
-      gererAffichageEspaceClub,
-      0
-    );
-
-
-    setTimeout(
-      gererAffichageEspaceClub,
-      100
-    );
-
-  }
-
-);
-
-
-
-/* ============================================================
-   SPOTS
-   OUVERTURE / FERMETURE DES INFORMATIONS
-============================================================ */
-
-document.addEventListener(
-
-  "click",
-
-  function (
-    event
-  ) {
-
-    const card =
-      event.target.closest(
-        "#spots .spot, #spots .eah-public-card, #spots article"
-      );
-
-
-    if (!card) {
-
-      return;
-
-    }
-
-
-    /*
-      Si l'utilisateur clique sur un vrai lien
-      dans la carte, on laisse le lien fonctionner.
-    */
-
-    if (
-      event.target.closest(
-        "a"
-      )
-    ) {
-
-      return;
-
-    }
-
-
-    const details =
-      card.querySelector(
-        ".spot-details"
-      );
-
-
-    if (!details) {
-
-      return;
-
-    }
-
-
-    const label =
-      card.querySelector(
-        ".spot-open-label"
-      );
-
-
-    const estOuvert =
-      !details.hidden;
-
-
-    details.hidden =
-      estOuvert;
-
-
-    card.classList.toggle(
-
-      "spot-is-open",
-
-      !estOuvert
-
-    );
-
-
-    card.setAttribute(
-
-      "aria-expanded",
-
-      String(
-        !estOuvert
-      )
-
-    );
-
-
-    if (label) {
-
-      label.textContent =
-        estOuvert
-        ?
-        "Voir les informations"
-        :
-        "Masquer les informations";
-
-    }
-
-  }
-
-);
+})();
