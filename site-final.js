@@ -1414,3 +1414,433 @@ document.addEventListener("click", function (event) {
   }
 
 });
+/* ============================================================
+   EAH DIVING
+   PAGE DETAIL ACTUALITE
+============================================================ */
+
+(function () {
+
+  function escNews(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  /* ==========================================================
+     VIDEO
+  ========================================================== */
+
+  function youtubeEmbed(url) {
+
+    if (!url) return "";
+
+    try {
+
+      const u = new URL(url);
+
+      let id = "";
+
+      if (
+        u.hostname.includes("youtu.be")
+      ) {
+
+        id =
+          u.pathname
+            .replace("/", "")
+            .trim();
+
+      } else if (
+        u.hostname.includes("youtube.com")
+      ) {
+
+        id =
+          u.searchParams.get("v") || "";
+
+        if (
+          !id &&
+          u.pathname.includes("/shorts/")
+        ) {
+
+          id =
+            u.pathname
+              .split("/shorts/")[1]
+              ?.split("/")[0];
+
+        }
+
+      }
+
+      if (!id) return "";
+
+      return (
+        "https://www.youtube.com/embed/" +
+        encodeURIComponent(id) +
+        "?autoplay=1&rel=0"
+      );
+
+    } catch (e) {
+
+      return "";
+
+    }
+
+  }
+
+
+  function creerVideoActualite(url) {
+
+    if (!url) return "";
+
+    const youtube =
+      youtubeEmbed(url);
+
+    /* YouTube */
+
+    if (youtube) {
+
+      return `
+        <div class="actualite-video">
+
+          <iframe
+            src="${youtube}"
+            title="Vidéo de l'actualité"
+            allow="
+              autoplay;
+              encrypted-media;
+              picture-in-picture
+            "
+            allowfullscreen
+          ></iframe>
+
+        </div>
+      `;
+
+    }
+
+
+    /* Fichier vidéo direct */
+
+    if (
+      /\.(mp4|webm|ogg)(\?.*)?$/i.test(url)
+    ) {
+
+      return `
+        <div class="actualite-video">
+
+          <video
+            src="${escNews(url)}"
+            controls
+            autoplay
+            playsinline
+          ></video>
+
+        </div>
+      `;
+
+    }
+
+
+    /* Autre type de lien vidéo */
+
+    return `
+      <a
+        class="actualite-external-link"
+        href="${escNews(url)}"
+        target="_blank"
+        rel="noopener"
+      >
+        Voir la vidéo
+      </a>
+    `;
+
+  }
+
+
+  /* ==========================================================
+     AFFICHAGE ACTUALITE
+  ========================================================== */
+
+  function ouvrirActualite(id) {
+
+    const data =
+      window.EAH_ACTUALITES?.[
+        String(id)
+      ];
+
+    if (!data) return;
+
+
+    const detail =
+      document.getElementById(
+        "actualite-detail"
+      );
+
+    const content =
+      document.getElementById(
+        "actualite-detail-content"
+      );
+
+    if (!detail || !content) return;
+
+
+    const image =
+      data.image_url ||
+      data.imageUrl ||
+      data.IMAGE_URL ||
+      "";
+
+    const title =
+      data.title ||
+      data.TITLE ||
+      "Actualité";
+
+    const date =
+      data.date ||
+      data.DATE ||
+      "";
+
+    const category =
+      data.category ||
+      data.CATEGORY ||
+      "";
+
+    const summary =
+      data.summary ||
+      data.SUMMARY ||
+      "";
+
+    const texte =
+      data.content ||
+      data.CONTENT ||
+      data.description ||
+      data.DESCRIPTION ||
+      "";
+
+    const video =
+      data.video_url ||
+      data.videoUrl ||
+      data.VIDEO_URL ||
+      "";
+
+    const link =
+      data.link_url ||
+      data.linkUrl ||
+      data.LINK_URL ||
+      "";
+
+
+    content.innerHTML = `
+
+      ${
+        image
+          ? `
+            <img
+              class="actualite-detail-image"
+              src="${escNews(image)}"
+              alt="${escNews(title)}"
+              loading="eager"
+              decoding="async"
+            >
+          `
+          : ""
+      }
+
+
+      <div class="actualite-detail-head">
+
+        ${
+          category
+            ? `
+              <span class="actualite-detail-category">
+                ${escNews(category)}
+              </span>
+            `
+            : ""
+        }
+
+        <h1>
+          ${escNews(title)}
+        </h1>
+
+        ${
+          date
+            ? `
+              <div class="actualite-detail-date">
+                ${escNews(date)}
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          summary
+            ? `
+              <p class="actualite-detail-summary">
+                ${escNews(summary)}
+              </p>
+            `
+            : ""
+        }
+
+      </div>
+
+
+      ${creerVideoActualite(video)}
+
+
+      ${
+        texte
+          ? `
+            <div class="actualite-detail-text">
+              ${escNews(texte)
+                .replace(/\n/g, "<br>")}
+            </div>
+          `
+          : ""
+      }
+
+
+      ${
+        link
+          ? `
+            <a
+              class="actualite-external-link"
+              href="${escNews(link)}"
+              target="_blank"
+              rel="noopener"
+            >
+              En savoir plus
+            </a>
+          `
+          : ""
+      }
+
+    `;
+
+
+    /*
+      Cache toutes les pages principales
+    */
+
+    document
+      .querySelectorAll(
+        "main > section, body > section"
+      )
+      .forEach(section => {
+
+        if (
+          section.id !==
+          "actualite-detail"
+        ) {
+
+          section.hidden = true;
+
+        }
+
+      });
+
+
+    detail.hidden = false;
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+
+    history.pushState(
+      {
+        actualite: String(id)
+      },
+      "",
+      "#actualite-" +
+        encodeURIComponent(id)
+    );
+
+  }
+
+
+  /* ==========================================================
+     CLIC SUR UNE CARTE
+  ========================================================== */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      const card =
+        event.target.closest(
+          "#actualites [data-actualite-id]"
+        );
+
+      if (!card) return;
+
+
+      /*
+        On laisse fonctionner les vrais liens
+        présents dans la carte
+      */
+
+      if (
+        event.target.closest("a")
+      ) {
+
+        return;
+
+      }
+
+
+      const id =
+        card.dataset.actualiteId;
+
+      if (!id) return;
+
+      ouvrirActualite(id);
+
+    }
+  );
+
+
+  /* ==========================================================
+     RETOUR
+  ========================================================== */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      if (
+        !event.target.closest(
+          "#actualite-back"
+        )
+      ) {
+
+        return;
+
+      }
+
+      window.location.hash =
+        "#actualites";
+
+      window.location.reload();
+
+    }
+  );
+
+
+  /*
+    API éventuellement réutilisable
+  */
+
+  window.EAHActualites = {
+    ouvrir: ouvrirActualite
+  };
+
+})();
