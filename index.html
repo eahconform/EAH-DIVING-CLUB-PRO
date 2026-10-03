@@ -5439,6 +5439,31 @@ html:not(.eah-page-club) #club,
 html:not(.eah-page-club) .eah-pro-workspace,
 html:not(.eah-page-club) #clubWorkspace {
   display: none !important;
+}/* ============================================================
+   SPOTS — CARTE CLIQUABLE
+============================================================ */
+
+#spots .spot-card {
+  cursor: pointer;
+}
+
+#spots .spot-details {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top:
+    1px solid rgba(255,255,255,.12);
+}
+
+#spots .spot-more {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+#spots .spot-card[aria-expanded="true"]
+.spot-more {
+  display: none;
 }
 </style>
 </body>
