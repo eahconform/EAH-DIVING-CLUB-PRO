@@ -1376,3 +1376,41 @@ document.addEventListener(
 
   }
 );
+/* ============================================================
+   SPOTS — OUVERTURE DES INFORMATIONS AU CLIC
+============================================================ */
+
+document.addEventListener("click", function (event) {
+
+  const card = event.target.closest(
+    "#spots .eah-public-card, #spots article"
+  );
+
+  if (!card) return;
+
+  const details = card.querySelector(
+    ".spot-details"
+  );
+
+  if (!details) return;
+
+  const label = card.querySelector(
+    ".spot-open-label"
+  );
+
+  const estOuvert = !details.hidden;
+
+  details.hidden = estOuvert;
+
+  card.classList.toggle(
+    "spot-is-open",
+    !estOuvert
+  );
+
+  if (label) {
+    label.textContent = estOuvert
+      ? "Voir les informations"
+      : "Masquer les informations";
+  }
+
+});
