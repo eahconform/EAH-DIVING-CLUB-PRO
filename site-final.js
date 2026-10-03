@@ -1340,3 +1340,39 @@ window.addEventListener(
   "hashchange",
   gererAffichageEspaceClub
 );
+/* ============================================================
+   SPOTS — OUVERTURE DES DETAILS AU CLIC
+============================================================ */
+
+document.addEventListener(
+  "click",
+  function (event) {
+
+    const card =
+      event.target.closest(
+        "#spots .spot-card"
+      );
+
+    if (!card) return;
+
+    const details =
+      card.querySelector(
+        ".spot-details"
+      );
+
+    if (!details) return;
+
+    const ouvert =
+      card.getAttribute(
+        "aria-expanded"
+      ) === "true";
+
+    card.setAttribute(
+      "aria-expanded",
+      String(!ouvert)
+    );
+
+    details.hidden = ouvert;
+
+  }
+);
