@@ -16,15 +16,36 @@
   ============================================================ */
 
   const PRELOAD_IMAGES = [
-    "site-water-premium-bg.jpg",
-    "hero-divers-group.png",
-    "hero-blazons.png",
-    "actualites-hero.jpg",
-    "spots-hero.jpg",
-    "hero-high-diving.png",
-    "olympique-desktop.jpg",
-    "portrait-water-diver.jpg"
-  ];
+
+  /* FOND */
+  "site-water-premium-bg.jpg",
+
+  /* ACCUEIL */
+  "hero-divers-group.png",
+
+  /* BLAZONS / AUTRES HERO */
+  "hero-blazons.png",
+  "actualites-hero.jpg",
+  "spots-hero.jpg",
+
+  /* PLONGEON OLYMPIQUE */
+  "olympique-desktop.jpg",
+  "olympique-mobile.jpg",
+  "portrait-water-diver.jpg",
+
+  /* FREESTYLE / DØDS */
+  "freestyle-desktop.jpg",
+  "freestyle-mobile.jpg",
+
+  /* HIGH DIVING */
+  "high-diving-desktop.png",
+  "high-diving-mobile.jpg",
+
+  /* SAUT DE L'ANGE */
+  "saut-ange-desktop.jpg",
+  "saut-ange-mobile.jpg"
+
+];
 
 
   /* ============================================================
