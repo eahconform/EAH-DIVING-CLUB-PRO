@@ -5431,7 +5431,15 @@
 .page-hero picture img {
   opacity: 1 !important;
 }
+/* ============================================================
+   CACHER L'ESPACE CLUB SUR LE SITE PUBLIC
+============================================================ */
 
+html:not(.eah-page-club) #club,
+html:not(.eah-page-club) .eah-pro-workspace,
+html:not(.eah-page-club) #clubWorkspace {
+  display: none !important;
+}
 </style>
 </body>
 
