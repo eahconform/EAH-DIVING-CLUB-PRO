@@ -1,16 +1,19 @@
 /* ============================================================
    EAH DIVING PRO
-   MEDIA FIX FINAL V2
-   02/10/2026
+   SITE-FINAL.JS
+   VERSION CORRIGEE
+   03/10/2026
 
-   - Ne cache plus les images
-   - Corrige les heroes des disciplines
+   - Corrige les images heroes
+   - Corrige les disciplines
    - Corrige le hero Blazons
    - Protège les 11 blazons
    - Protège les photos Actualités
    - Protège les photos Spots
-   - Desktop / tablette / téléphone
-   - Pas besoin d'actualiser après navigation
+   - Gestion desktop / tablette / mobile
+   - Spots dépliables
+   - Gestion affichage Espace Club
+   - Aucun ancien code Actualités cassé
 ============================================================ */
 
 (() => {
@@ -31,35 +34,43 @@
       "hero-blazons.png",
 
     olympique: {
+
       desktop:
         "olympique-desktop.jpg",
 
       mobile:
         "olympique-mobile.jpg"
+
     },
 
     freestyle: {
+
       desktop:
         "freestyle-desktop.jpg",
 
       mobile:
         "freestyle-mobile.jpg"
+
     },
 
     highdiving: {
+
       desktop:
         "high-diving-desktop.png",
 
       mobile:
         "high-diving-mobile.jpg"
+
     },
 
     ange: {
+
       desktop:
         "saut-ange-desktop.jpg",
 
       mobile:
         "saut-ange-mobile.jpg"
+
     }
 
   };
@@ -113,7 +124,7 @@
 
 
   /* ============================================================
-     CSS
+     CSS MEDIA
   ============================================================ */
 
   function installerCSS() {
@@ -123,7 +134,9 @@
         "eah-media-v2-css"
       )
     ) {
+
       return;
+
     }
 
 
@@ -140,11 +153,13 @@
     style.textContent = `
 
       /* ======================================================
-         AUCUN VOILE SOMBRE SUR LES HEROES
+         HEROES
       ====================================================== */
 
       .eah-v2-hero {
-        position: relative !important;
+
+        position:
+          relative !important;
 
         background-size:
           cover !important;
@@ -160,11 +175,18 @@
 
         background-color:
           transparent !important;
+
       }
 
 
+      /*
+        Pas de voile sombre ajouté
+        par site-final.js
+      */
+
       .eah-v2-hero::before,
       .eah-v2-hero::after {
+
         display:
           none !important;
 
@@ -179,27 +201,28 @@
 
         background-image:
           none !important;
+
       }
 
 
-      /* IMPORTANT :
-         on ne cache plus les images */
-
       .eah-v2-hero img {
+
         opacity:
           1 !important;
 
         visibility:
           visible !important;
+
       }
 
 
-      /* Texte lisible sans voile noir */
+      /* Texte lisible */
 
       .eah-v2-hero h1,
       .eah-v2-hero h2,
       .eah-v2-hero p,
       .eah-v2-hero span {
+
         position:
           relative;
 
@@ -207,15 +230,23 @@
           3;
 
         text-shadow:
-          0 3px 16px rgba(0,0,0,.55);
+          0 3px 14px
+          rgba(
+            0,
+            0,
+            0,
+            .42
+          );
+
       }
 
 
       /* ======================================================
-         IMAGES DE DISCIPLINE
+         IMAGES DISCIPLINES
       ====================================================== */
 
       .eah-discipline-photo {
+
         display:
           block !important;
 
@@ -238,10 +269,11 @@
           visible !important;
 
         filter:
-          brightness(1.12)
-          contrast(1.02)
-          saturate(1.07)
+          brightness(1.16)
+          contrast(1.01)
+          saturate(1.06)
           !important;
+
       }
 
 
@@ -250,6 +282,7 @@
       ====================================================== */
 
       .eah-blazon-image {
+
         display:
           block !important;
 
@@ -264,6 +297,7 @@
 
         filter:
           none !important;
+
       }
 
 
@@ -272,6 +306,7 @@
       ====================================================== */
 
       .eah-cms-image {
+
         display:
           block !important;
 
@@ -286,12 +321,16 @@
 
         visibility:
           visible !important;
+
       }
 
 
-      /* Fond premium général */
+      /* ======================================================
+         FOND GENERAL
+      ====================================================== */
 
       .site-background {
+
         background-image:
           url("site-water-premium-bg.jpg")
           !important;
@@ -307,11 +346,13 @@
 
         opacity:
           1 !important;
+
       }
 
 
       .site-background::before,
       .site-background::after {
+
         display:
           none !important;
 
@@ -320,6 +361,7 @@
 
         opacity:
           0 !important;
+
       }
 
     `;
@@ -338,13 +380,17 @@
      OUTILS
   ============================================================ */
 
-  function normaliser(value) {
+  function normaliser(
+    value
+  ) {
 
     return String(
       value || ""
     )
       .toLowerCase()
-      .normalize("NFD")
+      .normalize(
+        "NFD"
+      )
       .replace(
         /[\u0300-\u036f]/g,
         ""
@@ -371,14 +417,26 @@
     key
   ) {
 
-    if (!FILES[key]) {
+    if (
+      !FILES[
+        key
+      ]
+    ) {
+
       return "";
+
     }
 
 
     return mobile()
-      ? FILES[key].mobile
-      : FILES[key].desktop;
+      ?
+      FILES[
+        key
+      ].mobile
+      :
+      FILES[
+        key
+      ].desktop;
 
   }
 
@@ -407,58 +465,68 @@
       Array.isArray(
         textes
       )
-        ? textes
-        : [
-            textes
-          ];
+      ?
+      textes
+      :
+      [
+        textes
+      ];
 
 
-    return Array
-      .from(
-        document.querySelectorAll(
-          "h1,h2,h3"
+    return (
+      Array
+        .from(
+          document.querySelectorAll(
+            "h1,h2,h3"
+          )
         )
-      )
-      .find(
-        element => {
+        .find(
+          element => {
 
-          const texte =
-            normaliser(
-              element.textContent
+            const texte =
+              normaliser(
+                element.textContent
+              );
+
+
+            const rect =
+              element
+                .getBoundingClientRect();
+
+
+            return (
+
+              rect.width > 0
+
+              &&
+
+              rect.height > 0
+
+              &&
+
+              recherches.some(
+                recherche =>
+                  texte.includes(
+                    normaliser(
+                      recherche
+                    )
+                  )
+              )
+
             );
 
-
-          const rect =
-            element
-              .getBoundingClientRect();
-
-
-          return (
-            rect.width > 0
-            &&
-            rect.height > 0
-            &&
-            recherches.some(
-              recherche =>
-                texte.includes(
-                  normaliser(
-                    recherche
-                  )
-                )
-            )
-          );
-
-        }
-      )
+          }
+        )
       ||
-      null;
+      null
+    );
 
   }
 
 
 
   /* ============================================================
-     TROUVER LE CONTENEUR HERO
+     TROUVER HERO DEPUIS TITRE
   ============================================================ */
 
   function trouverHeroDepuisTitre(
@@ -466,13 +534,11 @@
   ) {
 
     if (!titre) {
+
       return null;
+
     }
 
-
-    /*
-      Priorité à la section contenant le titre.
-    */
 
     const section =
       titre.closest(
@@ -488,10 +554,14 @@
 
 
       if (
+
         rect.width >
           window.innerWidth * .60
+
         &&
+
         rect.height > 180
+
       ) {
 
         return section;
@@ -500,10 +570,6 @@
 
     }
 
-
-    /*
-      Sinon remontée progressive.
-    */
 
     let parent =
       titre.parentElement;
@@ -525,12 +591,18 @@
 
 
       if (
+
         rect.width >
           window.innerWidth * .70
+
         &&
+
         rect.height >= 180
+
         &&
+
         rect.height < 900
+
       ) {
 
         meilleur =
@@ -552,7 +624,7 @@
 
 
   /* ============================================================
-     RECHERCHER UNE IMAGE DANS LE HERO
+     IMAGE HERO
   ============================================================ */
 
   function imageHero(
@@ -560,7 +632,9 @@
   ) {
 
     if (!hero) {
+
       return null;
+
     }
 
 
@@ -572,42 +646,44 @@
       );
 
 
-    /*
-      Ne jamais sélectionner logo / blazon.
-    */
+    return (
+      images.find(
+        img => {
 
-    return images.find(
-      img => {
+          const src =
+            normaliser(
+              img.getAttribute(
+                "src"
+              )
+            );
 
-        const src =
-          normaliser(
-            img.getAttribute(
-              "src"
+
+          return (
+
+            !src.includes(
+              "logo"
             )
+
+            &&
+
+            !src.includes(
+              "blazon"
+            )
+
           );
 
-
-        return (
-          !src.includes(
-            "logo"
-          )
-          &&
-          !src.includes(
-            "blazon"
-          )
-        );
-
-      }
-    )
-    ||
-    null;
+        }
+      )
+      ||
+      null
+    );
 
   }
 
 
 
   /* ============================================================
-     APPLIQUER UNE PHOTO HERO
+     APPLIQUER PHOTO HERO
   ============================================================ */
 
   function appliquerPhotoHero(
@@ -620,7 +696,9 @@
       ||
       !fichier
     ) {
+
       return;
+
     }
 
 
@@ -635,26 +713,45 @@
       );
 
 
-    /*
-      Si le HTML possède déjà une balise IMG,
-      on la corrige directement.
-    */
-
     if (img) {
 
-      img.src =
-        fichier;
+      /*
+        Ne réattribuer src
+        que si nécessaire.
+      */
+
+      const srcActuel =
+        img.getAttribute(
+          "src"
+        )
+        ||
+        "";
+
+
+      if (
+        !srcActuel.endsWith(
+          fichier
+        )
+      ) {
+
+        img.src =
+          fichier;
+
+      }
+
+
+      img.loading =
+        "eager";
+
+
+      img.decoding =
+        "async";
 
 
       img.classList.add(
         "eah-discipline-photo"
       );
 
-
-      /*
-        En cas d'erreur navigateur :
-        fallback via background.
-      */
 
       img.onerror =
         function () {
@@ -669,9 +766,13 @@
 
           hero.style
             .setProperty(
+
               "background-image",
+
               `url("${fichier}")`,
+
               "important"
+
             );
 
         };
@@ -682,15 +783,15 @@
     }
 
 
-    /*
-      Sinon utiliser directement le background.
-    */
-
     hero.style
       .setProperty(
+
         "background-image",
+
         `url("${fichier}")`,
+
         "important"
+
       );
 
   }
@@ -709,12 +810,14 @@
 
     if (
       hash !==
-      "#accueil"
+        "#accueil"
       &&
       hash !==
-      ""
+        ""
     ) {
+
       return;
+
     }
 
 
@@ -731,8 +834,11 @@
 
 
     appliquerPhotoHero(
+
       hero,
+
       FILES.accueil
+
     );
 
   }
@@ -774,13 +880,17 @@
 
 
     else if (
+
       hash.includes(
         "freestyle"
       )
+
       ||
+
       hash.includes(
         "dods"
       )
+
     ) {
 
       config = {
@@ -841,7 +951,9 @@
 
 
     if (!config) {
+
       return;
+
     }
 
 
@@ -877,40 +989,77 @@
 
   function corrigerHeroBlazons() {
 
-  const hero =
-    document.querySelector(
-      "#blazons .page-hero"
-    );
+    const hero =
+      document.querySelector(
+        "#blazons .page-hero"
+      );
 
-  if (!hero) return;
 
-  const img =
-    hero.querySelector(
-      ".page-hero-image"
-    );
+    if (!hero) {
 
-  if (!img) return;
+      return;
 
-  img.src =
-    "hero-blazons.png";
+    }
 
-  img.loading =
-    "eager";
 
-  img.decoding =
-    "async";
+    const img =
+      hero.querySelector(
+        ".page-hero-image"
+      );
 
-  img.style.display =
-    "block";
 
-  img.style.opacity =
-    "1";
+    if (!img) {
 
-  hero.style.removeProperty(
-    "background-image"
-  );
+      return;
 
-}
+    }
+
+
+    if (
+      !String(
+        img.getAttribute(
+          "src"
+        )
+        ||
+        ""
+      )
+      .endsWith(
+        "hero-blazons.png"
+      )
+    ) {
+
+      img.src =
+        "hero-blazons.png";
+
+    }
+
+
+    img.loading =
+      "eager";
+
+
+    img.decoding =
+      "async";
+
+
+    img.style.display =
+      "block";
+
+
+    img.style.opacity =
+      "1";
+
+
+    img.style.visibility =
+      "visible";
+
+
+    hero.style
+      .removeProperty(
+        "background-image"
+      );
+
+  }
 
 
 
@@ -941,13 +1090,17 @@
                 element => {
 
                   return (
+
                     normaliser(
                       element.textContent
                     )
+
                     ===
+
                     normaliser(
                       nom
                     )
+
                   );
 
                 }
@@ -955,25 +1108,34 @@
 
 
           if (!titre) {
+
             return;
+
           }
 
 
           const card =
+
             titre.closest(
               "article"
             )
+
             ||
+
             titre.closest(
               "[class*='blazon']"
             )
+
             ||
+
             titre.parentElement
               ?.parentElement;
 
 
           if (!card) {
+
             return;
+
           }
 
 
@@ -984,12 +1146,37 @@
 
 
           if (!img) {
+
             return;
+
           }
 
 
-          img.src =
-            fichier;
+          if (
+            !String(
+              img.getAttribute(
+                "src"
+              )
+              ||
+              ""
+            )
+            .endsWith(
+              fichier
+            )
+          ) {
+
+            img.src =
+              fichier;
+
+          }
+
+
+          img.loading =
+            "eager";
+
+
+          img.decoding =
+            "async";
 
 
           img.classList.add(
@@ -1005,6 +1192,8 @@
 
   /* ============================================================
      ACTUALITES
+     UNIQUEMENT CORRECTION DES IMAGES
+     PAS DE GESTION DE PAGE DETAIL ICI
   ============================================================ */
 
   function corrigerActualites() {
@@ -1018,24 +1207,45 @@
         "actualit"
       )
     ) {
+
       return;
+
     }
 
 
     document
       .querySelectorAll(
-        "article img, .eah-public-card img"
+        "#actualites article img, #actualites .eah-public-card img"
       )
       .forEach(
         img => {
 
-          /*
-            Ne remplace jamais une photo valide.
-          */
-
           img.classList.add(
             "eah-cms-image"
           );
+
+
+          img.loading =
+            "eager";
+
+
+          img.decoding =
+            "async";
+
+
+          if (
+            img.dataset
+              .eahFallbackNews
+          ) {
+
+            return;
+
+          }
+
+
+          img.dataset
+            .eahFallbackNews =
+              "1";
 
 
           img.addEventListener(
@@ -1050,8 +1260,24 @@
               );
 
 
-              this.src =
-                "news-default.jpg";
+              /*
+                Evite boucle infinie
+                si news-default.jpg n'existe pas.
+              */
+
+              if (
+                !String(
+                  this.src
+                )
+                .includes(
+                  "news-default.jpg"
+                )
+              ) {
+
+                this.src =
+                  "news-default.jpg";
+
+              }
 
             }
 
@@ -1066,6 +1292,7 @@
 
   /* ============================================================
      SPOTS
+     UNIQUEMENT CORRECTION DES IMAGES
   ============================================================ */
 
   function corrigerSpots() {
@@ -1079,13 +1306,15 @@
         "spots"
       )
     ) {
+
       return;
+
     }
 
 
     document
       .querySelectorAll(
-        "article img, .eah-public-card img"
+        "#spots article img, #spots .eah-public-card img"
       )
       .forEach(
         img => {
@@ -1093,6 +1322,29 @@
           img.classList.add(
             "eah-cms-image"
           );
+
+
+          img.loading =
+            "eager";
+
+
+          img.decoding =
+            "async";
+
+
+          if (
+            img.dataset
+              .eahFallbackSpot
+          ) {
+
+            return;
+
+          }
+
+
+          img.dataset
+            .eahFallbackSpot =
+              "1";
 
 
           img.addEventListener(
@@ -1107,8 +1359,19 @@
               );
 
 
-              this.src =
-                "spot-default.jpg";
+              if (
+                !String(
+                  this.src
+                )
+                .includes(
+                  "spot-default.jpg"
+                )
+              ) {
+
+                this.src =
+                  "spot-default.jpg";
+
+              }
 
             }
 
@@ -1146,22 +1409,13 @@
 
 
   /* ============================================================
-     NAVIGATION SANS ACTUALISATION MANUELLE
+     NAVIGATION
   ============================================================ */
 
   function routeChange() {
 
-    /*
-      Dès le clic.
-    */
-
     appliquer();
 
-
-    /*
-      Après reconstruction de la page
-      par ton script principal.
-    */
 
     requestAnimationFrame(
       () => {
@@ -1240,8 +1494,50 @@
 
 
   /*
-    Observer les pages créées dynamiquement.
+    IMPORTANT :
+    history.replaceState() ne déclenche pas hashchange.
+    On relance donc les corrections lorsqu'un bouton
+    de navigation du site est utilisé.
   */
+
+  document.addEventListener(
+
+    "click",
+
+    event => {
+
+      const navigation =
+        event.target.closest(
+          "[data-page], [data-page-button], [data-open]"
+        );
+
+
+      if (!navigation) {
+
+        return;
+
+      }
+
+
+      setTimeout(
+        routeChange,
+        0
+      );
+
+
+      setTimeout(
+        routeChange,
+        100
+      );
+
+    }
+
+  );
+
+
+  /* ============================================================
+     OBSERVER LES ELEMENTS CREES PAR SUPABASE
+  ============================================================ */
 
   let timer;
 
@@ -1265,30 +1561,40 @@
     );
 
 
-  observer.observe(
+  if (
+    document.body
+  ) {
 
-    document.body,
+    observer.observe(
 
-    {
-      childList:
-        true,
+      document.body,
 
-      subtree:
-        true
-    }
+      {
 
-  );
+        childList:
+          true,
+
+        subtree:
+          true
+
+      }
+
+    );
+
+  }
 
 
-  /*
-    Mobile <-> tablette.
-  */
+  /* ============================================================
+     MOBILE / TABLETTE / DESKTOP
+  ============================================================ */
 
   let resizeTimer;
 
 
   window.addEventListener(
+
     "resize",
+
     () => {
 
       clearTimeout(
@@ -1303,9 +1609,13 @@
         );
 
     }
+
   );
 
 })();
+
+
+
 /* ============================================================
    EAH DIVING
    ESPACE CLUB UNIQUEMENT SUR LA PAGE CLUB
@@ -1314,310 +1624,233 @@
 function gererAffichageEspaceClub() {
 
   const hash =
-    (window.location.hash || "#accueil")
-      .toLowerCase();
+    (
+      window.location.hash
+      ||
+      "#accueil"
+    )
+    .toLowerCase();
+
 
   const estPageClub =
-    hash === "#club" ||
-    hash === "#espace-club" ||
-    hash === "#espaceclub" ||
-    hash.startsWith("#club-");
 
-  document.documentElement.classList.toggle(
-    "eah-page-club",
-    estPageClub
-  );
+    hash ===
+      "#club"
+
+    ||
+
+    hash ===
+      "#espace-club"
+
+    ||
+
+    hash ===
+      "#espaceclub"
+
+    ||
+
+    hash.startsWith(
+      "#club-"
+    );
+
+
+  document
+    .documentElement
+    .classList
+    .toggle(
+
+      "eah-page-club",
+
+      estPageClub
+
+    );
 
 }
 
 
-/* premier affichage */
-gererAffichageEspaceClub();
+
+/* Premier affichage */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+
+    "DOMContentLoaded",
+
+    gererAffichageEspaceClub,
+
+    {
+      once:
+        true
+    }
+
+  );
+
+} else {
+
+  gererAffichageEspaceClub();
+
+}
 
 
-/* changement de page */
+
+/* Changement manuel du hash */
+
 window.addEventListener(
+
   "hashchange",
+
   gererAffichageEspaceClub
+
 );
+
+
+
+/*
+  Le script principal utilise history.replaceState().
+  replaceState ne déclenche PAS l'événement hashchange.
+  Il faut donc également surveiller les clics de navigation.
+*/
+
+document.addEventListener(
+
+  "click",
+
+  event => {
+
+    const navigation =
+      event.target.closest(
+        "[data-page], [data-page-button], [data-open]"
+      );
+
+
+    if (!navigation) {
+
+      return;
+
+    }
+
+
+    setTimeout(
+      gererAffichageEspaceClub,
+      0
+    );
+
+
+    setTimeout(
+      gererAffichageEspaceClub,
+      100
+    );
+
+  }
+
+);
+
+
+
 /* ============================================================
-   SPOTS — OUVERTURE DES DETAILS AU CLIC
+   SPOTS
+   OUVERTURE / FERMETURE DES INFORMATIONS
 ============================================================ */
 
 document.addEventListener(
+
   "click",
-  function (event) {
+
+  function (
+    event
+  ) {
 
     const card =
       event.target.closest(
-        "#spots .spot-card"
+        "#spots .spot, #spots .eah-public-card, #spots article"
       );
 
-    if (!card) return;
+
+    if (!card) {
+
+      return;
+
+    }
+
+
+    /*
+      Si l'utilisateur clique sur un vrai lien
+      dans la carte, on laisse le lien fonctionner.
+    */
+
+    if (
+      event.target.closest(
+        "a"
+      )
+    ) {
+
+      return;
+
+    }
+
 
     const details =
       card.querySelector(
         ".spot-details"
       );
 
-    if (!details) return;
 
-    const ouvert =
-      card.getAttribute(
-        "aria-expanded"
-      ) === "true";
+    if (!details) {
 
-    card.setAttribute(
-      "aria-expanded",
-      String(!ouvert)
+      return;
+
+    }
+
+
+    const label =
+      card.querySelector(
+        ".spot-open-label"
+      );
+
+
+    const estOuvert =
+      !details.hidden;
+
+
+    details.hidden =
+      estOuvert;
+
+
+    card.classList.toggle(
+
+      "spot-is-open",
+
+      !estOuvert
+
     );
 
-    details.hidden = ouvert;
+
+    card.setAttribute(
+
+      "aria-expanded",
+
+      String(
+        !estOuvert
+      )
+
+    );
+
+
+    if (label) {
+
+      label.textContent =
+        estOuvert
+        ?
+        "Voir les informations"
+        :
+        "Masquer les informations";
+
+    }
 
   }
+
 );
-/* ============================================================
-   SPOTS — OUVERTURE DES INFORMATIONS AU CLIC
-============================================================ */
-
-document.addEventListener("click", function (event) {
-
-  const card = event.target.closest(
-    "#spots .eah-public-card, #spots article"
-  );
-
-  if (!card) return;
-
-  const details = card.querySelector(
-    ".spot-details"
-  );
-
-  if (!details) return;
-
-  const label = card.querySelector(
-    ".spot-open-label"
-  );
-
-  const estOuvert = !details.hidden;
-
-  details.hidden = estOuvert;
-
-  card.classList.toggle(
-    "spot-is-open",
-    !estOuvert
-  );
-
-  if (label) {
-    label.textContent = estOuvert
-      ? "Voir les informations"
-      : "Masquer les informations";
-  }
-
-});
-
-      return (
-        "https://www.youtube.com/embed/" +
-        encodeURIComponent(id) +
-        "?autoplay=1&rel=0"
-      );
-
-    } catch (e) {
-
-      return "";
-
-    }
-
-  }
-
-
-  function creerVideoActualite(url) {
-
-    if (!url) return "";
-
-    const youtube =
-      youtubeEmbed(url);
-
-    /* YouTube */
-
-    if (youtube) {
-
-      return `
-        <div class="actualite-video">
-
-          <iframe
-            src="${youtube}"
-            title="Vidéo de l'actualité"
-            allow="
-              autoplay;
-              encrypted-media;
-              picture-in-picture
-            "
-            allowfullscreen
-          ></iframe>
-
-        </div>
-      `;
-
-    }
-
-
-    /* Fichier vidéo direct */
-
-    if (
-      /\.(mp4|webm|ogg)(\?.*)?$/i.test(url)
-    ) {
-
-      return `
-        <div class="actualite-video">
-
-          <video
-            src="${escNews(url)}"
-            controls
-            autoplay
-            playsinline
-          ></video>
-
-        </div>
-      `;
-
-    }
-
-
-    /* Autre type de lien vidéo */
-
-    return `
-      <a
-        class="actualite-external-link"
-        href="${escNews(url)}"
-        target="_blank"
-        rel="noopener"
-      >
-        Voir la vidéo
-      </a>
-    `;
-
-  }
-
-
-  /* ==========================================================
-     AFFICHAGE ACTUALITE
-  ========================================================== */
-
-  function ouvrirActualite(id) {
-
-    const data =
-      window.EAH_ACTUALITES?.[
-        String(id)
-      ];
-
-    if (!data) return;
-
-
-    const detail =
-      document.getElementById(
-        "actualite-detail"
-      );
-
-    const content =
-      document.getElementById(
-        "actualite-detail-content"
-      );
-
-    if (!detail || !content) return;
-
-
-    const image =
-      data.image_url ||
-      data.imageUrl ||
-      data.IMAGE_URL ||
-      "";
-
-    const title =
-      data.title ||
-      data.TITLE ||
-      "Actualité";
-
-    const date =
-      data.date ||
-      data.DATE ||
-      "";
-
-    const category =
-      data.category ||
-      data.CATEGORY ||
-      "";
-
-    const summary =
-      data.summary ||
-      data.SUMMARY ||
-      "";
-
-    const texte =
-      data.content ||
-      data.CONTENT ||
-      data.description ||
-      data.DESCRIPTION ||
-      "";
-
-    const video =
-      data.video_url ||
-      data.videoUrl ||
-      data.VIDEO_URL ||
-      "";
-
-    const link =
-      data.link_url ||
-      data.linkUrl ||
-      data.LINK_URL ||
-      "";
-
-
-    content.innerHTML = `
-
-      ${
-        image
-          ? `
-            <img
-              class="actualite-detail-image"
-              src="${escNews(image)}"
-              alt="${escNews(title)}"
-              loading="eager"
-              decoding="async"
-            >
-          `
-          : ""
-      }
-
-
-      <div class="actualite-detail-head">
-
-        ${
-          category
-            ? `
-              <span class="actualite-detail-category">
-                ${escNews(category)}
-              </span>
-            `
-            : ""
-        }
-
-        <h1>
-          ${escNews(title)}
-        </h1>
-
-        ${
-          date
-            ? `
-              <div class="actualite-detail-date">
-                ${escNews(date)}
-              </div>
-            `
-            : ""
-        }
-
-        ${
-          summary
-            ? `
-              <p class="actualite-detail-summary">
-                ${escNew(
-   
