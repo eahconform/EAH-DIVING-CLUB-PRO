@@ -4322,9 +4322,7 @@ function renderNews() {
       </div>
 
     `;
-window.EAH_ACTUALITES[
-  String(actualite.id)
-] = actualite;
+
     return;
 
   }
@@ -4332,13 +4330,12 @@ window.EAH_ACTUALITES[
 
   grid.innerHTML =
     state.news
-     window.EAH_ACTUALITES = {};
       .map(
         news => `
 
           <article
             class="news-card ${
-               data-actualite-id="${esc(actualite.id || '')}"
+            
               bool(
                 news.featured
               )
@@ -4351,12 +4348,12 @@ window.EAH_ACTUALITES[
 
             ${
               news.image_url
-               data-actualite-id="${esc(news.id || '')}"
+               
               ?
               `
                 <img
                   class="news-image"
-           data-actualite-id="${esc(news.id || '')}"
+           
                   src="${esc(news.image_url)}"
                   alt="${esc(news.title)}"
                   loading="lazy"
