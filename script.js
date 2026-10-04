@@ -14415,6 +14415,940 @@ async function ouvrirCarteCoachDirectementEAH(
 
   }
 
+}/* ============================================================
+   EAH DIVING PRO
+   CORRECTION FINALE
+   POPULATION + DEMANDE PUBLIQUE
+   04/10/2026
+
+   SUPABASE EXISTANT :
+   - eah_fast_population(p_code, p_club_slug)
+   - submit_public_grading_request(p_payload)
+============================================================ */
+
+
+/* ============================================================
+   NORMALISATION REPONSE POPULATION
+============================================================ */
+
+function eahNormalizePopulationResult(
+  data
+) {
+
+  let result =
+    Array.isArray(
+      data
+    )
+    ?
+    data[0]
+    :
+    data;
+
+
+  if (
+    !result
+    ||
+    typeof result !==
+      'object'
+  ) {
+
+    return {
+
+      people:
+        0,
+
+      count:
+        0,
+
+      avg_eah:
+        null,
+
+      avg_wa:
+        null
+
+    };
+
+  }
+
+
+  /*
+    Certaines versions RPC
+    peuvent encapsuler les statistiques.
+  */
+
+  if (
+    result.stats
+    &&
+    typeof result.stats ===
+      'object'
+  ) {
+
+    result =
+      result.stats;
+
+  }
+
+
+  if (
+    result.population
+    &&
+    typeof result.population ===
+      'object'
+  ) {
+
+    result =
+      result.population;
+
+  }
+
+
+  if (
+    result.result
+    &&
+    typeof result.result ===
+      'object'
+  ) {
+
+    result =
+      result.result;
+
+  }
+
+
+  if (
+    result.data
+    &&
+    typeof result.data ===
+      'object'
+    &&
+    !Array.isArray(
+      result.data
+    )
+  ) {
+
+    result =
+      result.data;
+
+  }
+
+
+  return {
+
+    people:
+
+      result.people
+
+      ??
+
+      result.global_people
+
+      ??
+
+      result.divers
+
+      ??
+
+      result.diver_count
+
+      ??
+
+      result.diverCount
+
+      ??
+
+      result.people_count
+
+      ??
+
+      result.peopleCount
+
+      ??
+
+      result.total_divers
+
+      ??
+
+      result.totalDivers
+
+      ??
+
+      0,
+
+
+    count:
+
+      result.count
+
+      ??
+
+      result.global_count
+
+      ??
+
+      result.gradings
+
+      ??
+
+      result.evaluations
+
+      ??
+
+      result.evaluation_count
+
+      ??
+
+      result.evaluationCount
+
+      ??
+
+      result.total_gradings
+
+      ??
+
+      result.totalGradings
+
+      ??
+
+      0,
+
+
+    avg_eah:
+
+      result.avg_eah
+
+      ??
+
+      result.avgEah
+
+      ??
+
+      result.global_avg_eah
+
+      ??
+
+      result.eah_average
+
+      ??
+
+      result.eahAverage
+
+      ??
+
+      result.average_eah
+
+      ??
+
+      null,
+
+
+    avg_wa:
+
+      result.avg_wa
+
+      ??
+
+      result.avgWa
+
+      ??
+
+      result.global_avg_wa
+
+      ??
+
+      result.wa_average
+
+      ??
+
+      result.waAverage
+
+      ??
+
+      result.average_wa
+
+      ??
+
+      null
+
+  };
+
+}
+
+
+
+/* ============================================================
+   POPULATION
+   UTILISE LA FONCTION SUPABASE DEJA EXISTANTE :
+
+   eah_fast_population(
+     p_code text,
+     p_club_slug text
+   )
+============================================================ */
+
+async function loadPopulation() {
+
+  const code =
+    normalizeCode(
+      val(
+        'populationCode'
+      )
+    );
+
+
+  const box =
+    document.getElementById(
+      'populationResults'
+    );
+
+
+  const button =
+    document.getElementById(
+      'populationSearchButton'
+    );
+
+
+  if (!box) {
+
+    return;
+
+  }
+
+
+  box.innerHTML = `
+
+    <div class="loading-panel">
+      Recherche…
+    </div>
+
+  `;
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Recherche…',
+
+    'Rechercher'
+
+  );
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    /*
+      IMPORTANT :
+
+      Ancien script :
+      get_population_stats
+      p_dive_code
+
+      Fonction réellement présente :
+      eah_fast_population
+      p_code
+    */
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_fast_population',
+
+        {
+
+          p_code:
+            code ||
+            null,
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (
+      error
+    ) {
+
+      throw error;
+
+    }
+
+
+    /*
+      Certaines RPC retournent :
+      {
+        ok: false,
+        error: "..."
+      }
+    */
+
+    if (
+      data
+      &&
+      typeof data ===
+        'object'
+      &&
+      data.ok ===
+        false
+    ) {
+
+      throw new Error(
+
+        data.error
+        ||
+        'Recherche Population impossible.'
+
+      );
+
+    }
+
+
+    const result =
+      eahNormalizePopulationResult(
+        data
+      );
+
+
+    renderPopulationStats(
+
+      box,
+
+      result
+
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH POPULATION:',
+      error
+    );
+
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        ${esc(
+          error?.message
+          ||
+          'Impossible de charger les statistiques Population.'
+        )}
+
+      </div>
+
+    `;
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Rechercher'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   DEMANDE PUBLIQUE DE GRADING
+
+   SUPABASE EXISTANT :
+
+   submit_public_grading_request(
+     p_payload jsonb
+   )
+============================================================ */
+
+async function submitPublicGrading(
+  event
+) {
+
+  event
+    ?.preventDefault();
+
+
+  const button =
+    document.getElementById(
+      'publicSubmitButton'
+    );
+
+
+  const firstName =
+    val(
+      'publicFirstName'
+    )
+    .trim();
+
+
+  const lastName =
+    val(
+      'publicLastName'
+    )
+    .trim();
+
+
+  const email =
+    val(
+      'publicEmail'
+    )
+    .trim()
+    .toLowerCase();
+
+
+  const discipline =
+    val(
+      'publicDiscipline'
+    )
+    .trim();
+
+
+  const diveCode =
+    normalizeCode(
+      val(
+        'publicDive'
+      )
+    );
+
+
+  const height =
+    asNumber(
+      val(
+        'publicHeight'
+      )
+    );
+
+
+  const heightType =
+    val(
+      'publicHeightType'
+    )
+    ||
+    'KNOWN';
+
+
+  const videoUrl =
+    val(
+      'publicVideo'
+    )
+    .trim();
+
+
+  const message =
+    val(
+      'publicMessage'
+    )
+    .trim();
+
+
+  /* ==========================================================
+     VERIFICATIONS
+  ========================================================== */
+
+  if (
+    !firstName
+    ||
+    !lastName
+  ) {
+
+    setMessage(
+
+      'publicFormMessage',
+
+      `
+        <div class="notice error">
+          Prénom et nom obligatoires.
+        </div>
+      `
+
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    !email
+  ) {
+
+    setMessage(
+
+      'publicFormMessage',
+
+      `
+        <div class="notice error">
+          Adresse e-mail obligatoire.
+        </div>
+      `
+
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    !videoUrl
+  ) {
+
+    setMessage(
+
+      'publicFormMessage',
+
+      `
+        <div class="notice error">
+          Le lien de la vidéo est obligatoire.
+        </div>
+      `
+
+    );
+
+
+    return;
+
+  }
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Envoi…',
+
+    'Envoyer la demande'
+
+  );
+
+
+  setMessage(
+
+    'publicFormMessage',
+
+    `
+      <div class="notice">
+        Envoi de la demande…
+      </div>
+    `
+
+  );
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    /* ========================================================
+       PAYLOAD COMPATIBLE ANCIENNE + NOUVELLE VERSION
+
+       On envoie les deux écritures :
+       first_name + firstName
+       dive_code + diveCode
+       etc.
+
+       Ainsi ton ancienne fonction Supabase peut continuer
+       à fonctionner quelle que soit la version utilisée.
+    ======================================================== */
+
+    const payload = {
+
+      /* CLUB */
+
+      club_slug:
+        CLUB_SLUG ||
+        null,
+
+      clubSlug:
+        CLUB_SLUG ||
+        null,
+
+
+      /* IDENTITE */
+
+      first_name:
+        firstName,
+
+      firstName:
+        firstName,
+
+
+      last_name:
+        lastName,
+
+      lastName:
+        lastName,
+
+
+      email:
+        email,
+
+
+      /* DISCIPLINE */
+
+      discipline:
+        discipline,
+
+
+      /* PLONGEON */
+
+      dive_code:
+        diveCode,
+
+      diveCode:
+        diveCode,
+
+
+      /* HAUTEUR */
+
+      height:
+        height,
+
+
+      height_type:
+        heightType,
+
+      heightType:
+        heightType,
+
+
+      /* VIDEO */
+
+      video_url:
+        videoUrl,
+
+      videoUrl:
+        videoUrl,
+
+
+      /* MESSAGE */
+
+      message:
+        message,
+
+
+      /* SOURCE */
+
+      source:
+        'PUBLIC',
+
+      status:
+        'PENDING'
+
+    };
+
+
+    /*
+      IMPORTANT :
+
+      Ton ancienne fonction Supabase attend :
+
+      p_payload
+
+      et NON :
+
+      p_request
+    */
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'submit_public_grading_request',
+
+        {
+
+          p_payload:
+            payload
+
+        }
+
+      );
+
+
+    if (
+      error
+    ) {
+
+      throw error;
+
+    }
+
+
+    if (
+      data
+      &&
+      typeof data ===
+        'object'
+      &&
+      data.ok ===
+        false
+    ) {
+
+      throw new Error(
+
+        data.error
+        ||
+        'La demande n’a pas pu être enregistrée.'
+
+      );
+
+    }
+
+
+    /*
+      Récupération éventuelle
+      du numéro de demande.
+    */
+
+    const requestCode =
+
+      data?.request_code
+
+      ??
+
+      data?.requestCode
+
+      ??
+
+      data?.code
+
+      ??
+
+      '';
+
+
+    setMessage(
+
+      'publicFormMessage',
+
+      `
+        <div class="notice success">
+
+          <strong>
+            Demande enregistrée.
+          </strong>
+
+          ${
+            requestCode
+            ?
+            `
+
+              <br><br>
+
+              Référence :
+              <strong>
+                ${esc(requestCode)}
+              </strong>
+
+            `
+            :
+            ''
+          }
+
+        </div>
+      `
+
+    );
+
+
+    document
+      .getElementById(
+        'publicGradingForm'
+      )
+      ?.reset();
+
+
+    showToast(
+
+      'Demande de grading envoyée.',
+
+      'success'
+
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH PUBLIC GRADING:',
+      error
+    );
+
+
+    const message =
+      String(
+        error?.message
+        ||
+        'Envoi impossible.'
+      );
+
+
+    setMessage(
+
+      'publicFormMessage',
+
+      `
+        <div class="notice error">
+
+          ${esc(message)}
+
+        </div>
+      `
+
+    );
+
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Envoyer la demande'
+
+    );
+
+  }
+
 }
 init()
   .catch(
