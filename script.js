@@ -15349,7 +15349,1275 @@ async function submitPublicGrading(
 
   }
 
+}/* ============================================================
+   EAH DIVING
+   POPULATION DETAILLEE
+   04/10/2026
+
+   - statistiques
+   - moyenne EAH
+   - moyenne WA
+   - fenêtre plongeurs
+   - fenêtre gradings
+   - profil cliquable
+   - vidéo publique cliquable
+============================================================ */
+
+
+/* ============================================================
+   URL HTTP SECURISEE
+============================================================ */
+
+function eahPopulationSafeUrl(
+  value
+) {
+
+  const raw =
+    String(
+      value ||
+      ''
+    )
+    .trim();
+
+
+  if (!raw) {
+
+    return '';
+
+  }
+
+
+  try {
+
+    const url =
+      new URL(
+        raw,
+        window.location.href
+      );
+
+
+    if (
+      url.protocol !==
+        'https:'
+      &&
+      url.protocol !==
+        'http:'
+    ) {
+
+      return '';
+
+    }
+
+
+    return url.href;
+
+
+  } catch (_) {
+
+    return '';
+
+  }
+
 }
+
+
+
+/* ============================================================
+   LIEN PROFIL PUBLIC EAH
+============================================================ */
+
+function eahPopulationProfileUrl(
+  item
+) {
+
+  if (
+    !item
+    ||
+    !item.eah_id
+  ) {
+
+    return '';
+
+  }
+
+
+  const url =
+    new URL(
+      window.location.href
+    );
+
+
+  /*
+    On enlève les anciens paramètres sensibles
+    éventuels.
+  */
+
+  url.search = '';
+
+
+  if (
+    item.club_slug
+  ) {
+
+    url.searchParams.set(
+
+      'club',
+
+      item.club_slug
+
+    );
+
+  }
+
+
+  url.searchParams.set(
+
+    'id',
+
+    item.eah_id
+
+  );
+
+
+  url.hash =
+    'profil';
+
+
+  return url.toString();
+
+}
+
+
+
+/* ============================================================
+   DATE POPULATION
+============================================================ */
+
+function eahPopulationDate(
+  value
+) {
+
+  if (!value) {
+
+    return '';
+
+  }
+
+
+  const date =
+    new Date(
+      value
+    );
+
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
+    return '';
+
+  }
+
+
+  return date.toLocaleDateString(
+
+    'fr-FR',
+
+    {
+
+      day:
+        '2-digit',
+
+      month:
+        '2-digit',
+
+      year:
+        'numeric'
+
+    }
+
+  );
+
+}
+
+
+
+/* ============================================================
+   NORMALISER RESULTAT
+============================================================ */
+
+function eahPopulationNormalize(
+  data
+) {
+
+  let result =
+    Array.isArray(
+      data
+    )
+    ?
+    data[0]
+    :
+    data;
+
+
+  if (
+    !result
+    ||
+    typeof result !==
+      'object'
+  ) {
+
+    result = {};
+
+  }
+
+
+  return {
+
+    people:
+
+      Number(
+        result.people
+        ??
+        0
+      ),
+
+
+    public_people:
+
+      Number(
+        result.public_people
+        ??
+        0
+      ),
+
+
+    count:
+
+      Number(
+        result.count
+        ??
+        0
+      ),
+
+
+    avg_eah:
+
+      result.avg_eah
+      ??
+      null,
+
+
+    avg_wa:
+
+      result.avg_wa
+      ??
+      null,
+
+
+    divers:
+
+      Array.isArray(
+        result.divers
+      )
+      ?
+      result.divers
+      :
+      [],
+
+
+    gradings:
+
+      Array.isArray(
+        result.gradings
+      )
+      ?
+      result.gradings
+      :
+      []
+
+  };
+
+}
+
+
+
+/* ============================================================
+   OUVRIR LES PLONGEURS
+============================================================ */
+
+function eahOpenPopulationDivers(
+  result
+) {
+
+  const divers =
+    result.divers ||
+    [];
+
+
+  let html = `
+
+    <div class="modal-inner">
+
+      <span class="overline">
+        POPULATION EAH
+      </span>
+
+      <h2>
+        Plongeurs EAH
+      </h2>
+
+      <p class="muted">
+
+        ${esc(
+          result.people
+        )}
+        plongeur(s) concerné(s).
+
+      </p>
+
+  `;
+
+
+  if (
+    result.people >
+    divers.length
+  ) {
+
+    html += `
+
+      <div class="notice">
+
+        Certains profils sont privés.
+
+        Seuls les profils publics
+        sont affichés ci-dessous.
+
+      </div>
+
+    `;
+
+  }
+
+
+  if (
+    !divers.length
+  ) {
+
+    html += `
+
+      <div class="notice">
+
+        Aucun profil public disponible
+        pour cette recherche.
+
+      </div>
+
+    `;
+
+  }
+
+
+  divers.forEach(
+    diver => {
+
+      const name =
+
+        String(
+          diver.display_name
+          ||
+          ''
+        )
+        .trim()
+
+        ||
+
+        (
+          (
+            diver.first_name ||
+            ''
+          )
+
+          +
+
+          ' '
+
+          +
+
+          (
+            diver.last_name ||
+            ''
+          )
+        )
+        .trim()
+
+        ||
+
+        diver.eah_id;
+
+
+      const profileUrl =
+        eahPopulationProfileUrl(
+          diver
+        );
+
+
+      const videoUrl =
+        eahPopulationSafeUrl(
+          diver.video_url
+        );
+
+
+      html += `
+
+        <article
+          class="history-item"
+          style="
+            margin-top:14px;
+            align-items:center;
+          "
+        >
+
+          <div>
+
+            <strong>
+              ${esc(name)}
+            </strong>
+
+            <br>
+
+            <small class="muted">
+
+              ${esc(
+                diver.grading_count
+                ??
+                0
+              )}
+              grading(s)
+
+            </small>
+
+          </div>
+
+
+          <div
+            style="
+              display:flex;
+              gap:8px;
+              flex-wrap:wrap;
+              justify-content:flex-end;
+            "
+          >
+
+            ${
+              profileUrl
+              ?
+              `
+
+                <a
+                  class="button small"
+                  href="${esc(profileUrl)}"
+                >
+                  Voir le profil
+                </a>
+
+              `
+              :
+              ''
+            }
+
+
+            ${
+              videoUrl
+              ?
+              `
+
+                <a
+                  class="button small secondary"
+                  href="${esc(videoUrl)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Voir la vidéo
+                </a>
+
+              `
+              :
+              ''
+            }
+
+          </div>
+
+        </article>
+
+      `;
+
+    }
+  );
+
+
+  html += `
+    </div>
+  `;
+
+
+  openModal(
+    html
+  );
+
+}
+
+
+
+/* ============================================================
+   OUVRIR LES GRADINGS
+============================================================ */
+
+function eahOpenPopulationGradings(
+  result
+) {
+
+  const gradings =
+    result.gradings ||
+    [];
+
+
+  let html = `
+
+    <div class="modal-inner">
+
+      <span class="overline">
+        POPULATION EAH
+      </span>
+
+      <h2>
+        Gradings
+      </h2>
+
+      <p class="muted">
+
+        ${esc(
+          result.count
+        )}
+        grading(s) au total.
+
+      </p>
+
+  `;
+
+
+  if (
+    result.count >
+    gradings.length
+  ) {
+
+    html += `
+
+      <div class="notice">
+
+        Les gradings associés à des profils privés
+        ne sont pas affichés nominativement.
+
+      </div>
+
+    `;
+
+  }
+
+
+  if (
+    !gradings.length
+  ) {
+
+    html += `
+
+      <div class="notice">
+
+        Aucun grading public disponible
+        pour cette recherche.
+
+      </div>
+
+    `;
+
+  }
+
+
+  gradings.forEach(
+    grading => {
+
+      const name =
+
+        String(
+          grading.display_name
+          ||
+          ''
+        )
+        .trim()
+
+        ||
+
+        grading.eah_id
+
+        ||
+
+        'Plongeur EAH';
+
+
+      const profileUrl =
+        eahPopulationProfileUrl(
+          grading
+        );
+
+
+      const videoUrl =
+        eahPopulationSafeUrl(
+          grading.video_url
+        );
+
+
+      html += `
+
+        <article
+          class="history-item"
+          style="
+            margin-top:14px;
+            align-items:center;
+          "
+        >
+
+          <div>
+
+            <strong>
+              ${esc(name)}
+            </strong>
+
+            <br>
+
+
+            <span>
+
+              ${esc(
+                grading.dive_code
+                ||
+                '—'
+              )}
+
+              ${
+                grading.height !==
+                  null
+                &&
+                typeof grading.height !==
+                  'undefined'
+                ?
+                (
+                  ' • '
+                  +
+                  esc(
+                    fmtNumber(
+                      grading.height
+                    )
+                  )
+                  +
+                  ' m'
+                )
+                :
+                ''
+              }
+
+            </span>
+
+
+            <br>
+
+
+            <small class="muted">
+
+              ${esc(
+                eahPopulationDate(
+                  grading.evaluated_at
+                )
+              )}
+
+            </small>
+
+          </div>
+
+
+          <div
+            style="
+              text-align:right;
+            "
+          >
+
+            <strong>
+
+              EAH
+
+              ${esc(
+                fmtNumber(
+                  grading.eah_score
+                )
+              )}/10
+
+            </strong>
+
+
+            <br>
+
+
+            <span>
+
+              WA
+
+              ${esc(
+                fmtNumber(
+                  grading.wa_score
+                )
+              )}/10
+
+            </span>
+
+
+            <div
+              style="
+                margin-top:9px;
+                display:flex;
+                gap:7px;
+                flex-wrap:wrap;
+                justify-content:flex-end;
+              "
+            >
+
+              ${
+                profileUrl
+                ?
+                `
+
+                  <a
+                    class="button small"
+                    href="${esc(profileUrl)}"
+                  >
+                    Profil
+                  </a>
+
+                `
+                :
+                ''
+              }
+
+
+              ${
+                videoUrl
+                ?
+                `
+
+                  <a
+                    class="button small secondary"
+                    href="${esc(videoUrl)}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Vidéo
+                  </a>
+
+                `
+                :
+                ''
+              }
+
+            </div>
+
+          </div>
+
+        </article>
+
+      `;
+
+    }
+  );
+
+
+  html += `
+    </div>
+  `;
+
+
+  openModal(
+    html
+  );
+
+}
+
+
+
+/* ============================================================
+   RENDU STATISTIQUES POPULATION
+============================================================ */
+
+function renderPopulationStats(
+  box,
+  result
+) {
+
+  result =
+    eahPopulationNormalize(
+      result
+    );
+
+
+  box.innerHTML = `
+
+    <div class="population-stats">
+
+
+      <!-- PLONGEURS -->
+
+      <div
+        class="stat-card eah-population-clickable"
+        data-population-action="divers"
+        role="button"
+        tabindex="0"
+      >
+
+        <strong>
+          ${esc(
+            result.people
+          )}
+        </strong>
+
+        <span>
+          Plongeurs EAH
+        </span>
+
+        <small
+          style="
+            display:block;
+            margin-top:8px;
+            opacity:.65;
+          "
+        >
+          Cliquer pour voir
+        </small>
+
+      </div>
+
+
+
+      <!-- GRADINGS -->
+
+      <div
+        class="stat-card eah-population-clickable"
+        data-population-action="gradings"
+        role="button"
+        tabindex="0"
+      >
+
+        <strong>
+          ${esc(
+            result.count
+          )}
+        </strong>
+
+        <span>
+          Gradings
+        </span>
+
+        <small
+          style="
+            display:block;
+            margin-top:8px;
+            opacity:.65;
+          "
+        >
+          Cliquer pour voir
+        </small>
+
+      </div>
+
+
+
+      <!-- MOYENNE EAH -->
+
+      <div class="stat-card">
+
+        <strong>
+
+          ${esc(
+            fmtNumber(
+              result.avg_eah
+            )
+          )}
+
+        </strong>
+
+        <span>
+          Moyenne EAH
+        </span>
+
+      </div>
+
+
+
+      <!-- MOYENNE WA -->
+
+      <div class="stat-card">
+
+        <strong>
+
+          ${esc(
+            fmtNumber(
+              result.avg_wa
+            )
+          )}
+
+        </strong>
+
+        <span>
+          Moyenne WA
+        </span>
+
+      </div>
+
+
+    </div>
+
+  `;
+
+
+  /*
+    CLIC PLONGEURS
+  */
+
+  box
+    .querySelector(
+      '[data-population-action="divers"]'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      () => {
+
+        eahOpenPopulationDivers(
+          result
+        );
+
+      }
+
+    );
+
+
+  /*
+    CLIC GRADINGS
+  */
+
+  box
+    .querySelector(
+      '[data-population-action="gradings"]'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      () => {
+
+        eahOpenPopulationGradings(
+          result
+        );
+
+      }
+
+    );
+
+
+  /*
+    CLAVIER
+  */
+
+  box
+    .querySelectorAll(
+      '.eah-population-clickable'
+    )
+    .forEach(
+      card => {
+
+        card.addEventListener(
+
+          'keydown',
+
+          event => {
+
+            if (
+              event.key !==
+                'Enter'
+              &&
+              event.key !==
+                ' '
+            ) {
+
+              return;
+
+            }
+
+
+            event.preventDefault();
+
+
+            card.click();
+
+          }
+
+        );
+
+      }
+    );
+
+}
+
+
+
+/* ============================================================
+   CHARGEMENT POPULATION DETAILLEE
+============================================================ */
+
+async function loadPopulation() {
+
+  const code =
+    normalizeCode(
+      val(
+        'populationCode'
+      )
+    );
+
+
+  const box =
+    document.getElementById(
+      'populationResults'
+    );
+
+
+  const button =
+    document.getElementById(
+      'populationSearchButton'
+    );
+
+
+  if (!box) {
+
+    return;
+
+  }
+
+
+  box.innerHTML = `
+
+    <div class="loading-panel">
+      Recherche…
+    </div>
+
+  `;
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Recherche…',
+
+    'Rechercher'
+
+  );
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_population_details',
+
+        {
+
+          p_code:
+            code ||
+            null,
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (
+      error
+    ) {
+
+      throw error;
+
+    }
+
+
+    const result =
+      eahPopulationNormalize(
+        data
+      );
+
+
+    renderPopulationStats(
+
+      box,
+
+      result
+
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH POPULATION DETAIL:',
+      error
+    );
+
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        ${esc(
+          error?.message
+          ||
+          'Impossible de charger Population.'
+        )}
+
+      </div>
+
+    `;
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Rechercher'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   STYLE POPULATION CLIQUABLE
+============================================================ */
+
+(function eahInstallPopulationStyle() {
+
+  if (
+    document.getElementById(
+      'eah-population-detail-css'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+
+  style.id =
+    'eah-population-detail-css';
+
+
+  style.textContent = `
+
+    .eah-population-clickable {
+
+      cursor:
+        pointer;
+
+      transition:
+        transform .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease;
+
+    }
+
+
+    .eah-population-clickable:hover {
+
+      transform:
+        translateY(-4px);
+
+      border-color:
+        rgba(
+          48,
+          207,
+          255,
+          .48
+        ) !important;
+
+      box-shadow:
+        0 20px 50px
+        rgba(
+          0,
+          0,
+          0,
+          .26
+        );
+
+    }
+
+
+    .eah-population-clickable:focus {
+
+      outline:
+        2px solid
+        #30cfff;
+
+      outline-offset:
+        4px;
+
+    }
+
+  `;
+
+
+  document.head
+    .appendChild(
+      style
+    );
+
+})();
 init()
   .catch(
     error => {
