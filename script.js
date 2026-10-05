@@ -18322,6 +18322,764 @@ populationV3Observer.observe(
   }
 
 );
+/* ============================================================
+   EAH DIVING PRO
+   PROFIL / BLAZON / NOTE PRINCIPALE
+   PATCH V3
+============================================================ */
+
+
+/* ============================================================
+   NOTE PRINCIPALE EAH / WA
+============================================================ */
+
+function eahV3InstallScoreTypeSelector() {
+
+  if (
+    document.getElementById(
+      'scoreType'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const waScore =
+    document.getElementById(
+      'waScore'
+    );
+
+
+  if (!waScore) {
+
+    return;
+
+  }
+
+
+  const wrapper =
+    document.createElement(
+      'label'
+    );
+
+
+  wrapper.className =
+    'eah-main-score-selector';
+
+
+  wrapper.innerHTML = `
+
+    Note principale affichée sur le Grade Report
+
+    <select id="scoreType">
+
+      <option value="EAH">
+        EAH Diving
+      </option>
+
+      <option value="WA">
+        World Aquatics
+      </option>
+
+    </select>
+
+  `;
+
+
+  const waLabel =
+    waScore.closest(
+      'label'
+    );
+
+
+  if (
+    waLabel &&
+    waLabel.parentNode
+  ) {
+
+    waLabel.parentNode.insertBefore(
+
+      wrapper,
+
+      waLabel
+
+    );
+
+  } else {
+
+    waScore.parentNode?.insertBefore(
+
+      wrapper,
+
+      waScore
+
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   COLLECT CRITERIA
+   AJOUTE LE TYPE DE NOTE AU JSON
+
+   Aucun changement de RPC nécessaire.
+============================================================ */
+
+function collectCriteria() {
+
+  const result =
+    {};
+
+
+  [
+    'D',
+    'T',
+    'E'
+  ]
+  .forEach(
+    prefix => {
+
+      for (
+        let i = 1;
+        i <= 5;
+        i++
+      ) {
+
+        result[
+          `${prefix}${i}`
+        ] =
+          val(
+            `${prefix}${i}`
+          );
+
+      }
+
+    }
+  );
+
+
+  result._scoreType =
+    String(
+      val(
+        'scoreType'
+      )
+      ||
+      'EAH'
+    )
+    .toUpperCase();
+
+
+  return result;
+
+}
+
+
+/* ============================================================
+   VERIFICATION WA
+============================================================ */
+
+function eahV3InstallScoreValidation() {
+
+  const form =
+    document.getElementById(
+      'evaluationForm'
+    );
+
+
+  if (
+    !form ||
+    form.dataset.eahScoreValidation ===
+      '1'
+  ) {
+
+    return;
+
+  }
+
+
+  form.dataset.eahScoreValidation =
+    '1';
+
+
+  /*
+    Capture = validation exécutée
+    avant le submitEvaluation existant.
+  */
+
+  form.addEventListener(
+
+    'submit',
+
+    event => {
+
+      const type =
+        String(
+          val(
+            'scoreType'
+          )
+          ||
+          'EAH'
+        )
+        .toUpperCase();
+
+
+      if (
+        type !==
+        'WA'
+      ) {
+
+        return;
+
+      }
+
+
+      const wa =
+        asNumber(
+          val(
+            'waScore'
+          )
+        );
+
+
+      if (
+        wa !==
+        null
+      ) {
+
+        return;
+
+      }
+
+
+      event.preventDefault();
+
+      event.stopImmediatePropagation();
+
+
+      setMessage(
+
+        'evaluationMsg',
+
+        `
+          <div class="notice error">
+
+            Tu as choisi World Aquatics
+            comme note principale.
+
+            <br><br>
+
+            Renseigne d'abord la note WA.
+
+          </div>
+        `
+
+      );
+
+    },
+
+    true
+
+  );
+
+}
+
+
+/* ============================================================
+   IMAGE DU BLAZON ACTUEL
+============================================================ */
+
+function eahV3BlazonImage(
+  value
+) {
+
+  const key =
+    normalizeBlazonName(
+      value
+    );
+
+
+  return (
+    BLAZON_IMAGES[
+      key
+    ]
+    ||
+    ''
+  );
+
+}
+
+
+function eahV3InjectBlazon(
+  profile
+) {
+
+  const container =
+    document.querySelector(
+      '.eah-fast-profile-text'
+    );
+
+
+  if (!container) {
+
+    return;
+
+  }
+
+
+  container
+    .querySelector(
+      '.eah-current-blazon-visual'
+    )
+    ?.remove();
+
+
+  const blazon =
+    String(
+      profile?.currentBlazon ||
+      ''
+    )
+    .trim();
+
+
+  if (!blazon) {
+
+    return;
+
+  }
+
+
+  const image =
+    eahV3BlazonImage(
+      blazon
+    );
+
+
+  const block =
+    document.createElement(
+      'div'
+    );
+
+
+  block.className =
+    'eah-current-blazon-visual';
+
+
+  block.innerHTML = `
+
+    ${
+      image
+      ?
+      `
+        <img
+          src="${esc(image)}"
+          alt="${esc(blazon)}"
+        >
+      `
+      :
+      ''
+    }
+
+    <div>
+
+      <small>
+        BLAZON ACTUEL
+      </small>
+
+      <strong>
+        ${esc(blazon)}
+      </strong>
+
+    </div>
+
+  `;
+
+
+  container.appendChild(
+    block
+  );
+
+}
+
+
+/* ============================================================
+   ON CONSERVE TON RENDU PREMIUM ACTUEL
+   ET ON AJOUTE LE BLAZON DESSUS
+============================================================ */
+
+const eahV3OriginalRenderProfileSummary =
+  renderProfileSummary;
+
+
+renderProfileSummary =
+  function(
+    profile,
+    privateAccess = false
+  ) {
+
+    eahV3OriginalRenderProfileSummary(
+
+      profile,
+
+      privateAccess
+
+    );
+
+
+    eahV3InjectBlazon(
+      profile
+    );
+
+  };
+
+
+/* ============================================================
+   PROFIL PUBLIC
+
+   On ne dépend plus de la table public_profiles.
+
+   La visibilité est contrôlée directement
+   depuis divers.profile_visibility.
+============================================================ */
+
+async function loadPublicProfile(
+  eahId
+) {
+
+  setProfileLoading();
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_public_profile',
+
+        {
+
+          p_eah_id:
+            eahId,
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data ||
+      data.ok ===
+        false
+    ) {
+
+      throw new Error(
+
+        data?.error
+        ||
+        'Profil public introuvable.'
+
+      );
+
+    }
+
+
+    const profile =
+      data.profile ||
+      {};
+
+
+    state.profile = {
+
+      eahId:
+        profile.eahId,
+
+      firstName:
+        profile.firstName ||
+        '',
+
+      lastName:
+        profile.lastName ||
+        '',
+
+      photoUrl:
+        profile.photoUrl ||
+        '',
+
+      group:
+        profile.group ||
+        '',
+
+      sex:
+        profile.sex ||
+        '',
+
+      currentBlazon:
+        profile.currentBlazon ||
+        '',
+
+      club:
+        data.club?.name ||
+        'EAH Diving',
+
+      cardStatus:
+        ''
+
+    };
+
+
+    state.profileHistory = {
+
+      evaluations:
+        data.evaluations ||
+        [],
+
+      blazons:
+        data.blazons ||
+        []
+
+    };
+
+
+    renderProfileSummary(
+
+      state.profile,
+
+      false
+
+    );
+
+
+    renderProfileHistory(
+      state.profileHistory
+    );
+
+
+  } catch(error) {
+
+    console.error(
+      'EAH PUBLIC PROFILE:',
+      error
+    );
+
+
+    renderProfileError(
+
+      error.message
+      ||
+      'Profil public inaccessible.'
+
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   CSS BLAZON PROFIL
+============================================================ */
+
+(function eahV3InstallBlazonCss() {
+
+  if (
+    document.getElementById(
+      'eah-v3-blazon-css'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+
+  style.id =
+    'eah-v3-blazon-css';
+
+
+  style.textContent = `
+
+    .eah-current-blazon-visual {
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        16px;
+
+      margin-top:
+        22px;
+
+      padding:
+        14px 18px;
+
+      width:
+        fit-content;
+
+      max-width:
+        100%;
+
+      border:
+        1px solid
+        rgba(
+          48,
+          207,
+          255,
+          .25
+        );
+
+      border-radius:
+        20px;
+
+      background:
+        rgba(
+          48,
+          207,
+          255,
+          .06
+        );
+
+    }
+
+
+    .eah-current-blazon-visual img {
+
+      width:
+        72px;
+
+      height:
+        72px;
+
+      object-fit:
+        contain;
+
+    }
+
+
+    .eah-current-blazon-visual small {
+
+      display:
+        block;
+
+      margin-bottom:
+        3px;
+
+      color:
+        #8fa8bc;
+
+      font-size:
+        .72rem;
+
+      font-weight:
+        800;
+
+      letter-spacing:
+        .08em;
+
+    }
+
+
+    .eah-current-blazon-visual strong {
+
+      display:
+        block;
+
+      color:
+        white;
+
+      font-size:
+        1.05rem;
+
+    }
+
+
+    @media (
+      max-width:
+      700px
+    ) {
+
+      .eah-current-blazon-visual {
+
+        margin-left:
+          auto;
+
+        margin-right:
+          auto;
+
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+})();
+
+
+/* ============================================================
+   INSTALLATION CHAMPS EVALUATION
+============================================================ */
+
+function eahV3InstallEvaluationFields() {
+
+  eahV3InstallScoreTypeSelector();
+
+  eahV3InstallScoreValidation();
+
+}
+
+
+if (
+  document.readyState ===
+  'loading'
+) {
+
+  document.addEventListener(
+
+    'DOMContentLoaded',
+
+    eahV3InstallEvaluationFields
+
+  );
+
+} else {
+
+  eahV3InstallEvaluationFields();
+
+}
 init()
   .catch(
     error => {
