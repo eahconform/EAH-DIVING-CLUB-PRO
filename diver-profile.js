@@ -1,12 +1,20 @@
+'use strict';
+
+
 /* ============================================================
    EAH DIVING PRO
-   PROFIL PLONGEUR SIMPLE
+   DIVER-PROFILE.JS
+   VERSION 2.1
+   05/10/2026
 
-   - uniquement le profil
+   - profil personnel
+   - profil public lecture seule
+   - accès NFC
+   - accès EAH ID + PIN
    - progression
    - historique
-   - bouton Soumettre un plongeon
-   - demande au Club ou à EAH Grading
+   - demande Club
+   - demande EAH Grading
 ============================================================ */
 
 (() => {
@@ -19,10 +27,12 @@
 
   if (
     params.get(
-      "coachToken"
+      'coachToken'
     )
   ) {
+
     return;
+
   }
 
 
@@ -30,83 +40,365 @@
     false;
 
 
-  /* =========================================================
-     CSS
-  ========================================================= */
 
-  function installDiverCSS() {
+  /* ==========================================================
+     SESSION
+  ========================================================== */
+
+  function getStoredPinSession() {
+
+    try {
+
+      const raw =
+        sessionStorage.getItem(
+          'EAH_DIVER_PIN_SESSION'
+        );
+
+
+      if (!raw) {
+
+        return null;
+
+      }
+
+
+      const data =
+        JSON.parse(
+          raw
+        );
+
+
+      if (
+        !data ||
+        !data.eahId ||
+        !data.pinHash
+      ) {
+
+        return null;
+
+      }
+
+
+      return data;
+
+
+    } catch (_) {
+
+      return null;
+
+    }
+
+  }
+
+
+
+  function getSession() {
+
+    let clubSlug =
+      String(
+        params.get(
+          'club'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    let eahId =
+      String(
+        params.get(
+          'id'
+        )
+        ||
+        ''
+      )
+      .trim()
+      .toUpperCase();
+
+
+    let token =
+      String(
+        params.get(
+          'token'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    let pinHash =
+      '';
+
+
+    try {
+
+      if (
+        typeof state !==
+        'undefined'
+      ) {
+
+        clubSlug =
+          clubSlug
+          ||
+          state.club?.slug
+          ||
+          state.profile?.clubSlug
+          ||
+          state.profile?.club_slug
+          ||
+          '';
+
+
+        eahId =
+          eahId
+          ||
+          state.profile?.eahId
+          ||
+          state.profile?.eah_id
+          ||
+          '';
+
+
+        pinHash =
+          state.diverPinHash
+          ||
+          '';
+
+      }
+
+    } catch (_) {}
+
+
+    const stored =
+      getStoredPinSession();
+
+
+    if (
+      stored &&
+      String(
+        stored.eahId
+      )
+      .toUpperCase() ===
+      String(
+        eahId
+      )
+      .toUpperCase()
+    ) {
+
+      pinHash =
+        pinHash
+        ||
+        stored.pinHash
+        ||
+        '';
+
+
+      clubSlug =
+        clubSlug
+        ||
+        stored.clubSlug
+        ||
+        '';
+
+    }
+
+
+    return {
+
+      clubSlug:
+
+        String(
+          clubSlug ||
+          ''
+        )
+        .trim(),
+
+
+      eahId:
+
+        String(
+          eahId ||
+          ''
+        )
+        .trim()
+        .toUpperCase(),
+
+
+      token:
+
+        String(
+          token ||
+          ''
+        )
+        .trim(),
+
+
+      pinHash:
+
+        String(
+          pinHash ||
+          ''
+        )
+        .trim()
+
+    };
+
+  }
+
+
+
+  function hasPrivateAccess() {
+
+    const session =
+      getSession();
+
+
+    return Boolean(
+
+      session.eahId
+
+      &&
+
+      (
+        session.token
+        ||
+        session.pinHash
+      )
+
+    );
+
+  }
+
+
+
+  function pinIsStillPreparing() {
+
+    try {
+
+      return Boolean(
+
+        sessionStorage.getItem(
+          'EAH_DIVER_PIN_PENDING'
+        )
+
+      );
+
+    } catch (_) {
+
+      return false;
+
+    }
+
+  }
+
+
+
+  /* ==========================================================
+     CSS
+  ========================================================== */
+
+  function installCSS() {
 
     if (
       document.getElementById(
-        "eahDiverOnlyCss"
+        'eahDiverOnlyCss'
       )
     ) {
+
       return;
+
     }
 
 
     const style =
       document.createElement(
-        "style"
+        'style'
       );
 
 
     style.id =
-      "eahDiverOnlyCss";
+      'eahDiverOnlyCss';
 
 
     style.textContent = `
 
       #eahDiverOnlyApp {
 
-        position: fixed !important;
+        position:
+          fixed !important;
 
-        inset: 0 !important;
+        inset:
+          0 !important;
 
-        z-index: 2147483000 !important;
+        z-index:
+          2147483000 !important;
 
-        overflow-y: auto !important;
+        overflow-y:
+          auto !important;
 
         background:
+          radial-gradient(
+            circle at 50% 0%,
+            rgba(
+              11,
+              107,
+              255,
+              .14
+            ),
+            transparent 42%
+          ),
           linear-gradient(
             145deg,
             #03131f,
             #061e33
           );
 
-        color: white;
+        color:
+          white;
 
-        -webkit-overflow-scrolling: touch;
+        -webkit-overflow-scrolling:
+          touch;
 
       }
 
 
       .eah-diver-only-shell {
 
-        width: min(
-          760px,
-          calc(100% - 20px)
-        );
+        width:
+          min(
+            820px,
+            calc(
+              100% - 24px
+            )
+          );
 
-        margin: 0 auto;
+        margin:
+          0 auto;
 
         padding:
-          20px 0 70px;
+          22px 0 80px;
 
       }
 
 
       .eah-diver-brand {
 
-        margin-bottom: 15px;
+        margin:
+          4px 4px 15px;
 
-        color: #30cfff;
+        color:
+          #30cfff;
 
-        font-size: .8rem;
+        font-size:
+          .78rem;
 
-        font-weight: 900;
+        font-weight:
+          900;
 
-        letter-spacing: .16em;
+        letter-spacing:
+          .16em;
 
       }
 
@@ -114,53 +406,90 @@
       #eahDiverOnlyApp
       #profileView {
 
-        display: block !important;
+        display:
+          block !important;
 
-        width: 100% !important;
+        width:
+          100% !important;
 
-        margin: 0 !important;
+        margin:
+          0 !important;
 
       }
 
 
+      .eah-diver-public-info,
       .eah-diver-request-box {
 
-        box-sizing: border-box;
+        box-sizing:
+          border-box;
 
-        width: 100%;
+        width:
+          100%;
 
-        margin-top: 20px;
+        margin-top:
+          20px;
 
-        padding: 22px;
+        padding:
+          22px;
 
         border:
           1px solid
-          rgba(143,205,255,.22);
+          rgba(
+            143,
+            205,
+            255,
+            .22
+          );
 
-        border-radius: 24px;
+        border-radius:
+          24px;
 
         background:
-          rgba(5,23,42,.94);
+          rgba(
+            5,
+            23,
+            42,
+            .94
+          );
+
+        box-shadow:
+          0 20px 60px
+          rgba(
+            0,
+            0,
+            0,
+            .18
+          );
 
       }
 
 
+      .eah-diver-public-info h2,
       .eah-diver-request-box h2 {
 
-        margin-top: 0;
+        margin-top:
+          0;
 
       }
 
 
       .eah-diver-main-button {
 
-        width: 100%;
+        width:
+          100%;
 
-        min-height: 58px;
+        min-height:
+          58px;
 
-        border: 0;
+        margin-top:
+          5px;
 
-        border-radius: 16px;
+        border:
+          0;
+
+        border-radius:
+          16px;
 
         background:
           linear-gradient(
@@ -169,40 +498,72 @@
             #168dff
           );
 
-        color: white;
+        color:
+          white;
 
-        font-size: 16px;
+        font-size:
+          16px;
 
-        font-weight: 900;
+        font-weight:
+          900;
+
+        cursor:
+          pointer;
+
+      }
+
+
+      .eah-diver-main-button:hover {
+
+        filter:
+          brightness(
+            1.08
+          );
 
       }
 
 
       #eahDiverRequestModal {
 
-        position: fixed;
+        position:
+          fixed;
 
-        inset: 0;
+        inset:
+          0;
 
-        z-index: 2147483647;
+        z-index:
+          2147483647;
 
-        overflow-y: auto;
+        overflow-y:
+          auto;
 
-        padding: 12px;
+        padding:
+          12px;
 
         background:
-          rgba(1,9,18,.97);
+          rgba(
+            1,
+            9,
+            18,
+            .97
+          );
+
+        -webkit-overflow-scrolling:
+          touch;
 
       }
 
 
       .eah-diver-request-panel {
 
-        box-sizing: border-box;
+        box-sizing:
+          border-box;
 
-        width: 100%;
+        width:
+          100%;
 
-        max-width: 700px;
+        max-width:
+          700px;
 
         margin:
           10px auto 70px;
@@ -210,61 +571,128 @@
         padding:
           22px;
 
-        border-radius: 26px;
+        border:
+          1px solid
+          rgba(
+            143,
+            205,
+            255,
+            .20
+          );
 
-        background: #061e33;
+        border-radius:
+          26px;
+
+        background:
+          #061e33;
+
+        box-shadow:
+          0 30px 100px
+          rgba(
+            0,
+            0,
+            0,
+            .45
+          );
 
       }
 
 
       .eah-diver-modal-top {
 
-        display: flex;
+        display:
+          flex;
 
-        justify-content: space-between;
+        justify-content:
+          space-between;
 
-        align-items: flex-start;
+        align-items:
+          flex-start;
 
-        gap: 15px;
+        gap:
+          15px;
+
+      }
+
+
+      .eah-diver-modal-top h1 {
+
+        margin:
+          7px 0 0;
 
       }
 
 
       .eah-diver-close {
 
-        width: 44px;
+        width:
+          44px;
 
-        height: 44px;
+        height:
+          44px;
 
-        border: 0;
+        flex:
+          0 0 auto;
 
-        border-radius: 50%;
+        border:
+          1px solid
+          rgba(
+            255,
+            255,
+            255,
+            .14
+          );
 
-        font-size: 24px;
+        border-radius:
+          50%;
+
+        background:
+          rgba(
+            255,
+            255,
+            255,
+            .08
+          );
+
+        color:
+          white;
+
+        font-size:
+          24px;
+
+        cursor:
+          pointer;
 
       }
 
 
       .eah-diver-form {
 
-        display: grid;
+        display:
+          grid;
 
-        gap: 16px;
+        gap:
+          16px;
 
-        margin-top: 22px;
+        margin-top:
+          22px;
 
       }
 
 
       .eah-diver-form label {
 
-        display: grid;
+        display:
+          grid;
 
-        gap: 7px;
+        gap:
+          7px;
 
-        color: #c3d8e8;
+        color:
+          #c3d8e8;
 
-        font-weight: 700;
+        font-weight:
+          700;
 
       }
 
@@ -273,44 +701,94 @@
       .eah-diver-form select,
       .eah-diver-form textarea {
 
-        box-sizing: border-box;
+        box-sizing:
+          border-box;
 
-        width: 100%;
+        width:
+          100%;
 
-        min-height: 54px;
+        min-height:
+          54px;
 
-        padding: 13px 14px;
+        padding:
+          13px 14px;
 
         border:
           1px solid
-          rgba(143,205,255,.22);
+          rgba(
+            143,
+            205,
+            255,
+            .22
+          );
 
-        border-radius: 14px;
+        border-radius:
+          14px;
 
-        background: #10273a;
+        outline:
+          none;
 
-        color: white;
+        background:
+          #10273a;
 
-        font-size: 16px;
+        color:
+          white;
+
+        font-size:
+          16px;
+
+      }
+
+
+      .eah-diver-form input:focus,
+      .eah-diver-form select:focus,
+      .eah-diver-form textarea:focus {
+
+        border-color:
+          rgba(
+            48,
+            207,
+            255,
+            .70
+          );
+
+        box-shadow:
+          0 0 0 3px
+          rgba(
+            48,
+            207,
+            255,
+            .08
+          );
 
       }
 
 
       .eah-destination-button {
 
-        width: 100%;
+        width:
+          100%;
 
-        min-height: 56px;
+        min-height:
+          56px;
 
-        border: 0;
+        border:
+          0;
 
-        border-radius: 15px;
+        border-radius:
+          15px;
 
-        background: #0b6bff;
+        background:
+          #0b6bff;
 
-        color: white;
+        color:
+          white;
 
-        font-weight: 900;
+        font-weight:
+          900;
+
+        cursor:
+          pointer;
 
       }
 
@@ -319,34 +797,140 @@
 
         border:
           1px solid
-          rgba(48,207,255,.4);
+          rgba(
+            48,
+            207,
+            255,
+            .4
+          );
 
         background:
-          rgba(48,207,255,.10);
+          rgba(
+            48,
+            207,
+            255,
+            .10
+          );
 
-        color: #30cfff;
+        color:
+          #30cfff;
 
       }
 
 
-      @media(max-width:600px) {
+      .eah-destination-button:disabled {
+
+        opacity:
+          .55;
+
+        cursor:
+          wait;
+
+      }
+
+
+      .eah-diver-success {
+
+        margin-top:
+          12px;
+
+        padding:
+          15px;
+
+        border-radius:
+          14px;
+
+        border:
+          1px solid
+          rgba(
+            24,
+            185,
+            120,
+            .25
+          );
+
+        background:
+          rgba(
+            24,
+            185,
+            120,
+            .15
+          );
+
+      }
+
+
+      .eah-diver-error {
+
+        margin-top:
+          12px;
+
+        padding:
+          15px;
+
+        border-radius:
+          14px;
+
+        border:
+          1px solid
+          rgba(
+            224,
+            82,
+            94,
+            .25
+          );
+
+        background:
+          rgba(
+            224,
+            82,
+            94,
+            .15
+          );
+
+      }
+
+
+      @media(
+        max-width:
+        600px
+      ) {
 
         .eah-diver-only-shell {
 
           width:
-            calc(100% - 12px);
+            calc(
+              100% - 12px
+            );
 
-          padding-top: 8px;
+          padding-top:
+            8px;
 
         }
 
 
         .eah-diver-request-panel {
 
+          margin-top:
+            0;
+
           padding:
             18px 14px;
 
-          border-radius: 20px;
+          border-radius:
+            20px;
+
+        }
+
+
+        .eah-diver-public-info,
+        .eah-diver-request-box {
+
+          padding:
+            18px 15px;
+
+          border-radius:
+            20px;
 
         }
 
@@ -355,28 +939,46 @@
     `;
 
 
-    document.head.appendChild(
-      style
-    );
+    document.head
+      .appendChild(
+        style
+      );
 
   }
 
 
 
-  /* =========================================================
-     TROUVER LE PROFIL
-  ========================================================= */
+  /* ==========================================================
+     INSTALLATION PROFIL
+  ========================================================== */
 
-  function installDiverProfile() {
+  function installProfile() {
 
     if (installed) {
+
       return;
+
+    }
+
+
+    /*
+      Lors d'une connexion PIN,
+      on attend quelques millisecondes
+      que le hash soit disponible.
+    */
+
+    if (
+      pinIsStillPreparing()
+    ) {
+
+      return;
+
     }
 
 
     const profile =
       document.getElementById(
-        "profileView"
+        'profileView'
       );
 
 
@@ -384,18 +986,24 @@
       !profile ||
       !profile.innerHTML.trim()
     ) {
+
       return;
+
     }
 
 
     const rect =
-      profile.getBoundingClientRect();
+      profile
+        .getBoundingClientRect();
 
 
     if (
-      rect.width === 0
+      rect.width ===
+      0
     ) {
+
       return;
+
     }
 
 
@@ -403,17 +1011,21 @@
       true;
 
 
-    installDiverCSS();
+    installCSS();
+
+
+    const privateAccess =
+      hasPrivateAccess();
 
 
     const app =
       document.createElement(
-        "div"
+        'div'
       );
 
 
     app.id =
-      "eahDiverOnlyApp";
+      'eahDiverOnlyApp';
 
 
     app.innerHTML = `
@@ -421,105 +1033,169 @@
       <div class="eah-diver-only-shell">
 
         <div class="eah-diver-brand">
-          EAH DIVING • ESPACE PERSONNEL
+
+          EAH DIVING
+
+          ${
+            privateAccess
+            ?
+            ' • ESPACE PERSONNEL'
+            :
+            ' • PROFIL PUBLIC'
+          }
+
         </div>
 
-        <div id="eahDiverProfileHost"></div>
+
+        <div
+          id="eahDiverProfileHost"
+        ></div>
 
 
-        <section
-          class="eah-diver-request-box"
-        >
+        ${
+          privateAccess
+          ?
+          `
 
-          <h2>
-            Faire grader un plongeon
-          </h2>
+            <section
+              class="eah-diver-request-box"
+            >
 
-          <p>
-            Envoie ta vidéo à ton Coach
-            ou directement à EAH Grading.
-          </p>
+              <h2>
+                Faire grader un plongeon
+              </h2>
 
-          <button
-            id="openDiverGradingRequest"
-            type="button"
-            class="eah-diver-main-button"
-          >
-            Soumettre un plongeon
-          </button>
 
-        </section>
+              <p>
+
+                Envoie une vidéo de ton plongeon
+                à ton Coach ou directement
+                à EAH Grading.
+
+              </p>
+
+
+              <button
+                id="openDiverGradingRequest"
+                type="button"
+                class="eah-diver-main-button"
+              >
+                Soumettre un plongeon
+              </button>
+
+            </section>
+
+          `
+          :
+          `
+
+            <section
+              class="eah-diver-public-info"
+            >
+
+              <h2>
+                Profil public EAH
+              </h2>
+
+
+              <p>
+
+                Cette page présente uniquement
+                les informations publiques
+                de ce plongeur.
+
+              </p>
+
+            </section>
+
+          `
+        }
 
       </div>
 
     `;
 
 
-    document.body.appendChild(
-      app
-    );
+    document.body
+      .appendChild(
+        app
+      );
 
 
     document
       .getElementById(
-        "eahDiverProfileHost"
+        'eahDiverProfileHost'
       )
-      .appendChild(
+      ?.appendChild(
         profile
       );
 
 
-    /*
-      Tout le reste de l'espace Club est maintenant
-      derrière ce plein écran et inaccessible.
-    */
+    if (
+      privateAccess
+    ) {
 
+      document
+        .getElementById(
+          'openDiverGradingRequest'
+        )
+        ?.addEventListener(
 
-    document
-      .getElementById(
-        "openDiverGradingRequest"
-      )
-      .addEventListener(
-        "click",
-        openRequestForm
-      );
+          'click',
+
+          openRequestForm
+
+        );
+
+    }
 
   }
 
 
 
-  /* =========================================================
-     FORMULAIRE
-  ========================================================= */
+  /* ==========================================================
+     FORMULAIRE DE GRADING
+  ========================================================== */
 
   function openRequestForm() {
 
+    if (
+      !hasPrivateAccess()
+    ) {
+
+      return;
+
+    }
+
+
     const app =
       document.getElementById(
-        "eahDiverOnlyApp"
+        'eahDiverOnlyApp'
       );
 
 
     if (!app) {
+
       return;
+
     }
 
 
     document
       .getElementById(
-        "eahDiverRequestModal"
+        'eahDiverRequestModal'
       )
       ?.remove();
 
 
     const modal =
       document.createElement(
-        "div"
+        'div'
       );
 
 
     modal.id =
-      "eahDiverRequestModal";
+      'eahDiverRequestModal';
 
 
     modal.innerHTML = `
@@ -550,6 +1226,7 @@
             id="closeDiverRequest"
             type="button"
             class="eah-diver-close"
+            aria-label="Fermer"
           >
             ×
           </button>
@@ -564,7 +1241,9 @@
 
             Discipline
 
-            <select id="diverRequestDiscipline">
+            <select
+              id="diverRequestDiscipline"
+            >
 
               <option value="Plongeon">
                 Plongeon
@@ -598,6 +1277,7 @@
             <input
               id="diverRequestCode"
               placeholder="Ex : 107B"
+              autocomplete="off"
               required
             >
 
@@ -623,7 +1303,9 @@
             <input
               id="diverRequestHeight"
               type="number"
+              min="0"
               step="0.1"
+              inputmode="decimal"
               placeholder="Ex : 10"
             >
 
@@ -675,7 +1357,7 @@
 
             <textarea
               id="diverRequestMessage"
-              rows="3"
+              rows="4"
               placeholder="Informations complémentaires..."
             ></textarea>
 
@@ -700,7 +1382,9 @@
           </button>
 
 
-          <div id="diverRequestResult"></div>
+          <div
+            id="diverRequestResult"
+          ></div>
 
         </div>
 
@@ -714,130 +1398,150 @@
     );
 
 
+    const close =
+      () => {
+
+        modal.remove();
+
+      };
+
+
     document
       .getElementById(
-        "closeDiverRequest"
+        'closeDiverRequest'
       )
-      .onclick =
-        () =>
-          modal.remove();
+      ?.addEventListener(
+
+        'click',
+
+        close
+
+      );
+
+
+    modal.addEventListener(
+
+      'click',
+
+      event => {
+
+        if (
+          event.target ===
+          modal
+        ) {
+
+          close();
+
+        }
+
+      }
+
+    );
 
 
     modal
       .querySelectorAll(
-        "[data-destination]"
+        '[data-destination]'
       )
       .forEach(
         button => {
 
           button.addEventListener(
 
-            "click",
+            'click',
 
-            () =>
+            () => {
+
               submitRequest(
+
                 button.dataset.destination,
+
                 button
-              )
+
+              );
+
+            }
 
           );
 
         }
       );
 
-  }
 
-
-
-  /* =========================================================
-     IDENTITE PLONGEUR
-  ========================================================= */
-
-  function getSession() {
-
-    let clubSlug =
-      String(
-        params.get(
-          "club"
-        ) || ""
+    const codeField =
+      document.getElementById(
+        'diverRequestCode'
       );
 
 
-    let eahId =
-      String(
-        params.get(
-          "id"
-        ) || ""
+    codeField
+      ?.addEventListener(
+
+        'input',
+
+        () => {
+
+          const code =
+            String(
+              codeField.value ||
+              ''
+            )
+            .trim()
+            .toUpperCase()
+            .replace(
+              /\s+/g,
+              ''
+            );
+
+
+          codeField.value =
+            code;
+
+
+          try {
+
+            if (
+              typeof DIVE_NAMES !==
+                'undefined'
+              &&
+              DIVE_NAMES[
+                code
+              ]
+            ) {
+
+              const nameField =
+                document.getElementById(
+                  'diverRequestName'
+                );
+
+
+              if (
+                nameField &&
+                !nameField.value.trim()
+              ) {
+
+                nameField.value =
+                  DIVE_NAMES[
+                    code
+                  ];
+
+              }
+
+            }
+
+          } catch (_) {}
+
+        }
+
       );
-
-
-    let token =
-      String(
-        params.get(
-          "token"
-        ) || ""
-      );
-
-
-    let pinHash =
-      "";
-
-
-    try {
-
-      if (
-        typeof state !==
-        "undefined"
-      ) {
-
-        clubSlug =
-          clubSlug
-          ||
-          state.club?.slug
-          ||
-          state.profile?.club_slug
-          ||
-          state.profile?.clubSlug
-          ||
-          "";
-
-
-        eahId =
-          eahId
-          ||
-          state.profile?.eah_id
-          ||
-          state.profile?.eahId
-          ||
-          "";
-
-
-        pinHash =
-          state.diverPinHash
-          ||
-          "";
-
-      }
-
-    } catch (_) {}
-
-
-    return {
-
-      clubSlug,
-      eahId,
-      token,
-      pinHash
-
-    };
 
   }
 
 
 
-  /* =========================================================
+  /* ==========================================================
      ENVOI
-  ========================================================= */
+  ========================================================== */
 
   async function submitRequest(
     destination,
@@ -850,27 +1554,77 @@
 
     const result =
       document.getElementById(
-        "diverRequestResult"
+        'diverRequestResult'
       );
 
 
+    if (!result) {
+
+      return;
+
+    }
+
+
+    if (
+      !session.eahId
+      ||
+      (
+        !session.token
+        &&
+        !session.pinHash
+      )
+    ) {
+
+      result.innerHTML = `
+
+        <div class="eah-diver-error">
+
+          Ta session plongeur
+          n'est plus valide.
+
+          <br>
+
+          Reconnecte-toi à ton profil.
+
+        </div>
+
+      `;
+
+
+      return;
+
+    }
+
+
     const code =
-      document
-        .getElementById(
-          "diverRequestCode"
-        )
-        .value
-        .trim()
-        .toUpperCase();
+      String(
+        document
+          .getElementById(
+            'diverRequestCode'
+          )
+          ?.value
+        ||
+        ''
+      )
+      .trim()
+      .toUpperCase()
+      .replace(
+        /\s+/g,
+        ''
+      );
 
 
     const videoUrl =
-      document
-        .getElementById(
-          "diverRequestVideo"
-        )
-        .value
-        .trim();
+      String(
+        document
+          .getElementById(
+            'diverRequestVideo'
+          )
+          ?.value
+        ||
+        ''
+      )
+      .trim();
 
 
     if (
@@ -880,37 +1634,191 @@
 
       result.innerHTML = `
 
-        <div
-          style="
-            margin-top:12px;
-            padding:14px;
-            border-radius:14px;
-            background:rgba(224,82,94,.15);
-          "
-        >
-          Code du plongeon et vidéo obligatoires.
+        <div class="eah-diver-error">
+
+          Code du plongeon
+          et vidéo obligatoires.
+
         </div>
 
       `;
+
 
       return;
 
     }
 
 
-    button.disabled =
-      true;
+    let parsedVideoUrl;
 
 
-    const original =
+    try {
+
+      parsedVideoUrl =
+        new URL(
+          videoUrl
+        );
+
+
+      if (
+        parsedVideoUrl.protocol !==
+          'https:'
+        &&
+        parsedVideoUrl.protocol !==
+          'http:'
+      ) {
+
+        throw new Error();
+
+      }
+
+
+    } catch (_) {
+
+      result.innerHTML = `
+
+        <div class="eah-diver-error">
+
+          Le lien vidéo n'est pas valide.
+
+        </div>
+
+      `;
+
+
+      return;
+
+    }
+
+
+    const buttons =
+      document.querySelectorAll(
+
+        '#eahDiverRequestModal [data-destination]'
+
+      );
+
+
+    buttons.forEach(
+      item => {
+
+        item.disabled =
+          true;
+
+      }
+    );
+
+
+    const originalText =
       button.textContent;
 
 
     button.textContent =
-      "Envoi…";
+      'Envoi…';
+
+
+    result.innerHTML = `
+
+      <div class="notice">
+
+        Envoi de la demande…
+
+      </div>
+
+    `;
 
 
     try {
+
+      const heightRaw =
+        document
+          .getElementById(
+            'diverRequestHeight'
+          )
+          ?.value
+        ||
+        '';
+
+
+      const height =
+        heightRaw ===
+        ''
+        ?
+        null
+        :
+        Number(
+          heightRaw
+        );
+
+
+      const payload = {
+
+        discipline:
+
+          document
+            .getElementById(
+              'diverRequestDiscipline'
+            )
+            ?.value
+          ||
+          'Plongeon',
+
+
+        diveCode:
+          code,
+
+
+        diveName:
+
+          document
+            .getElementById(
+              'diverRequestName'
+            )
+            ?.value
+            ?.trim()
+          ||
+          '',
+
+
+        height:
+
+          Number.isFinite(
+            height
+          )
+          ?
+          height
+          :
+          null,
+
+
+        heightType:
+
+          document
+            .getElementById(
+              'diverRequestHeightType'
+            )
+            ?.value
+          ||
+          'KNOWN',
+
+
+        videoUrl:
+          parsedVideoUrl.href,
+
+
+        message:
+
+          document
+            .getElementById(
+              'diverRequestMessage'
+            )
+            ?.value
+            ?.trim()
+          ||
+          ''
+
+      };
+
 
       const {
         data,
@@ -919,71 +1827,30 @@
         await requireSupabase()
           .rpc(
 
-            "submit_diver_grading_request",
+            'submit_diver_grading_request',
 
             {
 
               p_club_slug:
-                session.clubSlug,
+                session.clubSlug ||
+                null,
 
               p_eah_id:
                 session.eahId,
 
               p_token:
-                session.token,
+                session.token ||
+                null,
 
               p_pin_hash:
-                session.pinHash,
+                session.pinHash ||
+                null,
 
               p_destination:
                 destination,
 
-              p_payload: {
-
-                discipline:
-                  document
-                    .getElementById(
-                      "diverRequestDiscipline"
-                    )
-                    .value,
-
-                diveCode:
-                  code,
-
-                diveName:
-                  document
-                    .getElementById(
-                      "diverRequestName"
-                    )
-                    .value
-                    .trim(),
-
-                height:
-                  document
-                    .getElementById(
-                      "diverRequestHeight"
-                    )
-                    .value,
-
-                heightType:
-                  document
-                    .getElementById(
-                      "diverRequestHeightType"
-                    )
-                    .value,
-
-                videoUrl:
-                  videoUrl,
-
-                message:
-                  document
-                    .getElementById(
-                      "diverRequestMessage"
-                    )
-                    .value
-                    .trim()
-
-              }
+              p_payload:
+                payload
 
             }
 
@@ -991,61 +1858,80 @@
 
 
       if (error) {
+
         throw error;
+
       }
 
 
       if (
         !data ||
-        data.ok === false
+        data.ok ===
+          false
       ) {
 
         throw new Error(
+
           data?.error ||
           "Impossible d'envoyer la demande."
+
         );
 
       }
 
 
+      const requestCode =
+
+        data.requestCode
+
+        ??
+
+        data.request_code
+
+        ??
+
+        data.code
+
+        ??
+
+        '';
+
+
       result.innerHTML = `
 
-        <div
-          style="
-            margin-top:12px;
-            padding:15px;
-            border-radius:14px;
-            background:rgba(24,185,120,.15);
-          "
-        >
+        <div class="eah-diver-success">
 
           <strong>
             Demande envoyée.
           </strong>
 
-          <br>
+          <br><br>
 
           ${
             destination ===
-            "CLUB"
+            'CLUB'
             ?
-            "Ton Coach recevra cette demande."
+            'Ton Coach recevra cette demande.'
             :
-            "Demande envoyée à EAH Grading."
+            'Ta demande a été envoyée à EAH Grading.'
           }
 
           ${
-            data.requestCode
+            requestCode
             ?
             `
-              <br>
+
+              <br><br>
+
               Référence :
-              ${escapeHTML(
-                data.requestCode
-              )}
+
+              <strong>
+                ${escapeHTML(requestCode)}
+              </strong>
+
             `
             :
-            ""
+            ''
           }
 
         </div>
@@ -1053,29 +1939,78 @@
       `;
 
 
-    } catch(error) {
+      const codeField =
+        document.getElementById(
+          'diverRequestCode'
+        );
 
-      button.disabled =
-        false;
+
+      const nameField =
+        document.getElementById(
+          'diverRequestName'
+        );
 
 
-      button.textContent =
-        original;
+      const videoField =
+        document.getElementById(
+          'diverRequestVideo'
+        );
+
+
+      const messageField =
+        document.getElementById(
+          'diverRequestMessage'
+        );
+
+
+      if (codeField) {
+
+        codeField.value =
+          '';
+
+      }
+
+
+      if (nameField) {
+
+        nameField.value =
+          '';
+
+      }
+
+
+      if (videoField) {
+
+        videoField.value =
+          '';
+
+      }
+
+
+      if (messageField) {
+
+        messageField.value =
+          '';
+
+      }
+
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        'EAH DIVER GRADING REQUEST:',
+        error
+      );
 
 
       result.innerHTML = `
 
-        <div
-          style="
-            margin-top:12px;
-            padding:15px;
-            border-radius:14px;
-            background:rgba(224,82,94,.15);
-          "
-        >
+        <div class="eah-diver-error">
 
           ${escapeHTML(
-            error.message ||
+            error?.message ||
             "Erreur d'envoi."
           )}
 
@@ -1083,36 +2018,106 @@
 
       `;
 
+
+    } finally {
+
+      buttons.forEach(
+        item => {
+
+          item.disabled =
+            false;
+
+        }
+      );
+
+
+      button.textContent =
+        originalText;
+
     }
 
   }
 
 
 
+  /* ==========================================================
+     ESCAPE
+  ========================================================== */
+
+  document.addEventListener(
+
+    'keydown',
+
+    event => {
+
+      if (
+        event.key ===
+        'Escape'
+      ) {
+
+        document
+          .getElementById(
+            'eahDiverRequestModal'
+          )
+          ?.remove();
+
+      }
+
+    }
+
+  );
+
+
+
+  /* ==========================================================
+     HTML ESCAPE
+  ========================================================== */
+
   function escapeHTML(
     value
   ) {
 
     return String(
-      value ?? ""
+      value ??
+      ''
     )
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
 
   }
 
 
 
-  /* =========================================================
-     ATTENDRE LE CHARGEMENT DU PROFIL
-  ========================================================= */
+  /* ==========================================================
+     ATTENDRE LE PROFIL
+  ========================================================== */
 
   const observer =
     new MutationObserver(
-      installDiverProfile
+      installProfile
     );
 
 
@@ -1121,22 +2126,51 @@
     document.body,
 
     {
-      childList: true,
-      subtree: true
+
+      childList:
+        true,
+
+      subtree:
+        true
+
     }
 
   );
 
 
-  setTimeout(
-    installDiverProfile,
-    400
+  window.addEventListener(
+
+    'eah-diver-pin-ready',
+
+    () => {
+
+      installed =
+        false;
+
+
+      installProfile();
+
+    }
+
   );
 
 
-  setTimeout(
-    installDiverProfile,
-    1000
+  window.setTimeout(
+    installProfile,
+    250
   );
+
+
+  window.setTimeout(
+    installProfile,
+    700
+  );
+
+
+  window.setTimeout(
+    installProfile,
+    1500
+  );
+
 
 })();
