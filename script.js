@@ -16617,7 +16617,1711 @@ async function loadPopulation() {
       style
     );
 
-})();
+})(); /* ============================================================
+   EAH DIVING PRO
+   POPULATION V3
+
+   - recherche indépendante Nom / Prénom
+   - noms visibles même profil privé
+   - profil ouvrable uniquement si PUBLIC_NAME = true
+   - fiche publique sécurisée
+   - aucun token NFC exposé
+============================================================ */
+
+
+/* ============================================================
+   CSS POPULATION
+============================================================ */
+
+function installPopulationV3CSS() {
+
+  if (
+    document.getElementById(
+      "eahPopulationV3Css"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      "style"
+    );
+
+
+  style.id =
+    "eahPopulationV3Css";
+
+
+  style.textContent = `
+
+    #eahPopulationPeopleSearch {
+
+      margin-top: 28px;
+
+      padding: 26px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.22);
+
+      border-radius: 24px;
+
+      background:
+        rgba(4,24,43,.82);
+
+      backdrop-filter:
+        blur(14px);
+
+    }
+
+
+    #eahPopulationPeopleSearch h2 {
+
+      margin:
+        0 0 8px;
+
+      color: white;
+
+    }
+
+
+    #eahPopulationPeopleSearch p {
+
+      margin:
+        0 0 18px;
+
+      color: #8fa8bc;
+
+    }
+
+
+    .eah-population-name-search-row {
+
+      display: grid;
+
+      grid-template-columns:
+        minmax(0,1fr)
+        auto;
+
+      gap: 14px;
+
+    }
+
+
+    .eah-population-name-search-row input {
+
+      width: 100%;
+
+      min-height: 58px;
+
+      box-sizing: border-box;
+
+      padding:
+        0 18px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.22);
+
+      border-radius: 15px;
+
+      background:
+        rgba(13,41,63,.9);
+
+      color: white;
+
+      font-size: 16px;
+
+    }
+
+
+    .eah-population-name-search-row button {
+
+      min-width: 150px;
+
+      min-height: 58px;
+
+      padding:
+        0 24px;
+
+      border: 0;
+
+      border-radius: 15px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #0b6bff,
+          #168dff
+        );
+
+      color: white;
+
+      font-weight: 900;
+
+      cursor: pointer;
+
+    }
+
+
+    #eahPopulationPeopleResults {
+
+      display: grid;
+
+      gap: 12px;
+
+      margin-top: 20px;
+
+    }
+
+
+    .eah-population-person {
+
+      display: grid;
+
+      grid-template-columns:
+        minmax(0,1fr)
+        auto;
+
+      align-items: center;
+
+      gap: 16px;
+
+      padding: 18px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.18);
+
+      border-radius: 17px;
+
+      background:
+        rgba(5,23,42,.72);
+
+    }
+
+
+    .eah-population-person-name {
+
+      font-size: 17px;
+
+      font-weight: 900;
+
+      color: white;
+
+    }
+
+
+    .eah-population-person-meta {
+
+      margin-top: 6px;
+
+      color: #8fa8bc;
+
+      font-size: 13px;
+
+    }
+
+
+    .eah-population-public-button {
+
+      min-height: 44px;
+
+      padding:
+        0 17px;
+
+      border: 0;
+
+      border-radius: 12px;
+
+      background: #0b6bff;
+
+      color: white;
+
+      font-weight: 900;
+
+      cursor: pointer;
+
+    }
+
+
+    .eah-population-private-badge {
+
+      display: inline-flex;
+
+      min-height: 42px;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding:
+        0 15px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.18);
+
+      border-radius: 12px;
+
+      background:
+        rgba(255,255,255,.05);
+
+      color: #8fa8bc;
+
+      font-size: 13px;
+
+      font-weight: 800;
+
+    }
+
+
+    #eahPopulationModal {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 2147483600;
+
+      overflow-y: auto;
+
+      padding: 16px;
+
+      background:
+        rgba(1,9,18,.95);
+
+    }
+
+
+    .eah-population-modal-panel {
+
+      width:
+        min(
+          850px,
+          100%
+        );
+
+      box-sizing: border-box;
+
+      margin:
+        20px auto 80px;
+
+      padding: 26px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.22);
+
+      border-radius: 26px;
+
+      background:
+        #061e33;
+
+      color: white;
+
+    }
+
+
+    .eah-population-modal-top {
+
+      display: flex;
+
+      justify-content:
+        space-between;
+
+      align-items:
+        flex-start;
+
+      gap: 20px;
+
+    }
+
+
+    .eah-population-modal-close {
+
+      width: 46px;
+
+      height: 46px;
+
+      flex:
+        0 0 46px;
+
+      border: 0;
+
+      border-radius: 50%;
+
+      background: white;
+
+      color: #03131f;
+
+      font-size: 25px;
+
+      cursor: pointer;
+
+    }
+
+
+    .eah-population-profile-header {
+
+      display: grid;
+
+      grid-template-columns:
+        95px
+        minmax(0,1fr);
+
+      gap: 18px;
+
+      align-items: center;
+
+      margin-top: 20px;
+
+    }
+
+
+    .eah-population-profile-photo {
+
+      width: 95px;
+
+      height: 95px;
+
+      object-fit: cover;
+
+      border-radius: 50%;
+
+      background:
+        #10273a;
+
+    }
+
+
+    .eah-population-profile-placeholder {
+
+      width: 95px;
+
+      height: 95px;
+
+      display: grid;
+
+      place-items: center;
+
+      border-radius: 50%;
+
+      background:
+        #10273a;
+
+      color: #30cfff;
+
+      font-size: 30px;
+
+      font-weight: 900;
+
+    }
+
+
+    .eah-population-profile-section {
+
+      margin-top: 24px;
+
+      padding: 20px;
+
+      border:
+        1px solid
+        rgba(143,205,255,.16);
+
+      border-radius: 18px;
+
+      background:
+        rgba(5,23,42,.65);
+
+    }
+
+
+    .eah-population-grading {
+
+      padding:
+        14px 0;
+
+      border-bottom:
+        1px solid
+        rgba(143,205,255,.12);
+
+    }
+
+
+    .eah-population-grading:last-child {
+
+      border-bottom: 0;
+
+    }
+
+
+    @media(max-width:650px) {
+
+      .eah-population-name-search-row {
+
+        grid-template-columns: 1fr;
+
+      }
+
+
+      .eah-population-name-search-row button {
+
+        width: 100%;
+
+      }
+
+
+      .eah-population-person {
+
+        grid-template-columns: 1fr;
+
+      }
+
+
+      .eah-population-public-button,
+      .eah-population-private-badge {
+
+        width: 100%;
+
+      }
+
+
+      .eah-population-modal-panel {
+
+        padding:
+          20px 14px;
+
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+}
+
+
+
+/* ============================================================
+   ECHAPPER HTML
+============================================================ */
+
+function escapePopulationHTML(
+  value
+) {
+
+  return String(
+    value ?? ""
+  )
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+  .replace(
+    /</g,
+    "&lt;"
+  )
+  .replace(
+    />/g,
+    "&gt;"
+  )
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+
+}
+
+
+
+/* ============================================================
+   TROUVER LA PAGE POPULATION
+============================================================ */
+
+function getPopulationPageV3() {
+
+  return document.getElementById(
+    "population"
+  );
+
+}
+
+
+
+/* ============================================================
+   INSTALLER LA RECHERCHE NOM / PRENOM
+============================================================ */
+
+function installPopulationPeopleSearchV3() {
+
+  installPopulationV3CSS();
+
+
+  const page =
+    getPopulationPageV3();
+
+
+  if (!page) {
+
+    return;
+
+  }
+
+
+  if (
+    document.getElementById(
+      "eahPopulationPeopleSearch"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const box =
+    document.createElement(
+      "section"
+    );
+
+
+  box.id =
+    "eahPopulationPeopleSearch";
+
+
+  box.innerHTML = `
+
+    <h2>
+      Rechercher un plongeur EAH
+    </h2>
+
+    <p>
+      Recherche indépendante par nom ou prénom.
+    </p>
+
+
+    <div
+      class="eah-population-name-search-row"
+    >
+
+      <input
+        id="eahPopulationNameInput"
+        type="search"
+        autocomplete="off"
+        placeholder="Nom ou prénom..."
+      >
+
+
+      <button
+        id="eahPopulationNameButton"
+        type="button"
+      >
+        Rechercher
+      </button>
+
+    </div>
+
+
+    <div
+      id="eahPopulationPeopleResults"
+    ></div>
+
+  `;
+
+
+  /*
+    On cherche le formulaire existant
+    de recherche du code 5152B.
+  */
+
+  const codeInput =
+    Array.from(
+      page.querySelectorAll(
+        "input"
+      )
+    )
+    .find(
+      input =>
+
+        String(
+          input.placeholder || ""
+        )
+        .toUpperCase()
+        .includes(
+          "5152B"
+        )
+
+    );
+
+
+  let target =
+    null;
+
+
+  if (codeInput) {
+
+    target =
+      codeInput.closest(
+        "form, .card, .panel, .glass, .search-box, section, div"
+      );
+
+  }
+
+
+  if (
+    target &&
+    target.parentElement
+  ) {
+
+    target.insertAdjacentElement(
+      "afterend",
+      box
+    );
+
+  } else {
+
+    page.appendChild(
+      box
+    );
+
+  }
+
+
+  document
+    .getElementById(
+      "eahPopulationNameButton"
+    )
+    ?.addEventListener(
+      "click",
+      searchPopulationPeopleV3
+    );
+
+
+  document
+    .getElementById(
+      "eahPopulationNameInput"
+    )
+    ?.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key ===
+          "Enter"
+        ) {
+
+          event.preventDefault();
+
+          searchPopulationPeopleV3();
+
+        }
+
+      }
+    );
+
+}
+
+
+
+/* ============================================================
+   RECHERCHER NOM / PRENOM
+============================================================ */
+
+async function searchPopulationPeopleV3() {
+
+  const input =
+    document.getElementById(
+      "eahPopulationNameInput"
+    );
+
+
+  const resultBox =
+    document.getElementById(
+      "eahPopulationPeopleResults"
+    );
+
+
+  if (
+    !input ||
+    !resultBox
+  ) {
+
+    return;
+
+  }
+
+
+  const search =
+    input.value
+      .trim();
+
+
+  if (
+    search.length < 2
+  ) {
+
+    resultBox.innerHTML = `
+
+      <div
+        style="
+          padding:14px;
+          color:#8fa8bc;
+        "
+      >
+        Entre au moins 2 caractères.
+      </div>
+
+    `;
+
+
+    return;
+
+  }
+
+
+  resultBox.innerHTML = `
+
+    <div
+      style="
+        padding:16px;
+        color:#8fa8bc;
+      "
+    >
+      Recherche…
+    </div>
+
+  `;
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await requireSupabase()
+        .rpc(
+
+          "eah_population_people_search",
+
+          {
+
+            p_search:
+              search,
+
+            p_limit:
+              50,
+
+            p_offset:
+              0
+
+          }
+
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    const items =
+      Array.isArray(
+        data?.items
+      )
+      ?
+      data.items
+      :
+      [];
+
+
+    if (
+      !items.length
+    ) {
+
+      resultBox.innerHTML = `
+
+        <div
+          style="
+            padding:16px;
+            color:#8fa8bc;
+          "
+        >
+          Aucun plongeur trouvé.
+        </div>
+
+      `;
+
+
+      return;
+
+    }
+
+
+    resultBox.innerHTML =
+      items.map(
+        function(item) {
+
+          const fullName =
+            item.display_name
+            ||
+            (
+              (
+                item.first_name
+                ||
+                ""
+              )
+              +
+              " "
+              +
+              (
+                item.last_name
+                ||
+                ""
+              )
+            )
+            .trim()
+            ||
+            item.eah_id;
+
+
+          const publicButton =
+            item.profile_public
+            ?
+            `
+
+              <button
+                type="button"
+                class="eah-population-public-button"
+                data-population-profile-club="${escapePopulationHTML(
+                  item.club_slug
+                )}"
+                data-population-profile-id="${escapePopulationHTML(
+                  item.eah_id
+                )}"
+              >
+                Voir le profil
+              </button>
+
+            `
+            :
+            `
+
+              <span
+                class="eah-population-private-badge"
+              >
+                Profil privé
+              </span>
+
+            `;
+
+
+          return `
+
+            <article
+              class="eah-population-person"
+            >
+
+              <div>
+
+                <div
+                  class="eah-population-person-name"
+                >
+                  ${escapePopulationHTML(
+                    fullName
+                  )}
+                </div>
+
+
+                <div
+                  class="eah-population-person-meta"
+                >
+
+                  ${escapePopulationHTML(
+                    item.club_name
+                    ||
+                    ""
+                  )}
+
+                  ${
+                    item.current_blazon
+                    ?
+                    " • "
+                    +
+                    escapePopulationHTML(
+                      item.current_blazon
+                    )
+                    :
+                    ""
+                  }
+
+                  ${
+                    typeof item.grading_count
+                    !==
+                    "undefined"
+                    ?
+                    " • "
+                    +
+                    escapePopulationHTML(
+                      item.grading_count
+                    )
+                    +
+                    " grading(s)"
+                    :
+                    ""
+                  }
+
+                </div>
+
+              </div>
+
+
+              <div>
+
+                ${publicButton}
+
+              </div>
+
+            </article>
+
+          `;
+
+        }
+      )
+      .join(
+        ""
+      );
+
+
+    resultBox
+      .querySelectorAll(
+        "[data-population-profile-id]"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+
+            "click",
+
+            () => {
+
+              openPopulationPublicProfileV3(
+
+                button.dataset
+                  .populationProfileClub,
+
+                button.dataset
+                  .populationProfileId
+
+              );
+
+            }
+
+          );
+
+        }
+      );
+
+
+  } catch(error) {
+
+    resultBox.innerHTML = `
+
+      <div
+        style="
+          padding:16px;
+          border-radius:14px;
+          background:rgba(224,82,94,.15);
+          color:white;
+        "
+      >
+        ${escapePopulationHTML(
+          error.message
+          ||
+          "Erreur de recherche."
+        )}
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+
+/* ============================================================
+   OUVRIR PROFIL PUBLIC
+============================================================ */
+
+async function openPopulationPublicProfileV3(
+  clubSlug,
+  eahId
+) {
+
+  document
+    .getElementById(
+      "eahPopulationModal"
+    )
+    ?.remove();
+
+
+  const modal =
+    document.createElement(
+      "div"
+    );
+
+
+  modal.id =
+    "eahPopulationModal";
+
+
+  modal.innerHTML = `
+
+    <div
+      class="eah-population-modal-panel"
+    >
+
+      <div
+        class="eah-population-modal-top"
+      >
+
+        <div>
+
+          <span
+            style="
+              color:#30cfff;
+              font-weight:900;
+            "
+          >
+            EAH DIVING
+          </span>
+
+          <h2>
+            Profil public
+          </h2>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="eah-population-modal-close"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div
+        id="eahPopulationModalContent"
+        style="
+          padding:30px 0;
+          color:#8fa8bc;
+        "
+      >
+        Chargement…
+      </div>
+
+    </div>
+
+  `;
+
+
+  document.body.appendChild(
+    modal
+  );
+
+
+  modal
+    .querySelector(
+      ".eah-population-modal-close"
+    )
+    .onclick =
+      () =>
+        modal.remove();
+
+
+  modal.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target ===
+        modal
+      ) {
+
+        modal.remove();
+
+      }
+
+    }
+  );
+
+
+  const content =
+    document.getElementById(
+      "eahPopulationModalContent"
+    );
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await requireSupabase()
+        .rpc(
+
+          "eah_population_public_profile",
+
+          {
+
+            p_club_slug:
+              clubSlug,
+
+            p_eah_id:
+              eahId
+
+          }
+
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data ||
+      data.ok !== true
+    ) {
+
+      if (
+        data?.private
+      ) {
+
+        content.innerHTML = `
+
+          <div
+            style="
+              padding:20px;
+              border-radius:16px;
+              background:rgba(255,255,255,.05);
+              color:#c3d8e8;
+            "
+          >
+            Ce profil est privé.
+          </div>
+
+        `;
+
+        return;
+
+      }
+
+
+      throw new Error(
+        "Profil introuvable."
+      );
+
+    }
+
+
+    const profile =
+      data.profile
+      ||
+      {};
+
+
+    const evaluations =
+      Array.isArray(
+        data.evaluations
+      )
+      ?
+      data.evaluations
+      :
+      [];
+
+
+    const blazons =
+      Array.isArray(
+        data.blazons
+      )
+      ?
+      data.blazons
+      :
+      [];
+
+
+    const fullName =
+      profile.display_name
+      ||
+      (
+        (
+          profile.first_name
+          ||
+          ""
+        )
+        +
+        " "
+        +
+        (
+          profile.last_name
+          ||
+          ""
+        )
+      )
+      .trim()
+      ||
+      profile.eah_id;
+
+
+    const photo =
+      profile.photo_url
+      ?
+      `
+
+        <img
+          class="eah-population-profile-photo"
+          src="${escapePopulationHTML(
+            profile.photo_url
+          )}"
+          alt=""
+        >
+
+      `
+      :
+      `
+
+        <div
+          class="eah-population-profile-placeholder"
+        >
+          EAH
+        </div>
+
+      `;
+
+
+    content.innerHTML = `
+
+      <div
+        class="eah-population-profile-header"
+      >
+
+        ${photo}
+
+
+        <div>
+
+          <h2
+            style="
+              margin:0 0 7px;
+              color:white;
+            "
+          >
+            ${escapePopulationHTML(
+              fullName
+            )}
+          </h2>
+
+
+          <div
+            style="
+              color:#8fa8bc;
+            "
+          >
+
+            ${escapePopulationHTML(
+              profile.eah_id
+              ||
+              ""
+            )}
+
+            ${
+              profile.club_name
+              ?
+              " • "
+              +
+              escapePopulationHTML(
+                profile.club_name
+              )
+              :
+              ""
+            }
+
+          </div>
+
+
+          ${
+            profile.current_blazon
+            ?
+            `
+
+              <div
+                style="
+                  margin-top:9px;
+                  color:#30cfff;
+                  font-weight:900;
+                "
+              >
+                ${escapePopulationHTML(
+                  profile.current_blazon
+                )}
+              </div>
+
+            `
+            :
+            ""
+          }
+
+        </div>
+
+      </div>
+
+
+      <section
+        class="eah-population-profile-section"
+      >
+
+        <h3>
+          Progression
+        </h3>
+
+
+        ${
+          blazons.length
+          ?
+          blazons.map(
+            item => `
+
+              <div
+                style="
+                  padding:10px 0;
+                  border-bottom:
+                    1px solid
+                    rgba(143,205,255,.10);
+                "
+              >
+
+                <strong>
+                  ${escapePopulationHTML(
+                    item.name
+                    ||
+                    item.key
+                  )}
+                </strong>
+
+                <span
+                  style="
+                    color:#8fa8bc;
+                  "
+                >
+                  •
+                  ${escapePopulationHTML(
+                    item.progress
+                    ??
+                    0
+                  )}%
+                </span>
+
+              </div>
+
+            `
+          )
+          .join(
+            ""
+          )
+          :
+          `
+
+            <div
+              style="
+                color:#8fa8bc;
+              "
+            >
+              Aucune progression enregistrée.
+            </div>
+
+          `
+        }
+
+      </section>
+
+
+      <section
+        class="eah-population-profile-section"
+      >
+
+        <h3>
+          Historique des gradings
+        </h3>
+
+
+        ${
+          evaluations.length
+          ?
+          evaluations.map(
+            evaluation => `
+
+              <div
+                class="eah-population-grading"
+              >
+
+                <strong>
+                  ${escapePopulationHTML(
+                    evaluation.dive_code
+                    ||
+                    "Plongeon"
+                  )}
+                </strong>
+
+
+                ${
+                  evaluation.height
+                  !==
+                  null
+                  &&
+                  typeof evaluation.height
+                  !==
+                  "undefined"
+                  ?
+                  `
+
+                    •
+                    ${escapePopulationHTML(
+                      evaluation.height
+                    )} m
+
+                  `
+                  :
+                  ""
+                }
+
+
+                <br>
+
+
+                <span
+                  style="
+                    color:#8fa8bc;
+                  "
+                >
+
+                  EAH :
+                  ${
+                    evaluation.eah_score
+                    ??
+                    "—"
+                  }/10
+
+                  ${
+                    evaluation.wa_score
+                    !==
+                    null
+                    &&
+                    typeof evaluation.wa_score
+                    !==
+                    "undefined"
+                    ?
+                    " • WA : "
+                    +
+                    escapePopulationHTML(
+                      evaluation.wa_score
+                    )
+                    +
+                    "/10"
+                    :
+                    ""
+                  }
+
+                </span>
+
+
+                ${
+                  evaluation.video_url
+                  ?
+                  `
+
+                    <div
+                      style="
+                        margin-top:8px;
+                      "
+                    >
+
+                      <a
+                        href="${escapePopulationHTML(
+                          evaluation.video_url
+                        )}"
+                        target="_blank"
+                        rel="noopener"
+                        style="
+                          color:#30cfff;
+                          font-weight:800;
+                        "
+                      >
+                        Voir la vidéo
+                      </a>
+
+                    </div>
+
+                  `
+                  :
+                  ""
+                }
+
+              </div>
+
+            `
+          )
+          .join(
+            ""
+          )
+          :
+          `
+
+            <div
+              style="
+                color:#8fa8bc;
+              "
+            >
+              Aucun grading enregistré.
+            </div>
+
+          `
+        }
+
+      </section>
+
+    `;
+
+
+  } catch(error) {
+
+    content.innerHTML = `
+
+      <div
+        style="
+          padding:16px;
+          border-radius:14px;
+          background:rgba(224,82,94,.15);
+          color:white;
+        "
+      >
+        ${escapePopulationHTML(
+          error.message
+          ||
+          "Impossible d'ouvrir le profil."
+        )}
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+
+/* ============================================================
+   REINSTALLATION LORS NAVIGATION
+============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    setTimeout(
+      installPopulationPeopleSearchV3,
+      300
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "hashchange",
+  () => {
+
+    if (
+      window.location.hash ===
+      "#population"
+    ) {
+
+      setTimeout(
+        installPopulationPeopleSearchV3,
+        100
+      );
+
+      setTimeout(
+        installPopulationPeopleSearchV3,
+        500
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   SECURITE SI LA PAGE EST RENDUE APRES LE CHARGEMENT
+============================================================ */
+
+const populationV3Observer =
+  new MutationObserver(
+    () => {
+
+      if (
+        window.location.hash ===
+        "#population"
+      ) {
+
+        installPopulationPeopleSearchV3();
+
+      }
+
+    }
+  );
+
+
+populationV3Observer.observe(
+
+  document.body,
+
+  {
+
+    childList:
+      true,
+
+    subtree:
+      true
+
+  }
+
+);
 init()
   .catch(
     error => {
