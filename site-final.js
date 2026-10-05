@@ -2,7 +2,7 @@
    EAH DIVING PRO
    SITE-FINAL.JS
    VERSION FINALE
-   03/10/2026
+   05/10/2026
 
    - Heroes plein écran / pleine largeur
    - Luminosité harmonisée
@@ -10,6 +10,8 @@
    - Uniquement le nom des catégories sur les heroes
    - Photos catégories principales
    - Disciplines desktop / mobile
+   - Tarifs desktop / mobile
+   - Tarifs mobile non coupé
    - Blazons protégés
    - Actualités cliquables avec page détail
    - Spots dépliables
@@ -46,8 +48,22 @@
     actualites:
       "actualites-hero.jpg",
 
-    tarifs:
-      "pricing-hero.jpg",
+
+    /* ========================================================
+       TARIFS
+       Desktop / tablette + mobile
+    ======================================================== */
+
+    tarifs: {
+
+      desktop:
+        "pricing-hero.jpg",
+
+      mobile:
+        "tarifs-mobile.png"
+
+    },
+
 
     faireGrader:
       "grading-request-hero.jpg",
@@ -208,6 +224,7 @@
         "eah-site-final-css"
       );
 
+
     if (old) {
 
       old.remove();
@@ -233,11 +250,14 @@
 
 .page .page-hero {
 
-  position: relative !important;
+  position:
+    relative !important;
 
-  width: 100% !important;
+  width:
+    100% !important;
 
-  max-width: none !important;
+  max-width:
+    none !important;
 
   min-height:
     clamp(
@@ -246,15 +266,20 @@
       540px
     ) !important;
 
-  margin: 0 !important;
+  margin:
+    0 !important;
 
-  padding: 0 !important;
+  padding:
+    0 !important;
 
-  overflow: hidden !important;
+  overflow:
+    hidden !important;
 
-  display: flex !important;
+  display:
+    flex !important;
 
-  align-items: flex-end !important;
+  align-items:
+    flex-end !important;
 
   background:
     #03131f !important;
@@ -268,32 +293,44 @@
 
 .page .page-hero > img.page-hero-image {
 
-  position: absolute !important;
+  position:
+    absolute !important;
 
-  inset: 0 !important;
+  inset:
+    0 !important;
 
-  left: 0 !important;
+  left:
+    0 !important;
 
-  top: 0 !important;
+  top:
+    0 !important;
 
-  width: 100% !important;
+  width:
+    100% !important;
 
-  max-width: none !important;
+  max-width:
+    none !important;
 
-  height: 100% !important;
+  height:
+    100% !important;
 
-  min-height: 100% !important;
+  min-height:
+    100% !important;
 
-  display: block !important;
+  display:
+    block !important;
 
-  object-fit: cover !important;
+  object-fit:
+    cover !important;
 
   object-position:
     center center !important;
 
-  opacity: 1 !important;
+  opacity:
+    1 !important;
 
-  visibility: visible !important;
+  visibility:
+    visible !important;
 
   filter:
     brightness(1.06)
@@ -301,24 +338,32 @@
     saturate(1.05)
     !important;
 
-  transform: none !important;
+  transform:
+    none !important;
 
 }
 
 
-/* PICTURE DES DISCIPLINES */
+/* ============================================================
+   PICTURE HERO
+============================================================ */
 
 .page .page-hero > picture {
 
-  position: absolute !important;
+  position:
+    absolute !important;
 
-  inset: 0 !important;
+  inset:
+    0 !important;
 
-  width: 100% !important;
+  width:
+    100% !important;
 
-  height: 100% !important;
+  height:
+    100% !important;
 
-  display: block !important;
+  display:
+    block !important;
 
 }
 
@@ -326,28 +371,38 @@
 .page .page-hero > picture > img.page-hero-image,
 .page .page-hero > picture > img {
 
-  position: absolute !important;
+  position:
+    absolute !important;
 
-  inset: 0 !important;
+  inset:
+    0 !important;
 
-  width: 100% !important;
+  width:
+    100% !important;
 
-  max-width: none !important;
+  max-width:
+    none !important;
 
-  height: 100% !important;
+  height:
+    100% !important;
 
-  min-height: 100% !important;
+  min-height:
+    100% !important;
 
-  display: block !important;
+  display:
+    block !important;
 
-  object-fit: cover !important;
+  object-fit:
+    cover !important;
 
   object-position:
     center center !important;
 
-  opacity: 1 !important;
+  opacity:
+    1 !important;
 
-  visibility: visible !important;
+  visibility:
+    visible !important;
 
   filter:
     brightness(1.06)
@@ -364,41 +419,52 @@
 
 .page .page-hero .page-hero-overlay {
 
-  position: absolute !important;
+  position:
+    absolute !important;
 
-  inset: 0 !important;
+  inset:
+    0 !important;
 
-  display: block !important;
+  display:
+    block !important;
 
-  opacity: 1 !important;
+  opacity:
+    1 !important;
 
-  z-index: 1 !important;
+  z-index:
+    1 !important;
 
   background:
     linear-gradient(
       180deg,
-      rgba(2, 12, 23, 0.02) 0%,
-      rgba(2, 12, 23, 0.02) 46%,
-      rgba(2, 12, 23, 0.22) 72%,
-      rgba(2, 12, 23, 0.42) 100%
+      rgba(2,12,23,.02) 0%,
+      rgba(2,12,23,.02) 46%,
+      rgba(2,12,23,.22) 72%,
+      rgba(2,12,23,.42) 100%
     )
     !important;
 
 }
 
 
-/* On neutralise les anciens pseudo-elements */
+/* ============================================================
+   SUPPRESSION ANCIENS PSEUDO ELEMENTS
+============================================================ */
 
 .page .page-hero::before,
 .page .page-hero::after {
 
-  content: none !important;
+  content:
+    none !important;
 
-  display: none !important;
+  display:
+    none !important;
 
-  background: none !important;
+  background:
+    none !important;
 
-  opacity: 0 !important;
+  opacity:
+    0 !important;
 
 }
 
@@ -409,9 +475,11 @@
 
 .page .page-hero > .container {
 
-  position: relative !important;
+  position:
+    relative !important;
 
-  z-index: 4 !important;
+  z-index:
+    4 !important;
 
   width:
     min(
@@ -419,7 +487,8 @@
       1240px
     ) !important;
 
-  max-width: 1240px !important;
+  max-width:
+    1240px !important;
 
   margin:
     0 auto !important;
@@ -495,7 +564,6 @@
 
 /* ============================================================
    HERO ACCUEIL
-   PLUS CLAIR
 ============================================================ */
 
 #accueil .hero-background-image {
@@ -521,16 +589,16 @@
 
     linear-gradient(
       90deg,
-      rgba(2, 12, 23, .54) 0%,
-      rgba(2, 12, 23, .32) 36%,
-      rgba(2, 12, 23, .13) 64%,
-      rgba(2, 12, 23, .08) 100%
+      rgba(2,12,23,.54) 0%,
+      rgba(2,12,23,.32) 36%,
+      rgba(2,12,23,.13) 64%,
+      rgba(2,12,23,.08) 100%
     ),
 
     linear-gradient(
       180deg,
-      rgba(2, 12, 23, .01) 45%,
-      rgba(2, 12, 23, .24) 100%
+      rgba(2,12,23,.01) 45%,
+      rgba(2,12,23,.24) 100%
     )
 
     !important;
@@ -644,21 +712,12 @@
     translateY(-5px);
 
   border-color:
-    rgba(
-      48,
-      207,
-      255,
-      .40
-    ) !important;
+    rgba(48,207,255,.40)
+    !important;
 
   box-shadow:
     0 26px 65px
-    rgba(
-      0,
-      0,
-      0,
-      .30
-    );
+    rgba(0,0,0,.30);
 
 }
 
@@ -721,23 +780,13 @@
 
   border:
     1px solid
-    rgba(
-      143,
-      205,
-      255,
-      .22
-    );
+    rgba(143,205,255,.22);
 
   border-radius:
     13px;
 
   background:
-    rgba(
-      5,
-      23,
-      42,
-      .78
-    );
+    rgba(5,23,42,.78);
 
   color:
     #ffffff;
@@ -749,9 +798,7 @@
     pointer;
 
   backdrop-filter:
-    blur(
-      16px
-    );
+    blur(16px);
 
 }
 
@@ -759,12 +806,7 @@
 .actualite-back:hover {
 
   background:
-    rgba(
-      11,
-      107,
-      255,
-      .18
-    );
+    rgba(11,107,255,.18);
 
 }
 
@@ -776,12 +818,7 @@
 
   border:
     1px solid
-    rgba(
-      143,
-      205,
-      255,
-      .20
-    );
+    rgba(143,205,255,.20);
 
   border-radius:
     30px;
@@ -789,28 +826,13 @@
   background:
     linear-gradient(
       145deg,
-      rgba(
-        7,
-        38,
-        66,
-        .94
-      ),
-      rgba(
-        4,
-        18,
-        31,
-        .94
-      )
+      rgba(7,38,66,.94),
+      rgba(4,18,31,.94)
     );
 
   box-shadow:
     0 30px 90px
-    rgba(
-      0,
-      0,
-      0,
-      .30
-    );
+    rgba(0,0,0,.30);
 
 }
 
@@ -947,12 +969,7 @@
 
   border-top:
     1px solid
-    rgba(
-      143,
-      205,
-      255,
-      .14
-    );
+    rgba(143,205,255,.14);
 
   color:
     #c3d8e8;
@@ -1078,12 +1095,7 @@
 
   border-top:
     1px solid
-    rgba(
-      255,
-      255,
-      255,
-      .14
-    );
+    rgba(255,255,255,.14);
 
 }
 
@@ -1126,13 +1138,10 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 /* ============================================================
-   MOBILE
+   MOBILE GENERAL
 ============================================================ */
 
-@media (
-  max-width:
-  700px
-) {
+@media (max-width:700px) {
 
   .page .page-hero {
 
@@ -1210,6 +1219,138 @@ html:not(.eah-page-club) #eah-tarifs {
 
 }
 
+
+/* ============================================================
+   TARIFS TELEPHONE UNIQUEMENT
+   <= 600 PX
+
+   La photo mobile est verticale.
+   On lui donne donc un hero 9:16.
+   L'image reste entière sans être coupée.
+============================================================ */
+
+@media (max-width:600px) {
+
+
+  #tarifs .page-hero {
+
+    width:
+      100% !important;
+
+    height:
+      auto !important;
+
+    min-height:
+      0 !important;
+
+    max-height:
+      none !important;
+
+    aspect-ratio:
+      9 / 16 !important;
+
+    align-items:
+      stretch !important;
+
+    background:
+      #03131f !important;
+
+  }
+
+
+  #tarifs .page-hero > picture.tarifs-hero-picture {
+
+    position:
+      absolute !important;
+
+    inset:
+      0 !important;
+
+    width:
+      100% !important;
+
+    height:
+      100% !important;
+
+    display:
+      block !important;
+
+  }
+
+
+  #tarifs .page-hero > picture.tarifs-hero-picture > img.page-hero-image {
+
+    position:
+      absolute !important;
+
+    inset:
+      0 !important;
+
+    width:
+      100% !important;
+
+    height:
+      100% !important;
+
+    min-height:
+      0 !important;
+
+    max-width:
+      none !important;
+
+    object-fit:
+      contain !important;
+
+    object-position:
+      center center !important;
+
+    filter:
+      none !important;
+
+    opacity:
+      1 !important;
+
+    visibility:
+      visible !important;
+
+    background:
+      #03131f !important;
+
+  }
+
+
+  /*
+     La nouvelle image mobile contient déjà :
+     - le logo EAH
+     - Amateur ou professionnel
+     - rejoignez l'équipe EAH Diving
+
+     On masque donc le titre "Les offres"
+     qui pourrait recouvrir le visuel.
+  */
+
+  #tarifs .page-hero > .container {
+
+    display:
+      none !important;
+
+  }
+
+
+  /*
+     Pas de voile sombre sur cette image,
+     afin de garder le texte net et lisible.
+  */
+
+  #tarifs .page-hero .page-hero-overlay {
+
+    display:
+      none !important;
+
+  }
+
+}
+
     `;
 
 
@@ -1250,6 +1391,11 @@ html:not(.eah-page-club) #eah-tarifs {
   }
 
 
+
+  /* ============================================================
+     MOBILE DISCIPLINES
+  ============================================================ */
+
   function mobile() {
 
     return (
@@ -1258,6 +1404,30 @@ html:not(.eah-page-club) #eah-tarifs {
 
   }
 
+
+
+  /* ============================================================
+     TARIFS MOBILE
+     UNIQUEMENT TELEPHONE <= 600px
+  ============================================================ */
+
+  function fichierTarifs() {
+
+    return (
+      window.innerWidth <= 600
+    )
+      ?
+      FILES.tarifs.mobile
+      :
+      FILES.tarifs.desktop;
+
+  }
+
+
+
+  /* ============================================================
+     FICHIER DISCIPLINE
+  ============================================================ */
 
   function fichierDiscipline(
     key
@@ -1285,6 +1455,7 @@ html:not(.eah-page-club) #eah-tarifs {
       ].desktop;
 
   }
+
 
 
   function escapeHtml(
@@ -1323,6 +1494,7 @@ html:not(.eah-page-club) #eah-tarifs {
     );
 
   }
+
 
 
   function formatDate(
@@ -1584,11 +1756,17 @@ html:not(.eah-page-club) #eah-tarifs {
     );
 
 
+    /* ========================================================
+       TARIFS
+       Desktop/tablette = pricing-hero.jpg
+       Téléphone = tarifs-mobile.png
+    ======================================================== */
+
     corrigerHeroPage(
 
       "tarifs",
 
-      FILES.tarifs,
+      fichierTarifs(),
 
       HERO_TITLES.tarifs
 
@@ -2921,10 +3099,6 @@ html:not(.eah-page-club) #eah-tarifs {
     event => {
 
 
-      /* ======================================================
-         RETOUR ACTUALITES
-      ====================================================== */
-
       if (
         event.target.closest(
           "#actualite-back"
@@ -2940,10 +3114,6 @@ html:not(.eah-page-club) #eah-tarifs {
       }
 
 
-      /* ======================================================
-         ACTUALITE
-      ====================================================== */
-
       const newsCard =
         event.target.closest(
           "#newsGrid .news-card"
@@ -2951,11 +3121,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
       if (newsCard) {
-
-        /*
-          On laisse les liens externes
-          fonctionner normalement.
-        */
 
         if (
           event.target.closest(
@@ -2987,10 +3152,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
       }
 
-
-      /* ======================================================
-         SPOT
-      ====================================================== */
 
       const spotCard =
         event.target.closest(
@@ -3068,10 +3229,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
       }
 
-
-      /* ======================================================
-         NAVIGATION
-      ====================================================== */
 
       const navigation =
         event.target.closest(
