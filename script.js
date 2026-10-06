@@ -6151,62 +6151,831 @@ function setProfileLoading() {
 
 
 
-function renderProfileError(
-  message
+function renderPopulationResults(
+  box,
+  result,
+  code,
+  name
 ) {
 
-  document
-    .getElementById(
-      'profileLoading'
+  const divers =
+    Array.isArray(
+      result.divers
     )
-    ?.classList
-    .add(
-      'hidden'
-    );
+    ?
+    result.divers
+    :
+    [];
 
 
-  document
-    .getElementById(
-      'profileSetup'
+  const gradings =
+    Array.isArray(
+      result.gradings
     )
-    ?.classList
-    .add(
-      'hidden'
-    );
+    ?
+    result.gradings
+    :
+    [];
 
 
-  document
-    .getElementById(
-      'profileNoAuth'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
+  box.innerHTML = `
 
+    <div class="population-stats">
 
-  const view =
-    document.getElementById(
-      'profileView'
-    );
+      <div class="stat-card">
 
+        <strong>
+          ${esc(result.people)}
+        </strong>
 
-  if (view) {
+        <span>
+          Plongeurs EAH
+        </span>
 
-    view.classList.remove(
-      'hidden'
-    );
-
-
-    view.innerHTML = `
-
-      <div class="notice error">
-        ${esc(message)}
       </div>
 
-    `;
 
-  }
+      <div class="stat-card">
+
+        <strong>
+          ${esc(result.count)}
+        </strong>
+
+        <span>
+          Gradings
+        </span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <strong>
+          ${esc(
+            fmtNumber(
+              result.avg_eah
+            )
+          )}
+        </strong>
+
+        <span>
+          Moyenne EAH
+        </span>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <strong>
+          ${esc(
+            fmtNumber(
+              result.avg_wa
+            )
+          )}
+        </strong>
+
+        <span>
+          Moyenne WA
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="dashboard-card eah-population-directory"
+      style="margin-top:25px"
+    >
+
+      <span class="overline">
+        POPULATION EAH
+      </span>
+
+
+      <h2>
+
+        ${
+          name
+          ?
+          'Résultats pour '
+          +
+          esc(name)
+          :
+          code
+          ?
+          'Plongeurs ayant réalisé '
+          +
+          esc(code)
+          :
+          'Plongeurs EAH'
+        }
+
+      </h2>
+
+
+      ${
+        divers.length
+        ?
+        divers
+          .map(
+            diver => {
+
+              const firstName =
+                String(
+                  diver.first_name ||
+                  ''
+                )
+                .trim();
+
+
+              const lastName =
+                String(
+                  diver.last_name ||
+                  ''
+                )
+                .trim();
+
+
+              const displayName =
+                String(
+                  diver.display_name ||
+                  ''
+                )
+                .trim()
+
+                ||
+
+                (
+                  firstName
+                  +
+                  ' '
+                  +
+                  lastName
+                )
+                .trim()
+
+                ||
+
+                'Plongeur EAH';
+
+
+              const sex =
+                String(
+                  diver.sex ||
+                  ''
+                )
+                .trim();
+
+
+              const isPublic =
+                diver.profile_public ===
+                  true
+                ||
+                String(
+                  diver.profile_public
+                )
+                .toLowerCase() ===
+                  'true';
+
+
+              const photo =
+                (
+                  isPublic &&
+                  diver.photo_url
+                )
+                ?
+                eahFastPhotoUrl(
+                  diver.photo_url
+                )
+                :
+                '';
+
+
+              const eahScore =
+                diver.latest_eah_score;
+
+
+              const waScore =
+                diver.latest_wa_score;
+
+
+              const latestCode =
+                diver.latest_dive_code
+                ||
+                code
+                ||
+                '';
+
+
+              const latestName =
+                diver.latest_dive_name
+                ||
+                (
+                  latestCode
+                  ?
+                  DIVE_NAMES[
+                    normalizeCode(
+                      latestCode
+                    )
+                  ]
+                  :
+                  ''
+                )
+                ||
+                '';
+
+
+              const profileUrl =
+                (
+                  isPublic &&
+                  diver.eah_id
+                )
+                ?
+                publicProfileUrl(
+                  diver
+                )
+                :
+                '';
+
+
+              return `
+
+                <article
+                  class="
+                    eah-population-person-card
+                    ${
+                      isPublic
+                      ?
+                      'is-public'
+                      :
+                      'is-private'
+                    }
+                  "
+                >
+
+
+                  <div
+                    class="eah-population-person-main"
+                  >
+
+
+                    <div
+                      class="eah-population-person-photo"
+                    >
+
+                      ${
+                        photo
+                        ?
+                        `
+
+                          <img
+                            src="${esc(photo)}"
+                            alt="${esc(displayName)}"
+                          >
+
+                        `
+                        :
+                        `
+
+                          <div
+                            class="eah-population-person-placeholder"
+                          >
+                            ${
+                              esc(
+                                (
+                                  (
+                                    firstName[0] ||
+                                    ''
+                                  )
+                                  +
+                                  (
+                                    lastName[0] ||
+                                    ''
+                                  )
+                                )
+                                .toUpperCase()
+                                ||
+                                'EAH'
+                              )
+                            }
+                          </div>
+
+                        `
+                      }
+
+                    </div>
+
+
+                    <div
+                      class="eah-population-person-info"
+                    >
+
+
+                      <div
+                        class="eah-population-profile-state"
+                      >
+
+                        ${
+                          isPublic
+                          ?
+                          `
+
+                            <span
+                              class="eah-population-public-badge"
+                            >
+                              PROFIL PUBLIC
+                            </span>
+
+                          `
+                          :
+                          `
+
+                            <span
+                              class="eah-population-private-badge"
+                            >
+                              PROFIL PRIVÉ
+                            </span>
+
+                          `
+                        }
+
+                      </div>
+
+
+                      <h3>
+                        ${esc(displayName)}
+                      </h3>
+
+
+                      <div
+                        class="eah-population-meta"
+                      >
+
+                        ${
+                          sex
+                          ?
+                          `
+
+                            <span>
+                              ${esc(sex)}
+                            </span>
+
+                          `
+                          :
+                          ''
+                        }
+
+
+                        ${
+                          isPublic &&
+                          diver.group_name
+                          ?
+                          `
+
+                            <span>
+                              ${esc(
+                                diver.group_name
+                              )}
+                            </span>
+
+                          `
+                          :
+                          ''
+                        }
+
+
+                        ${
+                          isPublic &&
+                          diver.current_blazon
+                          ?
+                          `
+
+                            <span>
+                              ${esc(
+                                diver.current_blazon
+                              )}
+                            </span>
+
+                          `
+                          :
+                          ''
+                        }
+
+
+                        <span>
+
+                          ${esc(
+                            diver.grading_count
+                            ??
+                            0
+                          )}
+
+                          grading(s)
+
+                        </span>
+
+                      </div>
+
+
+                      ${
+                        latestCode
+                        ?
+                        `
+
+                          <div
+                            class="eah-population-last-dive"
+                          >
+
+                            <small>
+                              ${
+                                code
+                                ?
+                                'NOTE SUR CE PLONGEON'
+                                :
+                                'DERNIER GRADING'
+                              }
+                            </small>
+
+
+                            <strong>
+
+                              ${esc(
+                                latestCode
+                              )}
+
+                              ${
+                                latestName
+                                ?
+                                `
+                                  —
+                                  ${esc(latestName)}
+                                `
+                                :
+                                ''
+                              }
+
+                            </strong>
+
+                          </div>
+
+                        `
+                        :
+                        ''
+                      }
+
+                    </div>
+
+                  </div>
+
+
+                  <div
+                    class="eah-population-person-score"
+                  >
+
+
+                    ${
+                      eahScore !==
+                        null
+                      &&
+                      typeof eahScore !==
+                        'undefined'
+                      ?
+                      `
+
+                        <div
+                          class="eah-population-score-main"
+                        >
+
+                          <small>
+                            EAH
+                          </small>
+
+                          <strong>
+
+                            ${esc(
+                              fmtNumber(
+                                eahScore
+                              )
+                            )}
+
+                            <span>
+                              /10
+                            </span>
+
+                          </strong>
+
+                        </div>
+
+                      `
+                      :
+                      `
+
+                        <div
+                          class="eah-population-score-empty"
+                        >
+                          Aucune note EAH
+                        </div>
+
+                      `
+                    }
+
+
+                    ${
+                      waScore !==
+                        null
+                      &&
+                      typeof waScore !==
+                        'undefined'
+                      ?
+                      `
+
+                        <div
+                          class="eah-population-wa-score"
+                        >
+
+                          WA
+
+                          <strong>
+                            ${esc(
+                              fmtNumber(
+                                waScore
+                              )
+                            )}/10
+                          </strong>
+
+                        </div>
+
+                      `
+                      :
+                      ''
+                    }
+
+
+                    ${
+                      isPublic &&
+                      profileUrl
+                      ?
+                      `
+
+                        <a
+                          class="button"
+                          href="${esc(profileUrl)}"
+                        >
+                          Voir le profil
+                        </a>
+
+                      `
+                      :
+                      `
+
+                        <div
+                          class="eah-population-private-info"
+                        >
+
+                          Profil complet privé
+
+                        </div>
+
+                      `
+                    }
+
+                  </div>
+
+
+                </article>
+
+              `;
+
+            }
+          )
+          .join('')
+
+        :
+
+        `
+
+          <div class="notice">
+
+            Aucun plongeur trouvé
+            pour cette recherche.
+
+          </div>
+
+        `
+      }
+
+    </div>
+
+
+    ${
+      code &&
+      gradings.length
+      ?
+      `
+
+        <div
+          class="dashboard-card"
+          style="margin-top:25px"
+        >
+
+          <span class="overline">
+            GRADINGS
+          </span>
+
+          <h2>
+            Tous les gradings ${esc(code)}
+          </h2>
+
+
+          ${
+            gradings
+              .map(
+                grading => {
+
+                  const gradingName =
+                    String(
+                      grading.display_name ||
+                      ''
+                    )
+                    .trim()
+
+                    ||
+
+                    (
+                      (
+                        grading.first_name ||
+                        ''
+                      )
+                      +
+                      ' '
+                      +
+                      (
+                        grading.last_name ||
+                        ''
+                      )
+                    )
+                    .trim()
+
+                    ||
+
+                    'Plongeur EAH';
+
+
+                  const gradingPublic =
+                    grading.profile_public ===
+                      true
+                    ||
+                    String(
+                      grading.profile_public
+                    )
+                    .toLowerCase() ===
+                      'true';
+
+
+                  return `
+
+                    <div
+                      class="history-item"
+                    >
+
+                      <span>
+
+                        <strong>
+                          ${esc(gradingName)}
+                        </strong>
+
+                        <br>
+
+                        <small class="muted">
+
+                          ${
+                            grading.sex
+                            ?
+                            esc(
+                              grading.sex
+                            )
+                            +
+                            ' • '
+                            :
+                            ''
+                          }
+
+                          ${esc(
+                            grading.dive_code ||
+                            ''
+                          )}
+
+                          ${
+                            grading.height !==
+                              null
+                            &&
+                            typeof grading.height !==
+                              'undefined'
+                            ?
+                            ' • '
+                            +
+                            esc(
+                              fmtNumber(
+                                grading.height
+                              )
+                            )
+                            +
+                            ' m'
+                            :
+                            ''
+                          }
+
+                          ${
+                            !gradingPublic
+                            ?
+                            ' • Profil privé'
+                            :
+                            ''
+                          }
+
+                        </small>
+
+                      </span>
+
+
+                      <span
+                        class="history-score"
+                      >
+
+                        ${
+                          grading.eah_score !==
+                            null
+                          &&
+                          typeof grading.eah_score !==
+                            'undefined'
+                          ?
+                          `
+
+                            <strong>
+
+                              EAH
+
+                              ${esc(
+                                fmtNumber(
+                                  grading.eah_score
+                                )
+                              )}/10
+
+                            </strong>
+
+                          `
+                          :
+                          ''
+                        }
+
+
+                        ${
+                          grading.wa_score !==
+                            null
+                          &&
+                          typeof grading.wa_score !==
+                            'undefined'
+                          ?
+                          `
+
+                            <small>
+
+                              WA
+
+                              ${esc(
+                                fmtNumber(
+                                  grading.wa_score
+                                )
+                              )}/10
+
+                            </small>
+
+                          `
+                          :
+                          ''
+                        }
+
+                      </span>
+
+                    </div>
+
+                  `;
+
+                }
+              )
+              .join('')
+          }
+
+        </div>
+
+      `
+      :
+      ''
+    }
+
+  `;
 
 }
 
