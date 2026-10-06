@@ -3,7 +3,117 @@
    COACH CARD UI FINAL
    Mobile / Tablette / Ordinateur
 ============================================================ */
+/* ============================================================
+   EAH DIVING
+   SUPABASE AUTONOME POUR CARTE COACH
+   06/10/2026
+============================================================ */
 
+if (
+  typeof window.requireSupabase !==
+  'function'
+) {
+
+  window.requireSupabase =
+    function() {
+
+      if (
+        window.EAH_SUPABASE_CLIENT
+      ) {
+
+        return window.EAH_SUPABASE_CLIENT;
+
+      }
+
+
+      const config =
+        window.EAH_CONFIG ||
+        {};
+
+
+      const url =
+        String(
+          config.SUPABASE_URL ||
+          ''
+        )
+        .trim();
+
+
+      const key =
+        String(
+          config.SUPABASE_PUBLISHABLE_KEY ||
+          ''
+        )
+        .trim();
+
+
+      if (
+        !url ||
+        !key
+      ) {
+
+        throw new Error(
+          'Configuration Supabase absente.'
+        );
+
+      }
+
+
+      if (
+        !window.supabase ||
+        typeof window.supabase.createClient !==
+          'function'
+      ) {
+
+        throw new Error(
+          'Supabase JS n’est pas encore chargé.'
+        );
+
+      }
+
+
+      if (
+        !window.__EAH_COACH_SUPABASE__
+      ) {
+
+        window.__EAH_COACH_SUPABASE__ =
+          window.supabase.createClient(
+
+            url,
+
+            key,
+
+            {
+
+              auth: {
+
+                persistSession:
+                  true,
+
+                autoRefreshToken:
+                  true,
+
+                detectSessionInUrl:
+                  true
+
+              }
+
+            }
+
+          );
+
+      }
+
+
+      window.EAH_SUPABASE_CLIENT =
+        window.__EAH_COACH_SUPABASE__;
+
+
+      return window.__EAH_COACH_SUPABASE__;
+
+    };
+
+}
 (() => {
 
   const params =
