@@ -998,7 +998,858 @@ html:not(.eah-page-club) #eah-tarifs {
   }
 
 }
+/* ============================================================
+   POPULATION EAH
+   PROFIL + PHOTO + NOTE
+============================================================ */
 
+#population .eah-population-directory {
+
+  overflow:
+    hidden;
+
+}
+
+
+#population .eah-population-person-card {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+
+  align-items:
+    center;
+
+  gap:
+    28px;
+
+  margin-top:
+    18px;
+
+  padding:
+    22px;
+
+  border:
+    1px solid
+    rgba(143,205,255,.20);
+
+  border-radius:
+    26px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(7,38,66,.88),
+      rgba(4,18,31,.92)
+    );
+
+  box-shadow:
+    0 18px 50px
+    rgba(0,0,0,.18);
+
+}
+
+
+/* ============================================================
+   PARTIE GAUCHE
+============================================================ */
+
+#population .eah-population-person-main {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    22px;
+
+  min-width:
+    0;
+
+}
+
+
+/* ============================================================
+   PHOTO
+============================================================ */
+
+#population .eah-population-person-photo {
+
+  width:
+    118px;
+
+  min-width:
+    118px;
+
+  height:
+    118px;
+
+  overflow:
+    hidden;
+
+  border:
+    2px solid
+    rgba(48,207,255,.32);
+
+  border-radius:
+    24px;
+
+  background:
+    rgba(3,19,31,.88);
+
+  box-shadow:
+    0 12px 30px
+    rgba(0,0,0,.22);
+
+}
+
+
+#population .eah-population-person-photo img {
+
+  display:
+    block !important;
+
+  width:
+    100% !important;
+
+  height:
+    100% !important;
+
+  max-width:
+    100% !important;
+
+  max-height:
+    100% !important;
+
+  object-fit:
+    cover !important;
+
+  object-position:
+    center center !important;
+
+  border-radius:
+    22px !important;
+
+}
+
+
+/* ============================================================
+   PHOTO ABSENTE / PROFIL PRIVE
+============================================================ */
+
+#population .eah-population-person-placeholder {
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  background:
+
+    radial-gradient(
+      circle at 35% 25%,
+      rgba(48,207,255,.18),
+      transparent 45%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(11,107,255,.20),
+      rgba(3,19,31,.92)
+    );
+
+  color:
+    #ffffff;
+
+  font-size:
+    1.4rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .06em;
+
+}
+
+
+/* ============================================================
+   INFORMATIONS
+============================================================ */
+
+#population .eah-population-person-info {
+
+  min-width:
+    0;
+
+}
+
+
+#population .eah-population-person-info h3 {
+
+  margin:
+    8px 0 8px;
+
+  color:
+    #ffffff;
+
+  font-size:
+    clamp(
+      1.25rem,
+      2vw,
+      1.7rem
+    );
+
+  line-height:
+    1.1;
+
+}
+
+
+#population .eah-population-profile-state {
+
+  margin-bottom:
+    5px;
+
+}
+
+
+#population .eah-population-public-badge,
+#population .eah-population-private-badge {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    26px;
+
+  padding:
+    0 10px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    .67rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .09em;
+
+  text-transform:
+    uppercase;
+
+}
+
+
+#population .eah-population-public-badge {
+
+  border:
+    1px solid
+    rgba(46,211,153,.35);
+
+  background:
+    rgba(46,211,153,.12);
+
+  color:
+    #55e7b2;
+
+}
+
+
+#population .eah-population-private-badge {
+
+  border:
+    1px solid
+    rgba(143,205,255,.24);
+
+  background:
+    rgba(143,205,255,.08);
+
+  color:
+    #bcd6e8;
+
+}
+
+
+/* ============================================================
+   META
+============================================================ */
+
+#population .eah-population-meta {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    7px;
+
+  margin-top:
+    7px;
+
+}
+
+
+#population .eah-population-meta span {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    28px;
+
+  padding:
+    0 10px;
+
+  border:
+    1px solid
+    rgba(143,205,255,.14);
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(255,255,255,.035);
+
+  color:
+    #a9c1d2;
+
+  font-size:
+    .76rem;
+
+  font-weight:
+    700;
+
+}
+
+
+/* ============================================================
+   DERNIER PLONGEON
+============================================================ */
+
+#population .eah-population-last-dive {
+
+  margin-top:
+    13px;
+
+}
+
+
+#population .eah-population-last-dive small {
+
+  display:
+    block;
+
+  margin-bottom:
+    4px;
+
+  color:
+    #30cfff;
+
+  font-size:
+    .66rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .10em;
+
+}
+
+
+#population .eah-population-last-dive strong {
+
+  color:
+    #dceafa;
+
+  font-size:
+    .91rem;
+
+}
+
+
+/* ============================================================
+   NOTE A DROITE
+============================================================ */
+
+#population .eah-population-person-score {
+
+  width:
+    175px;
+
+  min-width:
+    175px;
+
+  display:
+    grid;
+
+  gap:
+    10px;
+
+  align-content:
+    center;
+
+}
+
+
+/* ============================================================
+   NOTE EAH PRINCIPALE
+============================================================ */
+
+#population .eah-population-score-main {
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  min-height:
+    118px;
+
+  padding:
+    15px;
+
+  border:
+    1px solid
+    rgba(48,207,255,.38);
+
+  border-radius:
+    22px;
+
+  background:
+
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(48,207,255,.18),
+      transparent 55%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(11,107,255,.24),
+      rgba(4,18,31,.96)
+    );
+
+  box-shadow:
+    0 14px 35px
+    rgba(0,0,0,.22);
+
+  text-align:
+    center;
+
+}
+
+
+#population .eah-population-score-main small {
+
+  color:
+    #30cfff;
+
+  font-size:
+    .72rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .14em;
+
+}
+
+
+#population .eah-population-score-main strong {
+
+  display:
+    block;
+
+  margin-top:
+    4px;
+
+  color:
+    #ffffff;
+
+  font-size:
+    2.35rem;
+
+  font-weight:
+    900;
+
+  line-height:
+    1;
+
+}
+
+
+#population .eah-population-score-main strong span {
+
+  color:
+    #8fa8bc;
+
+  font-size:
+    .85rem;
+
+  font-weight:
+    700;
+
+}
+
+
+/* ============================================================
+   NOTE WA
+============================================================ */
+
+#population .eah-population-wa-score {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  padding:
+    10px 13px;
+
+  border:
+    1px solid
+    rgba(143,205,255,.14);
+
+  border-radius:
+    14px;
+
+  background:
+    rgba(255,255,255,.035);
+
+  color:
+    #8fa8bc;
+
+  font-size:
+    .75rem;
+
+  font-weight:
+    800;
+
+}
+
+
+#population .eah-population-wa-score strong {
+
+  color:
+    #ffffff;
+
+  font-size:
+    .95rem;
+
+}
+
+
+/* ============================================================
+   PAS DE NOTE
+============================================================ */
+
+#population .eah-population-score-empty {
+
+  padding:
+    16px;
+
+  border:
+    1px solid
+    rgba(143,205,255,.14);
+
+  border-radius:
+    18px;
+
+  color:
+    #8fa8bc;
+
+  font-size:
+    .8rem;
+
+  text-align:
+    center;
+
+}
+
+
+/* ============================================================
+   PROFIL PRIVE
+============================================================ */
+
+#population .eah-population-private-info {
+
+  padding:
+    10px 12px;
+
+  border:
+    1px solid
+    rgba(143,205,255,.13);
+
+  border-radius:
+    13px;
+
+  background:
+    rgba(255,255,255,.025);
+
+  color:
+    #8fa8bc;
+
+  font-size:
+    .74rem;
+
+  font-weight:
+    700;
+
+  text-align:
+    center;
+
+}
+
+
+/* ============================================================
+   BOUTON PROFIL
+============================================================ */
+
+#population .eah-population-person-score .button {
+
+  width:
+    100%;
+
+  box-sizing:
+    border-box;
+
+  justify-content:
+    center;
+
+  text-align:
+    center;
+
+}
+
+
+/* ============================================================
+   TABLETTE
+============================================================ */
+
+@media (max-width:850px) {
+
+  #population .eah-population-person-card {
+
+    grid-template-columns:
+      1fr
+      150px;
+
+  }
+
+
+  #population .eah-population-person-photo {
+
+    width:
+      100px;
+
+    min-width:
+      100px;
+
+    height:
+      100px;
+
+  }
+
+
+  #population .eah-population-person-score {
+
+    width:
+      150px;
+
+    min-width:
+      150px;
+
+  }
+
+}
+
+
+/* ============================================================
+   TELEPHONE
+============================================================ */
+
+@media (max-width:650px) {
+
+  #population .eah-population-person-card {
+
+    display:
+      block;
+
+    padding:
+      17px;
+
+    border-radius:
+      22px;
+
+  }
+
+
+  #population .eah-population-person-main {
+
+    align-items:
+      flex-start;
+
+    gap:
+      14px;
+
+  }
+
+
+  #population .eah-population-person-photo {
+
+    width:
+      82px;
+
+    min-width:
+      82px;
+
+    height:
+      82px;
+
+    border-radius:
+      18px;
+
+  }
+
+
+  #population .eah-population-person-photo img {
+
+    border-radius:
+      16px !important;
+
+  }
+
+
+  #population .eah-population-person-info h3 {
+
+    font-size:
+      1.2rem;
+
+  }
+
+
+  #population .eah-population-meta {
+
+    gap:
+      5px;
+
+  }
+
+
+  #population .eah-population-meta span {
+
+    min-height:
+      24px;
+
+    padding:
+      0 8px;
+
+    font-size:
+      .68rem;
+
+  }
+
+
+  #population .eah-population-person-score {
+
+    width:
+      100%;
+
+    min-width:
+      0;
+
+    margin-top:
+      18px;
+
+    grid-template-columns:
+      minmax(0,1fr)
+      auto;
+
+    align-items:
+      stretch;
+
+  }
+
+
+  #population .eah-population-score-main {
+
+    min-height:
+      92px;
+
+  }
+
+
+  #population .eah-population-score-main strong {
+
+    font-size:
+      2rem;
+
+  }
+
+
+  #population .eah-population-wa-score {
+
+    min-width:
+      90px;
+
+    display:
+      grid;
+
+    place-items:
+      center;
+
+    text-align:
+      center;
+
+  }
+
+
+  #population .eah-population-person-score .button,
+  #population .eah-population-private-info {
+
+    grid-column:
+      1 / -1;
+
+  }
+
+}
     `;
 
 
