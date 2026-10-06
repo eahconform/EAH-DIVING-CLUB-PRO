@@ -1,100 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr" class="eah-images-loading">
 
-
 <head>
-
-<style id="eah-club-visibility-guard">
-
-  html:not(.eah-page-club) #eah-club-pro,
-  html:not(.eah-page-club) #eah-club-divers,
-  html:not(.eah-page-club) #eah-club-groups,
-  html:not(.eah-page-club) #eah-coach-evaluation,
-  html:not(.eah-page-club) #eah-evaluations,
-  html:not(.eah-page-club) #eah-actualites,
-  html:not(.eah-page-club) #eah-spots,
-  html:not(.eah-page-club) #eah-blazons,
-  html:not(.eah-page-club) #eah-tarifs {
-    display: none !important;
-  }
-
-</style>
-
-
-<link rel="preload" as="image" href="site-water-premium-bg.jpg">
-<link rel="preload" as="image" href="hero-divers-group.png">
-<link rel="preload" as="image" href="hero-blazons.png">
-<link rel="preload" as="image" href="actualites-hero.jpg">
-<link rel="preload" as="image" href="spots-hero.jpg">
-<link rel="preload" as="image" href="hero-high-diving.png">
-<link rel="preload" as="image" href="olympique-desktop.jpg">
-<link rel="preload" as="image" href="portrait-water-diver.jpg">
-
-<link rel="stylesheet" href="styles.css?v=20261003-1">
-
-
-<!-- PHOTOS DISCIPLINES PRIORITAIRES -->
-
-<link
-  rel="preload"
-  as="image"
-  href="freestyle-desktop.jpg"
->
-
-<link
-  rel="preload"
-  as="image"
-  href="freestyle-mobile.jpg"
->
-
-<link
-  rel="preload"
-  as="image"
-  href="high-diving-desktop.png"
->
-
-<link
-  rel="preload"
-  as="image"
-  href="high-diving-mobile.jpg"
->
-
-
-<!-- =========================================================
-     TARIFS DESKTOP / MOBILE
-========================================================== -->
-
-<link
-  rel="preload"
-  as="image"
-  href="pricing-hero.jpg"
-  media="(min-width: 601px)"
->
-
-<link
-  rel="preload"
-  as="image"
-  href="tarifs-mobile.png"
-  media="(max-width: 600px)"
->
-
-
-<link
-  rel="preload"
-  as="image"
-  href="grading-request-hero.jpg"
->
-
-<link
-  rel="preload"
-  as="image"
-  href="club-dashboard-hero.jpg"
->
-
-
-<!-- =========================================================
-     EAH DIVING PRO CLUB
-========================================================== -->
 
 <meta charset="UTF-8">
 
@@ -118,9 +25,24 @@
   content="strict-origin-when-cross-origin"
 >
 
-<title>
-  EAH Diving Pro Club
-</title>
+<title>EAH Diving Pro Club</title>
+
+
+<style id="eah-club-visibility-guard">
+
+html:not(.eah-page-club) #eah-club-pro,
+html:not(.eah-page-club) #eah-club-divers,
+html:not(.eah-page-club) #eah-club-groups,
+html:not(.eah-page-club) #eah-coach-evaluation,
+html:not(.eah-page-club) #eah-evaluations,
+html:not(.eah-page-club) #eah-actualites,
+html:not(.eah-page-club) #eah-spots,
+html:not(.eah-page-club) #eah-blazons,
+html:not(.eah-page-club) #eah-tarifs {
+  display: none !important;
+}
+
+</style>
 
 
 <link
@@ -148,11 +70,78 @@
 
 
 <link
-  rel="preload"
-  as="image"
-  href="hero-divers-group.png"
+  rel="stylesheet"
+  href="styles.css?v=20261006-70"
 >
 
+
+<!-- =========================================================
+     PRELOADS
+========================================================== -->
+
+<link rel="preload" as="image" href="site-water-premium-bg.jpg">
+<link rel="preload" as="image" href="hero-divers-group.png">
+<link rel="preload" as="image" href="hero-blazons.png">
+<link rel="preload" as="image" href="actualites-hero.jpg">
+<link rel="preload" as="image" href="spots-hero.jpg">
+<link rel="preload" as="image" href="hero-high-diving.png">
+<link rel="preload" as="image" href="olympique-desktop.jpg">
+<link rel="preload" as="image" href="portrait-water-diver.jpg">
+
+<link
+  rel="preload"
+  as="image"
+  href="freestyle-desktop.jpg"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="freestyle-mobile.jpg"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="high-diving-desktop.png"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="high-diving-mobile.jpg"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="pricing-hero.jpg"
+  media="(min-width: 601px)"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="tarifs-mobile.png"
+  media="(max-width: 600px)"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="grading-request-hero.jpg"
+>
+
+<link
+  rel="preload"
+  as="image"
+  href="club-dashboard-hero.jpg"
+>
+
+
+<!-- =========================================================
+     CONFIGURATION
+========================================================== -->
 
 <script>
 
@@ -162,7 +151,7 @@ window.EAH_CONFIG = {
     "EAH DIVING PRO CLUB",
 
   VERSION:
-    "1.0.0",
+    "2026.10.06.70",
 
   SUPABASE_URL:
     "https://limyeqpdzjjwsdximehp.supabase.co",
@@ -181,28 +170,55 @@ window.EAH_CONFIG = {
 </script>
 
 
+<!-- =========================================================
+     SCRIPTS
+
+     IMPORTANT :
+     eah-v3.js supprimé
+     diver-profile.js supprimé
+
+     eah-final-fix.js TOUJOURS EN DERNIER.
+========================================================== -->
+
 <script
   defer
   src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
 
+<script
+  defer
+  src="script.js?v=20261006-70"
+></script>
 
-<script src="script.js?v=20261006-62" defer></script>
+<script
+  defer
+  src="coach-card.js?v=20261001-5"
+></script>
 
-<script defer src="eah-v3.js?v=20261005-3"></script>
+<script
+  defer
+  src="eah-workspace.js?v=20261001-5"
+></script>
 
-<script defer src="coach-card.js?v=20261001-5"></script>
+<script
+  defer
+  src="coach-photo.js?v=20261001-2"
+></script>
 
-<script defer src="eah-workspace.js?v=20261001-5"></script>
+<script
+  defer
+  src="site-final.js?v=20261005-1"
+></script>
 
-<script defer src="diver-profile.js?v=20261005-3"></script>
+<script
+  defer
+  src="photos-final.js?v=20261003-3"
+></script>
 
-<script defer src="coach-photo.js?v=20261001-2"></script>
-
-<!-- VERSION MODIFIEE -->
-<script defer src="site-final.js?v=20261005-1"></script>
-
-<script defer src="photos-final.js?v=20261003-3"></script>
+<script
+  defer
+  src="eah-final-fix.js?v=20261006-70"
+></script>
 
 </head>
 
@@ -220,13 +236,11 @@ window.EAH_CONFIG = {
   class="water-effects"
   aria-hidden="true"
 >
-
   <span class="bubble bubble-1"></span>
   <span class="bubble bubble-2"></span>
   <span class="bubble bubble-3"></span>
   <span class="bubble bubble-4"></span>
   <span class="bubble bubble-5"></span>
-
 </div>
 
 
@@ -1061,7 +1075,7 @@ Explorer les performances
 </h1>
 
 <p>
-Recherche par code de plongeon.
+Recherche par code de plongeon, nom ou prénom.
 </p>
 
 </div>
@@ -1075,11 +1089,13 @@ Recherche par code de plongeon.
 
 <div class="search-panel">
 
-<label for="populationCode">
-Code du plongeon
-</label>
+<div class="form-grid">
 
-<div class="search-line">
+<label>
+
+<span>
+Code du plongeon
+</span>
 
 <input
   id="populationCode"
@@ -1087,6 +1103,27 @@ Code du plongeon
   placeholder="Exemple : 5152B"
   autocomplete="off"
 >
+
+</label>
+
+
+<label>
+
+<span>
+Nom ou prénom
+</span>
+
+<input
+  id="populationName"
+  type="search"
+  placeholder="Exemple : Emeric, Goin..."
+  autocomplete="off"
+>
+
+</label>
+
+</div>
+
 
 <button
   type="button"
@@ -1098,8 +1135,6 @@ Rechercher
 
 </div>
 
-</div>
-
 
 <div
   id="populationResults"
@@ -1107,7 +1142,7 @@ Rechercher
 >
 
 <div class="loading-panel">
-Entre un code pour afficher les statistiques EAH.
+Recherche un plongeur ou un code de plongeon.
 </div>
 
 </div>
@@ -1239,13 +1274,6 @@ Chargement des actualités…
 >
 
 <section class="page-hero compact">
-
-
-<!-- =======================================================
-     IMAGE TARIFS RESPONSIVE
-     DESKTOP / TABLETTE : pricing-hero.jpg
-     TELEPHONE : tarifs-mobile.png
-======================================================== -->
 
 <picture class="tarifs-hero-picture">
 
@@ -1947,7 +1975,7 @@ Activez votre profil EAH
 
 <label>
 
-<span>Sexe / catégorie</span>
+<span>Sexe</span>
 
 <select id="setupSex">
 
@@ -1955,16 +1983,12 @@ Activez votre profil EAH
 Non renseigné
 </option>
 
-<option value="F">
-Femme
+<option value="FEMME">
+FEMME
 </option>
 
-<option value="M">
-Homme
-</option>
-
-<option value="OTHER">
-Autre / non renseigné
+<option value="HOMME">
+HOMME
 </option>
 
 </select>
@@ -1996,6 +2020,29 @@ Autre / non renseigné
   maxlength="8"
   required
 >
+
+</label>
+
+
+<label>
+
+<span>Visibilité du profil</span>
+
+<select id="setupProfileVisibility">
+
+<option value="PRIVÉ" selected>
+PRIVÉ
+</option>
+
+<option value="PUBLIC">
+PUBLIC
+</option>
+
+</select>
+
+<small class="muted">
+PUBLIC permet d'apparaître dans Population EAH.
+</small>
 
 </label>
 
@@ -2318,6 +2365,25 @@ Autre / non répertorié
   max="10"
   step="0.5"
 >
+
+</label>
+
+
+<label>
+
+<span>Note principale du Grade Report</span>
+
+<select id="scoreType">
+
+<option value="EAH">
+EAH Diving
+</option>
+
+<option value="WA">
+World Aquatics
+</option>
+
+</select>
 
 </label>
 
@@ -2919,7 +2985,7 @@ Le coach reste le coach.
 
 
 <!-- =========================================================
-     PROFIL NFC
+     MODULES CLUB PRO EXISTANTS
 ========================================================== -->
 
 <section
@@ -3141,10 +3207,6 @@ Activer ma carte EAH
 
 </section>
 
-
-<!-- =========================================================
-     ESPACE CLUB PRO
-========================================================== -->
 
 <section
   id="eah-club-pro"
@@ -3513,7 +3575,7 @@ Hauteur
 
 <label>
 
-Hauteur
+Type de hauteur
 
 <select name="heightType">
 
@@ -4240,7 +4302,6 @@ Offres
   padding-bottom: 75px;
 }
 
-
 .eah-pro-heading {
   display: flex;
   justify-content: space-between;
@@ -4249,17 +4310,14 @@ Offres
   margin-bottom: 30px;
 }
 
-
 .eah-pro-heading h2 {
   margin: 5px 0 5px;
 }
-
 
 .eah-pro-heading p {
   margin: 0;
   opacity: .72;
 }
-
 
 .eah-pro-eyebrow {
   display: block;
@@ -4269,7 +4327,6 @@ Offres
   letter-spacing: .14em;
   text-transform: uppercase;
 }
-
 
 .eah-pro-grid {
   display: grid;
@@ -4281,7 +4338,6 @@ Offres
   gap: 18px;
 }
 
-
 .eah-pro-grid-small {
   grid-template-columns:
     repeat(
@@ -4290,7 +4346,6 @@ Offres
     );
 }
 
-
 .eah-pro-blazon-grid {
   grid-template-columns:
     repeat(
@@ -4298,7 +4353,6 @@ Offres
       minmax(0,1fr)
     );
 }
-
 
 .eah-pro-stats {
   display: grid;
@@ -4309,7 +4363,6 @@ Offres
     );
   gap: 14px;
 }
-
 
 .eah-pro-stat {
   padding: 20px;
@@ -4323,14 +4376,12 @@ Offres
     blur(18px);
 }
 
-
 .eah-pro-stat span {
   display: block;
   margin-bottom: 9px;
   opacity: .68;
   font-size: .78rem;
 }
-
 
 .eah-pro-stat strong {
   display: block;
@@ -4339,12 +4390,10 @@ Offres
   line-height: 1;
 }
 
-
 .eah-pro-form {
   display: grid;
   gap: 22px;
 }
-
 
 .eah-pro-form-block {
   padding: 26px;
@@ -4358,11 +4407,9 @@ Offres
     blur(18px);
 }
 
-
 .eah-pro-form-block h3 {
   margin: 0 0 20px;
 }
-
 
 .eah-pro-form-grid {
   display: grid;
@@ -4374,7 +4421,6 @@ Offres
   gap: 16px;
 }
 
-
 .eah-pro-form label,
 .eah-pro-criteria label {
   display: grid;
@@ -4382,7 +4428,6 @@ Offres
   font-size: .86rem;
   font-weight: 700;
 }
-
 
 .eah-pro-form input,
 .eah-pro-form select,
@@ -4402,14 +4447,12 @@ Offres
   font: inherit;
 }
 
-
 .eah-pro-form input:focus,
 .eah-pro-form select:focus,
 .eah-pro-form textarea:focus {
   border-color:
     var(--cyan,#30cfff);
 }
-
 
 .eah-pro-phase-header {
   display: flex;
@@ -4419,11 +4462,9 @@ Offres
   margin-bottom: 20px;
 }
 
-
 .eah-pro-phase-header h3 {
   margin: 4px 0 0;
 }
-
 
 .eah-pro-phase-header strong {
   min-width: 90px;
@@ -4432,12 +4473,10 @@ Offres
   text-align: right;
 }
 
-
 .eah-pro-criteria {
   display: grid;
   gap: 12px;
 }
-
 
 .eah-pro-criteria label {
   grid-template-columns:
@@ -4449,7 +4488,6 @@ Offres
     1px solid
     rgba(143,205,255,.09);
 }
-
 
 .eah-pro-final-score {
   display: grid;
@@ -4468,13 +4506,11 @@ Offres
   text-align: center;
 }
 
-
 .eah-pro-final-score span {
   font-size: .8rem;
   font-weight: 900;
   letter-spacing: .15em;
 }
-
 
 .eah-pro-final-score strong {
   display: block;
@@ -4489,11 +4525,9 @@ Offres
   line-height: 1;
 }
 
-
 .eah-pro-final-score small {
   opacity: .68;
 }
-
 
 .eah-pro-submit-zone {
   display: flex;
@@ -4502,117 +4536,34 @@ Offres
   flex-wrap: wrap;
 }
 
-
 .eah-pro-submit {
   min-width: 260px;
 }
 
-
-@media (max-width:980px) {
-
-.eah-pro-grid,
-.eah-pro-blazon-grid {
-  grid-template-columns:
-    repeat(
-      2,
-      minmax(0,1fr)
-    );
-}
-
-
-.eah-pro-grid-small,
-.eah-pro-stats {
-  grid-template-columns:
-    repeat(
-      2,
-      minmax(0,1fr)
-    );
-}
-
-}
-
-
-@media (max-width:650px) {
-
-.eah-pro-section {
-  padding-top: 50px;
-  padding-bottom: 50px;
-}
-
-
-.eah-pro-heading {
-  display: grid;
-  align-items: start;
-}
-
-
-.eah-pro-grid,
-.eah-pro-grid-small,
-.eah-pro-blazon-grid,
-.eah-pro-stats,
-.eah-pro-form-grid {
-  grid-template-columns: 1fr;
-}
-
-
-.eah-pro-form-block {
-  padding: 18px;
-}
-
-
-.eah-pro-criteria label {
-  grid-template-columns: 1fr;
-}
-
-
-.eah-pro-phase-header strong {
-  min-width: 0;
-}
-
-}
-
-
-/* ============================================================
-   HERO PHOTOS
-============================================================ */
-
 .page-hero-image {
-
-filter:
-  brightness(1.18)
-  saturate(1.05)
-  contrast(1.02)
-  !important;
-
+  filter:
+    brightness(1.18)
+    saturate(1.05)
+    contrast(1.02)
+    !important;
 }
-
 
 .page-hero::after,
 .page-hero-overlay {
-
-background:
-  linear-gradient(
-    90deg,
-    rgba(1,15,28,.30) 0%,
-    rgba(1,15,28,.16) 45%,
-    rgba(1,15,28,.06) 100%
-  )
-  !important;
-
+  background:
+    linear-gradient(
+      90deg,
+      rgba(1,15,28,.30) 0%,
+      rgba(1,15,28,.16) 45%,
+      rgba(1,15,28,.06) 100%
+    )
+    !important;
 }
-
 
 .page-hero picture,
 .page-hero picture img {
-
-opacity: 1 !important;
-
+  opacity: 1 !important;
 }
-
-
-/* ============================================================
-   CLUB UNIQUEMENT
-============================================================ */
 
 html:not(.eah-page-club) #eah-club-pro,
 html:not(.eah-page-club) #eah-club-divers,
@@ -4623,263 +4574,62 @@ html:not(.eah-page-club) #eah-actualites,
 html:not(.eah-page-club) #eah-spots,
 html:not(.eah-page-club) #eah-blazons,
 html:not(.eah-page-club) #eah-tarifs {
+  display: none !important;
+}
 
-display: none !important;
+@media (max-width:980px) {
+
+  .eah-pro-grid,
+  .eah-pro-blazon-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+  }
+
+  .eah-pro-grid-small,
+  .eah-pro-stats {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+  }
 
 }
 
+@media (max-width:650px) {
 
-/* ============================================================
-   SPOTS
-============================================================ */
+  .eah-pro-section {
+    padding-top: 50px;
+    padding-bottom: 50px;
+  }
 
-#spots .spot-card {
-cursor: pointer;
-}
+  .eah-pro-heading {
+    display: grid;
+    align-items: start;
+  }
 
+  .eah-pro-grid,
+  .eah-pro-grid-small,
+  .eah-pro-blazon-grid,
+  .eah-pro-stats,
+  .eah-pro-form-grid {
+    grid-template-columns: 1fr;
+  }
 
-#spots .spot-details {
-margin-top: 18px;
-padding-top: 18px;
+  .eah-pro-form-block {
+    padding: 18px;
+  }
 
-border-top:
-  1px solid
-  rgba(255,255,255,.12);
-}
+  .eah-pro-criteria label {
+    grid-template-columns: 1fr;
+  }
 
-
-#spots .spot-more {
-display: inline-block;
-margin-top: 12px;
-color: var(--cyan);
-font-weight: 700;
-}
-
-
-#spots .spot-card[aria-expanded="true"]
-.spot-more {
-display: none;
-}
-
-
-#spots .eah-public-card,
-#spots article {
-cursor: pointer;
-}
-
-
-#spots .spot-details[hidden] {
-display: none !important;
-}
-
-
-#spots .spot-detail-block {
-margin-bottom: 16px;
-}
-
-
-#spots .spot-detail-block strong {
-display: block;
-margin-bottom: 6px;
-color: #ffffff;
-font-weight: 800;
-}
-
-
-#spots .spot-detail-block p {
-margin: 0;
-color: var(--text);
-line-height: 1.6;
-}
-
-
-#spots .spot-open-label {
-margin-top: 15px;
-color: var(--cyan);
-font-size: .92rem;
-font-weight: 800;
-}
-
-
-@keyframes eahSpotOpen {
-
-from {
-opacity: 0;
-transform: translateY(-6px);
-}
-
-to {
-opacity: 1;
-transform: translateY(0);
-}
-
-}
-
-
-/* ============================================================
-   ACTUALITE DETAIL
-============================================================ */
-
-#actualite-detail {
-min-height: 100vh;
-padding:
-  120px
-  24px
-  70px;
-background:
-  rgba(2,16,29,.96);
-}
-
-
-.actualite-detail-container {
-width: min(100%,1050px);
-margin: 0 auto;
-}
-
-
-.actualite-back {
-border:
-  1px solid
-  rgba(255,255,255,.16);
-background:
-  rgba(6,30,51,.82);
-color: #fff;
-padding: 12px 18px;
-border-radius: 12px;
-font-size: .95rem;
-font-weight: 700;
-cursor: pointer;
-margin-bottom: 26px;
-}
-
-
-.actualite-back:hover {
-background:
-  rgba(11,107,255,.22);
-}
-
-
-.actualite-detail-image {
-display: block;
-width: 100%;
-max-height: 560px;
-object-fit: cover;
-border-radius: 26px;
-margin-bottom: 32px;
-box-shadow:
-  0 25px 70px
-  rgba(0,0,0,.35);
-}
-
-
-.actualite-detail-head {
-margin-bottom: 28px;
-}
-
-
-.actualite-detail-category {
-display: inline-block;
-margin-bottom: 10px;
-color: var(--cyan);
-font-weight: 800;
-text-transform: uppercase;
-letter-spacing: .12em;
-}
-
-
-.actualite-detail-head h1 {
-margin: 0 0 12px;
-color: #fff;
-font-size:
-  clamp(
-    2.3rem,
-    6vw,
-    5rem
-  );
-line-height: 1.02;
-}
-
-
-.actualite-detail-date {
-color: var(--muted);
-margin-bottom: 20px;
-}
-
-
-.actualite-detail-summary {
-max-width: 850px;
-font-size: 1.2rem;
-line-height: 1.6;
-color: #dceaf4;
-}
-
-
-.actualite-detail-text {
-margin-top: 30px;
-padding: 28px;
-border:
-  1px solid
-  rgba(255,255,255,.12);
-border-radius: 20px;
-background:
-  rgba(5,23,42,.74);
-color: var(--text);
-font-size: 1.05rem;
-line-height: 1.8;
-}
-
-
-.actualite-video {
-position: relative;
-width: 100%;
-aspect-ratio: 16 / 9;
-overflow: hidden;
-margin: 30px 0;
-border-radius: 24px;
-background: #000;
-}
-
-
-.actualite-video iframe,
-.actualite-video video {
-width: 100%;
-height: 100%;
-border: 0;
-object-fit: contain;
-}
-
-
-.actualite-external-link {
-display: inline-flex;
-margin-top: 28px;
-padding: 13px 20px;
-border-radius: 12px;
-background: var(--blue);
-color: white;
-text-decoration: none;
-font-weight: 800;
-}
-
-
-@media (max-width:700px) {
-
-#actualite-detail {
-padding:
-  95px
-  16px
-  50px;
-}
-
-
-.actualite-detail-image {
-border-radius: 18px;
-max-height: 400px;
-}
-
-
-.actualite-detail-text {
-padding: 20px;
-}
+  .eah-pro-phase-header strong {
+    min-width: 0;
+  }
 
 }
 
