@@ -1,1784 +1,826 @@
-'use strict';
+(() => {
 
-/* ============================================================
-   EAH DIVING PRO CLUB
-   SCRIPT.JS CLEAN V7
-   06/10/2026
-============================================================ */
+  'use strict';
 
 
-/* ============================================================
-   CONFIGURATION
-============================================================ */
+  /* ============================================================
+     EAH DIVING PRO CLUB
+     FRONTEND STABLE V8
+     06/10/2026
 
-const CONFIG =
-  window.EAH_CONFIG ||
-  {};
+     OBJECTIFS
+     ------------------------------------------------------------
+     - navigation indépendante de Supabase
+     - un seul routeur
+     - profils public / privé / NFC
+     - connexion plongeur
+     - connexion coach
+     - carte coach
+     - dashboard coach
+     - évaluations
+     - actualités
+     - spots
+     - tarifs
+     - blazons
+     - population
+  ============================================================ */
 
 
-const SUPABASE_URL =
-  String(
-    CONFIG.SUPABASE_URL ||
-    ''
-  ).trim();
+  const CONFIG =
+    window.EAH_CONFIG
+    ||
+    {};
 
 
-const SUPABASE_KEY =
-  String(
-    CONFIG.SUPABASE_PUBLISHABLE_KEY ||
-    ''
-  ).trim();
+  const URL_PARAMS =
+    new URLSearchParams(
+      window.location.search
+    );
 
 
-const APPS_SCRIPT_URL =
-  String(
-    CONFIG.APPS_SCRIPT_URL ||
-    ''
-  ).trim();
+  let CLUB_SLUG =
+    String(
+      URL_PARAMS.get(
+        'club'
+      )
+      ||
+      ''
+    )
+    .trim();
 
 
-if (
-  !SUPABASE_URL ||
-  !SUPABASE_KEY
-) {
+  let supabaseClient =
+    null;
 
-  console.error(
-    'EAH Diving : configuration Supabase manquante.'
-  );
 
-}
+  const state = {
 
+    club:
+      null,
 
-const supabaseClient =
-  (
-    window.supabase &&
-    SUPABASE_URL &&
-    SUPABASE_KEY
-  )
-  ?
-  window.supabase.createClient(
+    membership:
+      null,
 
-    SUPABASE_URL,
+    coach:
+      null,
 
-    SUPABASE_KEY,
+    divers:
+      [],
 
-    {
+    evaluations:
+      [],
 
-      auth: {
+    groups:
+      [],
 
-        persistSession:
-          true,
+    spots:
+      [],
 
-        autoRefreshToken:
-          true,
+    pricing:
+      [],
 
-        detectSessionInUrl:
-          true
+    news:
+      [],
 
-      }
+    blazons:
+      [],
 
-    }
+    profile:
+      null,
 
-  )
-  :
-  null;
+    profileHistory:
+      [],
 
+    profileBlazons:
+      [],
 
-/* ============================================================
-   URL
-============================================================ */
+    cardContext:
+      null,
 
-const urlParams =
-  new URLSearchParams(
-    window.location.search
-  );
-
-
-let CLUB_SLUG =
-  String(
-    urlParams.get(
-      'club'
-    ) ||
-    ''
-  )
-  .trim();
-
-
-let CARD_EAH_ID =
-  String(
-    urlParams.get(
-      'id'
-    ) ||
-    ''
-  )
-  .trim()
-  .toUpperCase();
-
-
-let CARD_TOKEN =
-  String(
-    urlParams.get(
-      'token'
-    ) ||
-    ''
-  )
-  .trim();
-
-
-let LEGACY_COACH_TOKEN =
-  String(
-    urlParams.get(
-      'coachToken'
-    ) ||
-    ''
-  )
-  .trim();
-
-
-
-/* ============================================================
-   ETAT
-============================================================ */
-
-const state = {
-
-  publicLoaded:
-    false,
-
-  club:
-    null,
-
-  user:
-    null,
-
-  membership:
-    null,
-
-  coach:
-    null,
-
-  divers:
-    [],
-
-  groups:
-    [],
-
-  spots:
-    [],
-
-  pricing:
-    [],
-
-  news:
-    [],
-
-  blazons:
-    [],
-
-  profile:
-    null,
-
-  profileHistory:
-    null,
-
-  evaluationBusy:
-    false,
-
-  diverPinHash:
-    ''
-
-};
-
-
-
-/* ============================================================
-   CRITERES EAH
-============================================================ */
-
-const CRITERIA = {
-
-  D: [
-
-    'Coordination / élan (si applicable)',
-
-    'Impulsion / détente / élévation',
-
-    'Trajectoire verticale',
-
-    'Temps de fixation',
-
-    'Amplitude des bras'
-
-  ],
-
-
-  T: [
-
-    'Vitesse des rotations',
-
-    'Saltos et/ou vrilles contrôlés',
-
-    'Ligne / tenue / position du corps',
-
-    'Ouverture (si applicable)',
-
-    'Continuité / rythme'
-
-  ],
-
-
-  E: [
-
-    'Angle vertical (si applicable)',
-
-    'Éclaboussures / tolérance discipline',
-
-    'Position des bras',
-
-    'Jambes tendues et serrées',
-
-    "Axe d'entrée"
-
-  ]
-
-};
-
-
-
-/* ============================================================
-   PLONGEONS
-============================================================ */
-
-const DIVE_NAMES = {
-
-  '001A':
-    'Chute avant droite',
-
-  '001B':
-    'Chute avant carpée',
-
-  '001C':
-    'Chute avant groupée',
-
-  '002A':
-    'Chute arrière droite',
-
-  '002AS':
-    'Plongeon arrière droit en sautant',
-
-  '100A':
-    'Chandelle avant droite',
-
-  '101C':
-    'Plongeon avant groupé',
-
-  '102C':
-    '1 salto avant groupé',
-
-  '103C':
-    '1½ salto avant groupé',
-
-  '104C':
-    '2 saltos avant groupés',
-
-  '105C':
-    '2½ saltos avant groupés',
-
-  '105B':
-    '2½ saltos avant carpés',
-
-  '107C':
-    '3½ saltos avant groupés',
-
-  '107B':
-    '3½ saltos avant carpés',
-
-  '109C':
-    '4½ saltos avant groupés',
-
-  '109B':
-    '4½ saltos avant carpés',
-
-  '1011C':
-    '5½ saltos avant groupés',
-
-  '201C':
-    'Plongeon arrière groupé',
-
-  '201B':
-    'Plongeon arrière carpé',
-
-  '202C':
-    '1 salto arrière groupé',
-
-  '203C':
-    '1½ salto arrière groupé',
-
-  '203B':
-    '1½ salto arrière carpé',
-
-  '204C':
-    '2 saltos arrière groupés',
-
-  '205C':
-    '2½ saltos arrière groupés',
-
-  '205B':
-    '2½ saltos arrière carpés',
-
-  '207C':
-    '3½ saltos arrière groupés',
-
-  '207B':
-    '3½ saltos arrière carpés',
-
-  '209C':
-    '4½ saltos arrière groupés',
-
-  '301C':
-    'Plongeon renversé groupé',
-
-  '301B':
-    'Plongeon renversé carpé',
-
-  '302C':
-    '1 salto renversé groupé',
-
-  '303C':
-    '1½ salto renversé groupé',
-
-  '303B':
-    '1½ salto renversé carpé',
-
-  '304C':
-    '2 saltos renversés groupés',
-
-  '305C':
-    '2½ saltos renversés groupés',
-
-  '305B':
-    '2½ saltos renversés carpés',
-
-  '307C':
-    '3½ saltos renversés groupés',
-
-  '307B':
-    '3½ saltos renversés carpés',
-
-  '309C':
-    '4½ saltos renversés groupés',
-
-  '401C':
-    'Plongeon retourné groupé',
-
-  '402C':
-    '1 salto retourné groupé',
-
-  '403C':
-    '1½ salto retourné groupé',
-
-  '403B':
-    '1½ salto retourné carpé',
-
-  '404C':
-    '2 saltos retournés groupés',
-
-  '405C':
-    '2½ saltos retournés groupés',
-
-  '405B':
-    '2½ saltos retournés carpés',
-
-  '407C':
-    '3½ saltos retournés groupés',
-
-  '407B':
-    '3½ saltos retournés carpés',
-
-  '409C':
-    '4½ saltos retournés groupés',
-
-  '5122A':
-    '1 salto avant + 1 vrille',
-
-  '5124D':
-    '1 salto avant + 2 vrilles',
-
-  '5132D':
-    '1½ salto avant + 1 vrille',
-
-  '5134D':
-    '1½ salto avant + 2 vrilles',
-
-  '5152B':
-    '2½ saltos avant + 1 vrille',
-
-  '5153B':
-    '2½ saltos avant + 1½ vrille',
-
-  '5154B':
-    '2½ saltos avant + 2 vrilles',
-
-  '5162B':
-    '3 saltos avant + 1 vrille',
-
-  '5163B':
-    '3 saltos avant + 1½ vrille',
-
-  '5211A':
-    'Plongeon arrière + ½ vrille',
-
-  '5221A':
-    '1 salto arrière + ½ vrille',
-
-  '5223D':
-    '1 salto arrière + 1½ vrille',
-
-  '5231D':
-    '1½ salto arrière + ½ vrille',
-
-  '5233D':
-    '1½ salto arrière + 1½ vrille',
-
-  '5235D':
-    '1½ salto arrière + 2½ vrilles',
-
-  '5253B':
-    '2½ saltos arrière + 1½ vrille',
-
-  '5255B':
-    '2½ saltos arrière + 2½ vrilles',
-
-  '5257B':
-    '2½ saltos arrière + 3½ vrilles',
-
-  '5263B':
-    '3 saltos arrière + 1½ vrille',
-
-  '5321A':
-    '1 salto renversé + ½ vrille',
-
-  '5323D':
-    '1 salto renversé + 1½ vrille',
-
-  '5331D':
-    '1½ salto renversé + ½ vrille',
-
-  '5333D':
-    '1½ salto renversé + 1½ vrille',
-
-  '5335D':
-    '1½ salto renversé + 2½ vrilles',
-
-  '5337D':
-    '1½ salto renversé + 3½ vrilles',
-
-  '5339D':
-    '1½ salto renversé + 4½ vrilles',
-
-  '5353B':
-    '2½ saltos renversés + 1½ vrille',
-
-  '616C':
-    'Équilibre avant + 3 saltos groupés',
-
-  '6243D':
-    'Équilibre arrière + 2 saltos + 1½ vrille',
-
-  '626C':
-    'Équilibre arrière + 3 saltos groupés',
-
-  '628C':
-    'Équilibre arrière + 4 saltos groupés'
-
-};
-
-
-
-/* ============================================================
-   IMAGES BLAZONS
-============================================================ */
-
-const BLAZON_IMAGES = {
-
-  BLANC:
-    'blazon-blanc.png',
-
-  ORANGE:
-    'blazon-orange.png',
-
-  VERT:
-    'blazon-vert.png',
-
-  BLEU:
-    'blazon-bleu.png',
-
-  ROUGE:
-    'blazon-rouge.png',
-
-  BRONZE:
-    'blazon-bronze.png',
-
-  ARGENT:
-    'blazon-argent.png',
-
-  OR:
-    'blazon-or.png',
-
-  NOIR:
-    'blazon-noir.png',
-
-  LEGEND:
-    'blazon-legend.png',
-
-  LEGENDE:
-    'blazon-legend.png',
-
-  TITAN:
-    'blazon-titan.png'
-
-};
-
-
-
-/* ============================================================
-   TARIFS FALLBACK
-============================================================ */
-
-const PRICING_FALLBACK = [
-
-  {
-
-    id:
-      'START',
-
-    name:
-      'Club Start',
-
-    price:
-      '590 €',
-
-    renewal:
-      '190 €',
-
-    description:
-      '25 profils + 25 cartes NFC/QR + espace club + Grade Reports.',
-
-    card_quota:
-      25,
-
-    coach_quota:
-      2,
-
-    sort_order:
-      1
-
-  },
-
-
-  {
-
-    id:
-      'CLUB50',
-
-    name:
-      'Club 50',
-
-    price:
-      '790 €',
-
-    renewal:
-      '290 €',
-
-    description:
-      '50 profils + 50 cartes NFC/QR + dashboard club.',
-
-    card_quota:
-      50,
-
-    coach_quota:
-      5,
-
-    sort_order:
-      2
-
-  },
-
-
-  {
-
-    id:
-      'CLUB100',
-
-    name:
-      'Club 100',
-
-    price:
-      '990 €',
-
-    renewal:
-      '390 €',
-
-    description:
-      '100 profils + 100 cartes NFC/QR + dashboard club.',
-
-    card_quota:
-      100,
-
-    coach_quota:
-      10,
-
-    sort_order:
-      3
-
-  },
-
-
-  {
-
-    id:
-      'VERIFIED',
-
-    name:
-      'EAH Verified',
-
-    price:
-      '9 €/vidéo',
-
-    renewal:
-      '—',
-
-    description:
-      "Vérification d'une vidéo directement par EAH Diving.",
-
-    sort_order:
-      4
-
-  },
-
-
-  {
-
-    id:
-      'INDIVIDUAL',
-
-    name:
-      'Particulier',
-
-    price:
-      '50 €',
-
-    renewal:
-      '—',
-
-    description:
-      'Profil EAH + carte NFC/QR + 3 gradings.',
-
-    sort_order:
-      5
-
-  }
-
-];
-
-
-
-/* ============================================================
-   BLAZONS FALLBACK
-============================================================ */
-
-function seriesRule(
-  height,
-  codes,
-  minWa,
-  minEah,
-  extra = {}
-) {
-
-  return {
-
-    height,
-
-    codes,
-
-    minWa,
-
-    minEah,
-
-    ...extra
+    evaluationBusy:
+      false
 
   };
 
-}
 
+  /* ============================================================
+     PAGES
+  ============================================================ */
 
-const BLAZON_FALLBACK = [
 
-  {
+  const PAGE_IDS =
+    new Set([
 
-    sort_order:
-      1,
+      'accueil',
 
-    key:
-      'BLANC',
+      'grading',
 
-    name:
-      'Blazon Blanc',
+      'blazons',
 
-    image_url:
-      'blazon-blanc.png',
+      'population',
 
-    rules: {
+      'spots',
 
-      allowFixedAlternatives:
-        true,
+      'actualites',
 
-      summary:
-        "5/10 World Aquatics ou 6/10 EAH. Si la plateforme 5 m n'est pas disponible, la série 5 m peut être réalisée à 3 m avec 6/10 WA ou 7/10 EAH.",
+      'tarifs',
 
-      series: [
+      'faire-grader',
 
-        seriesRule(
-          1,
-          ['101C','002A'],
-          5,
-          6
-        ),
+      'club',
 
-        seriesRule(
-          3,
-          ['001C','001B','001A'],
-          5,
-          6
-        ),
+      'profil',
 
-        seriesRule(
-          5,
-          ['100A'],
-          5,
-          6,
-          {
-            alternativeHeights:
-              [3],
-            alternativeMinWa:
-              6,
-            alternativeMinEah:
-              7
-          }
-        )
+      'evaluation',
 
-      ]
+      'olympique',
 
-    }
+      'freestyle',
 
-  },
+      'highdiving',
 
+      'ange'
 
-  {
+    ]);
 
-    sort_order:
-      2,
 
-    key:
-      'ORANGE',
+  /* ============================================================
+     CRITERES EAH
+  ============================================================ */
 
-    name:
-      'Blazon Orange',
 
-    image_url:
-      'blazon-orange.png',
+  const CRITERIA = {
 
-    rules: {
+    D: [
 
-      allowFixedAlternatives:
-        true,
-
-      summary:
-        "5/10 World Aquatics ou 6/10 EAH. Les plongeons 5 m peuvent être réalisés à 3 m si la plateforme n'est pas disponible, avec 6/10 WA ou 7/10 EAH.",
-
-      series: [
-
-        seriesRule(
-          3,
-          ['101C','002A'],
-          5,
-          6
-        ),
-
-        seriesRule(
-          1,
-          ['002AS','401C','102C'],
-          5,
-          6
-        ),
-
-        seriesRule(
-          5,
-          ['001C','001B','001A'],
-          5,
-          6,
-          {
-            alternativeHeights:
-              [3],
-            alternativeMinWa:
-              6,
-            alternativeMinEah:
-              7
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      3,
-
-    key:
-      'VERT',
-
-    name:
-      'Blazon Vert',
-
-    image_url:
-      'blazon-vert.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 World Aquatics ou 7/10 EAH.',
-
-      series: [
-
-        seriesRule(
-          1,
-          [
-            '401C',
-            '201C',
-            '301C',
-            '101C',
-            '5211A'
-          ],
-          6,
-          7
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      4,
-
-    key:
-      'BLEU',
-
-    name:
-      'Blazon Bleu',
-
-    image_url:
-      'blazon-bleu.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 WA ou 7/10 EAH. Une série 1 m ou 3 m peut être déplacée à 5 m, 7,5 m ou 10 m.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          1,
-          [
-            '401C',
-            '201C',
-            '301C',
-            '101C',
-            '5211A'
-          ],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10]
-          }
-        ),
-
-        seriesRule(
-          3,
-          [
-            '401C',
-            '201C',
-            '301C',
-            '101C',
-            '5211A'
-          ],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10]
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      5,
-
-    key:
-      'ROUGE',
-
-    name:
-      'Blazon Rouge',
-
-    image_url:
-      'blazon-rouge.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 WA ou 7/10 EAH. Une des séries 1 m / 3 m peut être réalisée à 5 m, 7,5 m ou 10 m.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          1,
-          ['103C','201B','301B','403C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-
-              TWIST:
-                ['5122A','5221A','5321A']
-
-            }
-
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['103C','201B','301B','403C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-
-              TWIST:
-                ['5132D','5231D','5331D']
-
-            }
-
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      6,
-
-    key:
-      'BRONZE',
-
-    name:
-      'Blazon Bronze',
-
-    image_url:
-      'blazon-bronze.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 WA ou 7/10 EAH. Une des séries 1 m / 3 m peut être réalisée à 5 m, 7,5 m ou 10 m.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          1,
-          ['203C','303C','403C','104C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5132D','5231D','5331D']
-            }
-
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['203C','303C','403C','105C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5132D','5231D','5331D']
-            }
-
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      7,
-
-    key:
-      'ARGENT',
-
-    name:
-      'Blazon Argent',
-
-    image_url:
-      'blazon-argent.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 WA ou 7/10 EAH. Bord/plot + séries 1 m et 3 m.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          0,
-          ['102C','202C','302C','402C'],
-          6,
-          7,
-          {
-            substitutable:
-              false,
-            label:
-              'Bord / plot'
-          }
-        ),
-
-        seriesRule(
-          1,
-          ['105C','204C','304C','404C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5124D','5223D','5323D']
-            }
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['105B','405C','303B','203B','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5134D','5233D','5333D']
-            }
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      8,
-
-    key:
-      'OR',
-
-    name:
-      'Blazon Or',
-
-    image_url:
-      'blazon-or.png',
-
-    rules: {
-
-      summary:
-        '3 m : 6/10 WA ou 7/10 EAH. Série 1 m : 7/10 WA ou 8/10 EAH.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          3,
-          ['105B','405C','205C','305C','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5134D','5235D','5335D']
-            }
-          }
-        ),
-
-        seriesRule(
-          1,
-          ['105B','403B','203B','303B','TWIST'],
-          7,
-          8,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5132D','5233D','5333D']
-            }
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      9,
-
-    key:
-      'NOIR',
-
-    name:
-      'Blazon Noir',
-
-    image_url:
-      'blazon-noir.png',
-
-    rules: {
-
-      summary:
-        'Chaque plongeon : 6/10 WA ou 7/10 EAH.',
-
-      allowOnePlatformSubstitution:
-        true,
-
-      series: [
-
-        seriesRule(
-          3,
-          ['107C','405B','5152B','205B','305B'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10]
-          }
-        ),
-
-        seriesRule(
-          1,
-          ['305C','405C','203B','105B','TWIST'],
-          6,
-          7,
-          {
-            alternativeHeights:
-              [5,7.5,10],
-
-            choiceGroups: {
-              TWIST:
-                ['5134D','5335D']
-            }
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      10,
-
-    key:
-      'LEGEND',
-
-    name:
-      'Blazon Legend',
-
-    image_url:
-      'blazon-legend.png',
-
-    rules: {
-
-      mode:
-        'ANY_SERIES',
-
-      summary:
-        'Choisir et réussir une série Legend adaptée.',
-
-      series: [
-
-        seriesRule(
-          3,
-          ['109C','TWIST','207C','307C','407C'],
-          6,
-          7,
-          {
-            label:
-              'Homme 3 m',
-
-            choiceGroups: {
-              TWIST:
-                ['5154B','5337D']
-            }
-          }
-        ),
-
-        seriesRule(
-          10,
-          ['109C','TWIST','207C','307C','407C','ARM'],
-          6,
-          7,
-          {
-            label:
-              'Homme 10 m',
-
-            choiceGroups: {
-              TWIST:
-                ['5255B','5154B'],
-
-              ARM:
-                ['626C','616C']
-            }
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['205B','405B','107B','5153B','305B'],
-          6,
-          7,
-          {
-            label:
-              'Femme 3 m'
-          }
-        ),
-
-        seriesRule(
-          10,
-          ['207C','407C','107B','5253B','305B','ARM'],
-          6,
-          7,
-          {
-            label:
-              'Femme 10 m',
-
-            choiceGroups: {
-              ARM:
-                ['626C','616C','6243D']
-            }
-          }
-        )
-
-      ]
-
-    }
-
-  },
-
-
-  {
-
-    sort_order:
-      11,
-
-    key:
-      'TITAN',
-
-    name:
-      'Blazon Titan',
-
-    image_url:
-      'blazon-titan.png',
-
-    rules: {
-
-      mode:
-        'ANY_ONE',
-
-      summary:
-        'Au moins un plongeon Titan à 6/10 WA ou 7/10 EAH, ou une série 1 m complète.',
-
-      options: [
-
-        seriesRule(
-          10,
-          ['ONE'],
-          6,
-          7,
-          {
-            label:
-              'Homme 10 m',
-
-            choiceGroups: {
-              ONE: [
-                '207B',
-                '209C',
-                '407B',
-                '409C',
-                '307B',
-                '309C',
-                '5162B',
-                '5263B',
-                '5257B',
-                '628C',
-                '109B',
-                '1011C'
-              ]
-            }
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['ONE'],
-          6,
-          7,
-          {
-            label:
-              'Homme 3 m',
-
-            choiceGroups: {
-              ONE: [
-                '307B',
-                '309C',
-                '407B',
-                '409C',
-                '207B',
-                '5163B',
-                '5339D',
-                '109B',
-                '1011C'
-              ]
-            }
-          }
-        ),
-
-        seriesRule(
-          10,
-          ['ONE'],
-          6,
-          7,
-          {
-            label:
-              'Femme 10 m',
-
-            choiceGroups: {
-              ONE: [
-                '307C',
-                '207B',
-                '407B',
-                '409C',
-                '109C',
-                '5255B',
-                '5154B'
-              ]
-            }
-          }
-        ),
-
-        seriesRule(
-          3,
-          ['ONE'],
-          6,
-          7,
-          {
-            label:
-              'Femme 3 m',
-
-            choiceGroups: {
-              ONE: [
-                '307C',
-                '407C',
-                '109C',
-                '5154B',
-                '5253B',
-                '5353B',
-                '207C'
-              ]
-            }
-          }
-        )
-
+      [
+        'D1',
+        'Coordination / élan'
       ],
 
-      fullSeriesOptions: [
+      [
+        'D2',
+        'Impulsion / détente / élévation'
+      ],
 
-        seriesRule(
-          1,
-          ['205B','305B','405B','107B','TWIST'],
-          6,
-          7,
-          {
-            label:
-              'Série 1 m Homme',
+      [
+        'D3',
+        'Trajectoire verticale'
+      ],
 
-            choiceGroups: {
-              TWIST:
-                ['5154B','5337D']
-            }
-          }
-        ),
+      [
+        'D4',
+        'Temps de fixation'
+      ],
 
-        seriesRule(
-          1,
-          ['107C','405C','305C','205C','5152B'],
-          6,
-          7,
-          {
-            label:
-              'Série 1 m Femme'
-          }
-        )
-
+      [
+        'D5',
+        'Amplitude des bras'
       ]
 
-    }
+    ],
+
+
+    T: [
+
+      [
+        'T1',
+        'Vitesse des rotations'
+      ],
+
+      [
+        'T2',
+        'Saltos et/ou vrilles contrôlés'
+      ],
+
+      [
+        'T3',
+        'Ligne / tenue / position du corps'
+      ],
+
+      [
+        'T4',
+        'Ouverture'
+      ],
+
+      [
+        'T5',
+        'Continuité / rythme'
+      ]
+
+    ],
+
+
+    E: [
+
+      [
+        'E1',
+        'Angle vertical'
+      ],
+
+      [
+        'E2',
+        'Éclaboussures / tolérance discipline'
+      ],
+
+      [
+        'E3',
+        'Position des bras'
+      ],
+
+      [
+        'E4',
+        'Jambes tendues et serrées'
+      ],
+
+      [
+        'E5',
+        "Axe d'entrée"
+      ]
+
+    ]
+
+  };
+
+
+  /* ============================================================
+     NOMS DES PLONGEONS
+  ============================================================ */
+
+
+  const DIVE_NAMES = {
+
+    '001A':
+      'Chute avant droite',
+
+    '001B':
+      'Chute avant carpée',
+
+    '001C':
+      'Chute avant groupée',
+
+    '002A':
+      'Chute arrière droite',
+
+    '002AS':
+      'Plongeon arrière droit en sautant',
+
+    '100A':
+      'Chandelle avant droite',
+
+    '101C':
+      'Plongeon avant groupé',
+
+    '102C':
+      '1 salto avant groupé',
+
+    '103C':
+      '1½ salto avant groupé',
+
+    '104C':
+      '2 saltos avant groupés',
+
+    '105C':
+      '2½ saltos avant groupés',
+
+    '105B':
+      '2½ saltos avant carpés',
+
+    '107C':
+      '3½ saltos avant groupés',
+
+    '107B':
+      '3½ saltos avant carpés',
+
+    '109C':
+      '4½ saltos avant groupés',
+
+    '109B':
+      '4½ saltos avant carpés',
+
+    '1011C':
+      '5½ saltos avant groupés',
+
+    '201C':
+      'Plongeon arrière groupé',
+
+    '201B':
+      'Plongeon arrière carpé',
+
+    '202C':
+      '1 salto arrière groupé',
+
+    '203C':
+      '1½ salto arrière groupé',
+
+    '203B':
+      '1½ salto arrière carpé',
+
+    '204C':
+      '2 saltos arrière groupés',
+
+    '205C':
+      '2½ saltos arrière groupés',
+
+    '205B':
+      '2½ saltos arrière carpés',
+
+    '207C':
+      '3½ saltos arrière groupés',
+
+    '207B':
+      '3½ saltos arrière carpés',
+
+    '209C':
+      '4½ saltos arrière groupés',
+
+    '301C':
+      'Plongeon renversé groupé',
+
+    '301B':
+      'Plongeon renversé carpé',
+
+    '302C':
+      '1 salto renversé groupé',
+
+    '303C':
+      '1½ salto renversé groupé',
+
+    '303B':
+      '1½ salto renversé carpé',
+
+    '304C':
+      '2 saltos renversés groupés',
+
+    '305C':
+      '2½ saltos renversés groupés',
+
+    '305B':
+      '2½ saltos renversés carpés',
+
+    '307C':
+      '3½ saltos renversés groupés',
+
+    '307B':
+      '3½ saltos renversés carpés',
+
+    '309C':
+      '4½ saltos renversés groupés',
+
+    '401C':
+      'Plongeon retourné groupé',
+
+    '402C':
+      '1 salto retourné groupé',
+
+    '403C':
+      '1½ salto retourné groupé',
+
+    '403B':
+      '1½ salto retourné carpé',
+
+    '404C':
+      '2 saltos retournés groupés',
+
+    '405C':
+      '2½ saltos retournés groupés',
+
+    '405B':
+      '2½ saltos retournés carpés',
+
+    '407C':
+      '3½ saltos retournés groupés',
+
+    '407B':
+      '3½ saltos retournés carpés',
+
+    '409C':
+      '4½ saltos retournés groupés',
+
+    '5122A':
+      '1 salto avant + 1 vrille',
+
+    '5124D':
+      '1 salto avant + 2 vrilles',
+
+    '5132D':
+      '1½ salto avant + 1 vrille',
+
+    '5134D':
+      '1½ salto avant + 2 vrilles',
+
+    '5152B':
+      '2½ saltos avant + 1 vrille',
+
+    '5153B':
+      '2½ saltos avant + 1½ vrille',
+
+    '5154B':
+      '2½ saltos avant + 2 vrilles',
+
+    '5162B':
+      '3 saltos avant + 1 vrille',
+
+    '5163B':
+      '3 saltos avant + 1½ vrille',
+
+    '5211A':
+      'Plongeon arrière + ½ vrille',
+
+    '5221A':
+      '1 salto arrière + ½ vrille',
+
+    '5223D':
+      '1 salto arrière + 1½ vrille',
+
+    '5231D':
+      '1½ salto arrière + ½ vrille',
+
+    '5233D':
+      '1½ salto arrière + 1½ vrille',
+
+    '5235D':
+      '1½ salto arrière + 2½ vrilles',
+
+    '5253B':
+      '2½ saltos arrière + 1½ vrille',
+
+    '5255B':
+      '2½ saltos arrière + 2½ vrilles',
+
+    '5257B':
+      '2½ saltos arrière + 3½ vrilles',
+
+    '5263B':
+      '3 saltos arrière + 1½ vrille',
+
+    '5321A':
+      '1 salto renversé + ½ vrille',
+
+    '5323D':
+      '1 salto renversé + 1½ vrille',
+
+    '5331D':
+      '1½ salto renversé + ½ vrille',
+
+    '5333D':
+      '1½ salto renversé + 1½ vrille',
+
+    '5335D':
+      '1½ salto renversé + 2½ vrilles',
+
+    '5337D':
+      '1½ salto renversé + 3½ vrilles',
+
+    '5339D':
+      '1½ salto renversé + 4½ vrilles',
+
+    '5353B':
+      '2½ saltos renversés + 1½ vrille',
+
+    '616C':
+      'Équilibre avant + 3 saltos groupés',
+
+    '6243D':
+      'Équilibre arrière + 2 saltos + 1½ vrille',
+
+    '626C':
+      'Équilibre arrière + 3 saltos groupés',
+
+    '628C':
+      'Équilibre arrière + 4 saltos groupés'
+
+  };
+
+
+  /* ============================================================
+     OUTILS DOM
+  ============================================================ */
+
+
+  function qs(
+    selector,
+    root = document
+  ) {
+
+    return root.querySelector(
+      selector
+    );
 
   }
 
-];
+
+  function qsa(
+    selector,
+    root = document
+  ) {
+
+    return Array.from(
+
+      root.querySelectorAll(
+        selector
+      )
+
+    );
+
+  }
 
 
+  function byId(
+    id
+  ) {
 
-/* ============================================================
-   DOM
-============================================================ */
-
-const pages =
-  document.querySelectorAll(
-    '.page'
-  );
-
-
-const navigation =
-  document.getElementById(
-    'navigation'
-  );
-
-
-const mobileMenu =
-  document.getElementById(
-    'mobileMenu'
-  );
-
-
-const siteModal =
-  document.getElementById(
-    'siteModal'
-  );
-
-
-const modalContent =
-  document.getElementById(
-    'modalContent'
-  );
-
-
-
-/* ============================================================
-   OUTILS
-============================================================ */
-
-function esc(
-  value
-) {
-
-  return String(
-    value ??
-    ''
-  )
-  .replace(
-    /[&<>"']/g,
-    char => ({
-
-      '&':
-        '&amp;',
-
-      '<':
-        '&lt;',
-
-      '>':
-        '&gt;',
-
-      '"':
-        '&quot;',
-
-      "'":
-        '&#39;'
-
-    }[char])
-  );
-
-}
-
-
-
-function val(
-  id
-) {
-
-  const element =
-    document.getElementById(
+    return document.getElementById(
       id
     );
 
-
-  return element
-    ?
-    String(
-      element.value ||
-      ''
-    )
-    :
-    '';
-
-}
+  }
 
 
-
-function bool(
-  value
-) {
-
-  return (
-    value ===
-      true
-    ||
-    String(
-      value
-    )
-    .toLowerCase() ===
-      'true'
-    ||
-    String(
-      value
-    ) ===
-      '1'
-  );
-
-}
-
-
-
-function asNumber(
-  value,
-  fallback = null
-) {
-
-  if (
-    value ===
-      ''
-    ||
-    value ===
-      null
-    ||
-    typeof value ===
-      'undefined'
+  function val(
+    id
   ) {
 
-    return fallback;
+    const element =
+      byId(
+        id
+      );
+
+
+    return element
+      ?
+      element.value
+      :
+      '';
 
   }
 
 
-  const n =
-    Number(
-      value
-    );
+  function setText(
+    id,
+    text
+  ) {
+
+    const element =
+      byId(
+        id
+      );
 
 
-  return Number.isFinite(
-    n
-  )
-    ?
-    n
-    :
-    fallback;
+    if (!element) {
 
-}
+      return;
+
+    }
 
 
-
-function fmtNumber(
-  value
-) {
-
-  if (
-    value ===
-      null
-    ||
-    value ===
+    element.textContent =
+      text == null
+      ?
       ''
-    ||
-    typeof value ===
-      'undefined'
-  ) {
-
-    return '—';
+      :
+      String(
+        text
+      );
 
   }
 
 
-  const n =
-    Number(
-      value
-    );
+  /* ============================================================
+     SECURITE HTML
+  ============================================================ */
 
 
-  if (
-    !Number.isFinite(
-      n
-    )
-  ) {
-
-    return esc(
-      value
-    );
-
-  }
-
-
-  return String(
-    Math.round(
-      n * 10
-    )
-    /
-    10
-  )
-  .replace(
-    '.',
-    ','
-  );
-
-}
-
-
-
-function fmtDate(
-  value,
-  withTime = false
-) {
-
-  if (!value) {
-
-    return '';
-
-  }
-
-
-  const date =
-    new Date(
-      value
-    );
-
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
+  function escapeHtml(
+    value
   ) {
 
     return String(
+      value ?? ''
+    )
+
+    .replace(
+      /&/g,
+      '&amp;'
+    )
+
+    .replace(
+      /</g,
+      '&lt;'
+    )
+
+    .replace(
+      />/g,
+      '&gt;'
+    )
+
+    .replace(
+      /"/g,
+      '&quot;'
+    )
+
+    .replace(
+      /'/g,
+      '&#039;'
+    );
+
+  }
+
+
+  function escapeAttr(
+    value
+  ) {
+
+    return escapeHtml(
       value
     );
 
   }
 
 
-  return date.toLocaleDateString(
+  /* ============================================================
+     OUTILS
+  ============================================================ */
 
-    'fr-FR',
 
-    withTime
+  function firstObject(
+    value
+  ) {
+
+    if (
+      Array.isArray(
+        value
+      )
+    ) {
+
+      return value[0]
+      ||
+      null;
+
+    }
+
+
+    return (
+      value
+      &&
+      typeof value ===
+        'object'
+    )
       ?
+      value
+      :
+      null;
+
+  }
+
+
+  function safeJson(
+    value,
+    fallback = {}
+  ) {
+
+    if (
+      value
+      &&
+      typeof value ===
+        'object'
+    ) {
+
+      return value;
+
+    }
+
+
+    if (!value) {
+
+      return fallback;
+
+    }
+
+
+    try {
+
+      return JSON.parse(
+        value
+      );
+
+    } catch (_) {
+
+      return fallback;
+
+    }
+
+  }
+
+
+  function numberOrNull(
+    value
+  ) {
+
+    if (
+      value ===
+        null
+      ||
+      value ===
+        ''
+      ||
+      typeof value ===
+        'undefined'
+    ) {
+
+      return null;
+
+    }
+
+
+    const number =
+      Number(
+        value
+      );
+
+
+    return Number.isFinite(
+      number
+    )
+      ?
+      number
+      :
+      null;
+
+  }
+
+
+  function fmtNumber(
+    value
+  ) {
+
+    const number =
+      numberOrNull(
+        value
+      );
+
+
+    if (
+      number ===
+      null
+    ) {
+
+      return '—';
+
+    }
+
+
+    return String(
+
+      Math.round(
+        number * 10
+      )
+      /
+      10
+
+    )
+    .replace(
+      '.',
+      ','
+    );
+
+  }
+
+
+  function fmtDate(
+    value
+  ) {
+
+    if (!value) {
+
+      return '—';
+
+    }
+
+
+    const date =
+      new Date(
+        value
+      );
+
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      return String(
+        value
+      );
+
+    }
+
+
+    return new Intl.DateTimeFormat(
+
+      'fr-FR',
+
       {
 
         day:
@@ -1788,1856 +830,1511 @@ function fmtDate(
           '2-digit',
 
         year:
-          'numeric',
-
-        hour:
-          '2-digit',
-
-        minute:
-          '2-digit'
+          'numeric'
 
       }
-      :
-      undefined
 
-  );
-
-}
-
-
-
-function normalizeBlazonName(
-  name
-) {
-
-  return String(
-    name ||
-    ''
-  )
-  .normalize(
-    'NFD'
-  )
-  .replace(
-    /[\u0300-\u036f]/g,
-    ''
-  )
-  .toUpperCase()
-  .trim()
-  .replace(
-    /^BLAZON\s+/,
-    ''
-  )
-  .replace(
-    /^LE\s+BLAZON\s+/,
-    ''
-  );
-
-}
-
-
-
-function normalizeCode(
-  code
-) {
-
-  return String(
-    code ||
-    ''
-  )
-  .trim()
-  .toUpperCase()
-  .replace(
-    /\s+/g,
-    ''
-  );
-
-}
-
-
-
-function setLoadingButton(
-  button,
-  loading,
-  loadingText,
-  normalText
-) {
-
-  if (!button) {
-
-    return;
+    )
+    .format(
+      date
+    );
 
   }
 
 
-  button.disabled =
-    Boolean(
-      loading
-    );
+  function normalizeVisibility(
+    value
+  ) {
+
+    const visibility =
+      String(
+        value || ''
+      )
+
+      .normalize(
+        'NFD'
+      )
+
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+
+      .trim()
+
+      .toUpperCase();
 
 
-  button.textContent =
-    loading
+    return (
+      visibility ===
+        'PUBLIC'
+    )
       ?
-      loadingText
+      'PUBLIC'
       :
-      normalText;
-
-}
-
-
-
-function showToast(
-  message,
-  type = 'info',
-  timeout = 3500
-) {
-
-  const container =
-    document.getElementById(
-      'toastContainer'
-    );
-
-
-  if (!container) {
-
-    return;
+      'PRIVATE';
 
   }
 
 
-  const toast =
-    document.createElement(
-      'div'
-    );
+  function normalizeEahId(
+    value
+  ) {
+
+    let id =
+      String(
+        value || ''
+      )
+
+      .trim()
+
+      .toUpperCase()
+
+      .replace(
+        /\s+/g,
+        ''
+      );
 
 
-  toast.className =
-    `toast ${type}`;
-
-
-  toast.textContent =
-    message;
-
-
-  container.appendChild(
-    toast
-  );
-
-
-  window.setTimeout(
-    () => toast.remove(),
-    timeout
-  );
-
-}
-
-
-
-function setMessage(
-  id,
-  html = ''
-) {
-
-  const element =
-    document.getElementById(
+    if (
       id
-    );
-
-
-  if (element) {
-
-    element.innerHTML =
-      html;
-
-  }
-
-}
-
-
-
-function imagePath(
-  value,
-  fallback = ''
-) {
-
-  const raw =
-    String(
-      value ||
-      ''
-    )
-    .trim();
-
-
-  if (!raw) {
-
-    return fallback;
-
-  }
-
-
-  return raw.replace(
-    /^assets\/img\//,
-    ''
-  );
-
-}
-
-
-
-function clubColor(
-  value,
-  fallback
-) {
-
-  const color =
-    String(
-      value ||
-      ''
-    )
-    .trim();
-
-
-  return /^#[0-9a-f]{6}$/i
-    .test(
-      color
-    )
-    ?
-    color
-    :
-    fallback;
-
-}
-
-
-
-function handleSupabaseError(
-  error,
-  fallback =
-    'Une erreur est survenue.'
-) {
-
-  if (!error) {
-
-    return fallback;
-
-  }
-
-
-  console.error(
-    error
-  );
-
-
-  return (
-    error.message
-    ||
-    fallback
-  );
-
-}
-
-
-
-function requireSupabase() {
-
-  if (!supabaseClient) {
-
-    throw new Error(
-      'Connexion Supabase non configurée.'
-    );
-
-  }
-
-
-  return supabaseClient;
-
-}
-/* ============================================================
-   EXPOSITION SUPABASE AUX MODULES EAH
-============================================================ */
-
-window.requireSupabase =
-  requireSupabase;
-
-
-window.EAH_SUPABASE_CLIENT =
-  supabaseClient;
-
-
-async function eahFastSha256(
-  value
-) {
-
-  const bytes =
-    new TextEncoder()
-      .encode(
-        String(
-          value ||
-          ''
-        )
-      );
-
-
-  const digest =
-    await crypto.subtle.digest(
-      'SHA-256',
-      bytes
-    );
-
-
-  return Array
-    .from(
-      new Uint8Array(
-        digest
+      &&
+      !id.startsWith(
+        'EAH-'
       )
+    ) {
+
+      id =
+        'EAH-'
+        +
+        id;
+
+    }
+
+
+    return id;
+
+  }
+
+
+  function normalizeDiveCode(
+    value
+  ) {
+
+    return String(
+      value || ''
     )
-    .map(
-      value =>
-        value
-          .toString(16)
-          .padStart(
-            2,
-            '0'
-          )
-    )
-    .join('');
 
-}
+    .trim()
 
+    .toUpperCase()
 
-
-function eahFastPhotoUrl(
-  url,
-  size = 'w1800'
-) {
-
-  const raw =
-    String(
-      url ||
+    .replace(
+      /\s+/g,
       ''
-    )
-    .trim();
-
-
-  if (!raw) {
-
-    return '';
+    );
 
   }
 
 
-  /*
-    FICHIER LOCAL GITHUB
-  */
+  /* ============================================================
+     MESSAGES
+  ============================================================ */
 
-  if (
-    !/^https?:\/\//i.test(
-      raw
-    )
-    &&
-    !raw.startsWith(
-      '//'
-    )
+
+  function showMessage(
+    id,
+    text,
+    type = ''
   ) {
 
-    return raw;
-
-  }
-
-
-  /*
-    SUPABASE STORAGE PUBLIC
-  */
-
-  if (
-    raw.includes(
-      '/storage/v1/object/public/'
-    )
-  ) {
-
-    return raw;
-
-  }
-
-
-  /*
-    GOOGLE USER CONTENT
-  */
-
-  if (
-    raw.includes(
-      'googleusercontent.com'
-    )
-  ) {
-
-    return raw;
-
-  }
-
-
-  try {
-
-    const decoded =
-      decodeURIComponent(
-        raw
+    const element =
+      byId(
+        id
       );
 
 
-    /*
-      DRIVE :
-      /file/d/FILE_ID/view
-    */
+    if (!element) {
 
-    let match =
-      decoded.match(
-        /\/file\/d\/([^/?#]+)/
+      return;
+
+    }
+
+
+    element.textContent =
+      text || '';
+
+
+    element.classList.remove(
+
+      'success',
+
+      'error',
+
+      'warning'
+
+    );
+
+
+    if (type) {
+
+      element.classList.add(
+        type
       );
+
+    }
+
+  }
+
+
+  function toast(
+    message,
+    type = 'info'
+  ) {
+
+    const container =
+      byId(
+        'toastContainer'
+      );
+
+
+    if (!container) {
+
+      return;
+
+    }
+
+
+    const element =
+      document.createElement(
+        'div'
+      );
+
+
+    element.className =
+      'toast '
+      +
+      type;
+
+
+    element.textContent =
+      String(
+        message || ''
+      );
+
+
+    container.appendChild(
+      element
+    );
+
+
+    window.setTimeout(
+      () => {
+
+        element.remove();
+
+      },
+      4000
+    );
+
+  }
+
+
+  /* ============================================================
+     SUPABASE
+
+     IMPORTANT :
+     Cette fonction est aussi exposée dans window
+     pour supprimer définitivement l'erreur :
+     requireSupabase is not defined
+  ============================================================ */
+
+
+  function requireSupabase() {
+
+    if (
+      supabaseClient
+    ) {
+
+      return supabaseClient;
+
+    }
 
 
     if (
-      match &&
-      match[1]
+      !CONFIG.SUPABASE_URL
+      ||
+      !CONFIG.SUPABASE_PUBLISHABLE_KEY
     ) {
 
-      return (
-        'https://drive.google.com/thumbnail?id='
-        +
-        encodeURIComponent(
-          match[1]
-        )
-        +
-        '&sz='
-        +
-        encodeURIComponent(
-          size
-        )
+      throw new Error(
+        'Configuration Supabase absente.'
       );
 
     }
 
 
-    /*
-      DRIVE :
-      /d/FILE_ID/
-    */
-
-    match =
-      decoded.match(
-        /\/d\/([^/?#]+)/
-      );
-
-
     if (
-      match &&
-      match[1]
+      !window.supabase
+      ||
+      typeof window.supabase.createClient !==
+        'function'
     ) {
 
-      return (
-        'https://drive.google.com/thumbnail?id='
-        +
-        encodeURIComponent(
-          match[1]
-        )
-        +
-        '&sz='
-        +
-        encodeURIComponent(
-          size
-        )
+      throw new Error(
+        "Supabase JS n'est pas chargé."
       );
 
     }
 
 
-    /*
-      DRIVE :
-      ?id=FILE_ID
-    */
+    supabaseClient =
+      window.supabase.createClient(
 
-    const parsed =
-      new URL(
-        raw,
-        window.location.href
+        CONFIG.SUPABASE_URL,
+
+        CONFIG.SUPABASE_PUBLISHABLE_KEY,
+
+        {
+
+          auth: {
+
+            persistSession:
+              true,
+
+            autoRefreshToken:
+              true,
+
+            detectSessionInUrl:
+              true
+
+          }
+
+        }
+
       );
 
 
-    const id =
-      parsed.searchParams.get(
-        'id'
+    window.EAH_SUPABASE_CLIENT =
+      supabaseClient;
+
+
+    return supabaseClient;
+
+  }
+
+
+  window.requireSupabase =
+    requireSupabase;
+
+
+  /* ============================================================
+     NAVIGATION
+
+     CE MODULE NE DEPEND PAS DE SUPABASE.
+
+     Même si Supabase plante,
+     les catégories du site continuent
+     de fonctionner.
+  ============================================================ */
+
+
+  function closeMobileMenu() {
+
+    const navigation =
+      byId(
+        'navigation'
       );
 
 
-    if (
-      id &&
-      (
-        parsed.hostname.includes(
-          'drive.google.com'
-        )
+    const button =
+      byId(
+        'mobileMenu'
+      );
+
+
+    navigation
+      ?.classList
+      .remove(
+        'open'
+      );
+
+
+    navigation
+      ?.classList
+      .remove(
+        'active'
+      );
+
+
+    button
+      ?.classList
+      .remove(
+        'open'
+      );
+
+
+    button
+      ?.classList
+      .remove(
+        'active'
+      );
+
+  }
+
+
+  function showPage(
+    pageName,
+    options = {}
+  ) {
+
+    const page =
+      PAGE_IDS.has(
+        pageName
+      )
+      ?
+      pageName
+      :
+      'accueil';
+
+
+    qsa(
+      '.page'
+    )
+    .forEach(
+      function(section) {
+
+        section.classList.toggle(
+
+          'active',
+
+          section.id ===
+          page
+
+        );
+
+      }
+    );
+
+
+    document
+      .documentElement
+      .classList
+      .toggle(
+
+        'eah-page-club',
+
+        page ===
+          'club'
         ||
-        parsed.hostname.includes(
-          'docs.google.com'
-        )
-      )
+        page ===
+          'evaluation'
+
+      );
+
+
+    qsa(
+      '[data-page]'
+    )
+    .forEach(
+      function(link) {
+
+        link.classList.toggle(
+
+          'active',
+
+          link.dataset.page ===
+          page
+
+        );
+
+      }
+    );
+
+
+    closeMobileMenu();
+
+
+    if (
+      options.updateHash !==
+      false
     ) {
 
-      return (
-        'https://drive.google.com/thumbnail?id='
+      const nextHash =
+        '#'
         +
-        encodeURIComponent(
-          id
-        )
-        +
-        '&sz='
-        +
-        encodeURIComponent(
-          size
-        )
-      );
+        page;
+
+
+      if (
+        window.location.hash !==
+        nextHash
+      ) {
+
+        history.pushState(
+
+          null,
+
+          '',
+
+          nextHash
+
+        );
+
+      }
 
     }
 
 
-  } catch (_) {}
+    if (
+      options.scroll !==
+      false
+    ) {
+
+      window.scrollTo({
+
+        top:
+          0,
+
+        behavior:
+          'auto'
+
+      });
+
+    }
 
 
-  return raw;
+    if (
+      page ===
+      'evaluation'
+    ) {
 
-}
+      updateEvaluationAccess();
+
+    }
 
 
-/*
-  FONCTION GLOBALE UTILISEE
-  PAR SITE-FINAL ET PHOTOS-FINAL
-*/
+    return page;
 
-window.EAHMediaUrl =
-  function(
-    url,
-    size = 'w1800'
-  ) {
+  }
 
-    return eahFastPhotoUrl(
-      url,
-      size
-    );
+
+  window.EAHRouter = {
+
+    showPage
 
   };
 
 
+  window.showPage =
+    showPage;
 
-/* ============================================================
-   NAVIGATION
-============================================================ */
 
-function showPage(
-  pageName,
-  updateHash = true
-) {
+  function pageFromHash() {
 
-  pages.forEach(
-    page => {
-
-      page.classList.toggle(
-        'active',
-        page.id ===
-        pageName
-      );
-
-    }
-  );
-
-
-  document.documentElement
-    .classList
-    .toggle(
-      'eah-page-club',
-      pageName ===
-      'club'
-    );
-
-
-  if (
-    updateHash &&
-    window.location.hash !==
-      `#${pageName}`
-  ) {
-
-    history.replaceState(
-
-      null,
-
-      '',
-
-      (
-        window.location.pathname
-        +
-        window.location.search
-        +
-        '#'
-        +
-        pageName
-      )
-
-    );
-
-  }
-
-
-  navigation
-    ?.classList
-    .remove(
-      'open'
-    );
-
-
-  window.scrollTo({
-
-    top:
-      0,
-
-    behavior:
-      'auto'
-
-  });
-
-
-  if (
-    pageName ===
-      'profil'
-  ) {
-
-    restoreOrLoadProfile()
-      .catch(
-        console.warn
-      );
-
-  }
-
-
-  if (
-    pageName ===
-      'club'
-  ) {
-
-    restoreCoachSession()
-      .catch(
-        console.warn
-      );
-
-  }
-
-
-  if (
-    pageName ===
-      'evaluation'
-  ) {
-
-    updateEvaluationAccess();
-
-  }
-
-}
-
-
-
-document
-  .querySelectorAll(
-    '[data-page]'
-  )
-  .forEach(
-    link => {
-
-      link.addEventListener(
-
-        'click',
-
-        event => {
-
-          event.preventDefault();
-
-          showPage(
-            link.dataset.page
-          );
-
-        }
-
-      );
-
-    }
-  );
-
-
-document
-  .querySelectorAll(
-    '[data-page-button]'
-  )
-  .forEach(
-    button => {
-
-      button.addEventListener(
-
-        'click',
-
-        () => {
-
-          showPage(
-            button.dataset.pageButton
-          );
-
-        }
-
-      );
-
-    }
-  );
-
-
-document
-  .querySelectorAll(
-    '[data-open]'
-  )
-  .forEach(
-    card => {
-
-      card.addEventListener(
-
-        'click',
-
-        () => {
-
-          showPage(
-            card.dataset.open
-          );
-
-        }
-
-      );
-
-    }
-  );
-
-
-mobileMenu
-  ?.addEventListener(
-
-    'click',
-
-    () => {
-
-      navigation
-        ?.classList
-        .toggle(
-          'open'
-        );
-
-    }
-
-  );
-
-
-
-/* ============================================================
-   MODAL
-============================================================ */
-
-function openModal(
-  html
-) {
-
-  if (
-    !siteModal ||
-    !modalContent
-  ) {
-
-    return;
-
-  }
-
-
-  modalContent.innerHTML =
-    html;
-
-
-  siteModal.classList.add(
-    'show'
-  );
-
-
-  siteModal.setAttribute(
-    'aria-hidden',
-    'false'
-  );
-
-
-  document.body.classList.add(
-    'modal-open'
-  );
-
-}
-
-
-
-function closeModal() {
-
-  if (!siteModal) {
-
-    return;
-
-  }
-
-
-  siteModal.classList.remove(
-    'show'
-  );
-
-
-  siteModal.setAttribute(
-    'aria-hidden',
-    'true'
-  );
-
-
-  document.body.classList.remove(
-    'modal-open'
-  );
-
-}
-
-
-
-document.addEventListener(
-
-  'click',
-
-  event => {
-
-    if (
-      event.target.matches(
-        '[data-close-modal]'
-      )
-    ) {
-
-      closeModal();
-
-    }
-
-  }
-
-);
-
-
-
-document.addEventListener(
-
-  'keydown',
-
-  event => {
-
-    if (
-      event.key ===
-        'Escape'
-    ) {
-
-      closeModal();
-
-    }
-
-  }
-
-);
-
-
-
-/* ============================================================
-   DONNEES PUBLIQUES
-============================================================ */
-
-async function loadPublicData() {
-
-  state.blazons =
-    BLAZON_FALLBACK.slice();
-
-
-  state.pricing =
-    PRICING_FALLBACK.slice();
-
-
-  renderBlazons();
-
-  renderPricing();
-
-  renderSpots();
-
-  renderNews();
-
-  renderSpotSelect();
-
-
-  if (!supabaseClient) {
-
-    return;
-
-  }
-
-
-  const [
-
-    blazonsRes,
-
-    pricingRes,
-
-    spotsRes,
-
-    newsRes
-
-  ] =
-    await Promise.all([
-
-
-      supabaseClient
-        .from(
-          'blazon_definitions'
-        )
-        .select(
-          'sort_order,key,name,image_url,rules,active'
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'sort_order'
-        ),
-
-
-      supabaseClient
-        .from(
-          'pricing'
-        )
-        .select(
-          'id,name,price,renewal,description,card_quota,coach_quota,active,sort_order'
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'sort_order'
-        ),
-
-
-      supabaseClient
-        .from(
-          'spots'
-        )
-        .select(
-          'id,name,city,address,heights,photo_url,description,active'
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'name'
-        ),
-
-
-      supabaseClient
-        .from(
-          'news'
-        )
-        .select(
-          'id,sort_order,category,title,summary,content,image_url,video_url,link_url,featured,published_at,active'
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'sort_order'
-        )
-        .order(
-          'published_at',
-          {
-            ascending:
-              false
-          }
-        )
-
-    ]);
-
-
-  if (
-    !blazonsRes.error &&
-    Array.isArray(
-      blazonsRes.data
-    ) &&
-    blazonsRes.data.length
-  ) {
-
-    state.blazons =
-      blazonsRes.data;
-
-  }
-
-
-  if (
-    !pricingRes.error &&
-    Array.isArray(
-      pricingRes.data
-    ) &&
-    pricingRes.data.length
-  ) {
-
-    state.pricing =
-      pricingRes.data;
-
-  }
-
-
-  if (
-    !spotsRes.error &&
-    Array.isArray(
-      spotsRes.data
-    )
-  ) {
-
-    state.spots =
-      spotsRes.data;
-
-  }
-
-
-  if (
-    !newsRes.error &&
-    Array.isArray(
-      newsRes.data
-    )
-  ) {
-
-    state.news =
-      newsRes.data;
-
-  }
-
-
-  state.publicLoaded =
-    true;
-
-
-  renderBlazons();
-
-  renderPricing();
-
-  renderSpots();
-
-  renderNews();
-
-  renderSpotSelect();
-
-}
-
-
-
-/* ============================================================
-   CLUB
-============================================================ */
-
-async function loadClubBranding() {
-
-  if (
-    !CLUB_SLUG ||
-    !supabaseClient
-  ) {
-
-    return null;
-
-  }
-
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-
-      .from(
-        'clubs'
-      )
-
-      .select(
-        'id,slug,name,city,logo_url,primary_color,secondary_color,season,welcome_text,offer,card_quota,active'
-      )
-
-      .eq(
-        'slug',
-        CLUB_SLUG
-      )
-
-      .eq(
-        'active',
-        true
-      )
-
-      .maybeSingle();
-
-
-  if (
-    error ||
-    !data
-  ) {
-
-    if (error) {
-
-      console.warn(
-        error
-      );
-
-    }
-
-
-    return null;
-
-  }
-
-
-  state.club =
-    data;
-
-
-  applyClubBranding(
-    data
-  );
-
-
-  return data;
-
-}
-
-
-
-function applyClubBranding(
-  club
-) {
-
-  if (!club) {
-
-    return;
-
-  }
-
-
-  document.documentElement
-    .style
-    .setProperty(
-
-      '--blue',
-
-      clubColor(
-        club.primary_color,
-        '#0b6bff'
-      )
-
-    );
-
-
-  document.documentElement
-    .style
-    .setProperty(
-
-      '--background',
-
-      clubColor(
-        club.secondary_color,
-        '#03131f'
-      )
-
-    );
-
-
-  const dashboardClubName =
-    document.getElementById(
-      'dashboardClubName'
-    );
-
-
-  if (dashboardClubName) {
-
-    dashboardClubName.textContent =
-      club.name ||
-      'EAH Diving Club';
-
-  }
-
-
-  document.title =
-    (
-      club.name ||
-      'EAH Diving Club'
-    )
-    +
-    ' — EAH Diving Pro';
-
-}
-
-
-
-/* ============================================================
-   BLAZONS
-============================================================ */
-
-function getBlazonImage(
-  blazon
-) {
-
-  const key =
-    normalizeBlazonName(
-      blazon.key ||
-      blazon.name
-    );
-
-
-  return (
-    BLAZON_IMAGES[
-      key
-    ]
-    ||
-    imagePath(
-      blazon.image_url ||
-      blazon.imageUrl,
-      ''
-    )
-  );
-
-}
-
-
-
-function getBlazonRules(
-  blazon
-) {
-
-  const raw =
-    blazon
-      ?.rules;
-
-
-  if (!raw) {
-
-    return {};
-
-  }
-
-
-  if (
-    typeof raw ===
-      'object'
-  ) {
-
-    return raw;
-
-  }
-
-
-  try {
-
-    return JSON.parse(
-      raw
-    );
-
-  } catch (_) {
-
-    return {};
-
-  }
-
-}
-
-
-
-function renderBlazons() {
-
-  const grid =
-    document.getElementById(
-      'blazonGrid'
-    );
-
-
-  if (!grid) {
-
-    return;
-
-  }
-
-
-  const list =
-    (
-      state.blazons ||
-      []
-    )
-    .slice()
-    .sort(
-      (a,b) =>
-        Number(
-          a.sort_order ??
-          a.order ??
-          999
-        )
-        -
-        Number(
-          b.sort_order ??
-          b.order ??
-          999
-        )
-    );
-
-
-  grid.innerHTML =
-    list.length
-      ?
-      list
-        .map(
-          (
-            blazon,
-            index
-          ) => {
-
-            const image =
-              getBlazonImage(
-                blazon
-              );
-
-
-            return `
-
-              <article
-                class="blazon-card"
-                data-blazon-index="${index}"
-              >
-
-                ${
-                  image
-                  ?
-                  `
-                    <img
-                      src="${esc(image)}"
-                      alt="${esc(blazon.name)}"
-                      loading="eager"
-                    >
-                  `
-                  :
-                  ''
-                }
-
-                <h3>
-                  ${esc(blazon.name)}
-                </h3>
-
-                <span>
-                  Voir les critères →
-                </span>
-
-              </article>
-
-            `;
-
-          }
-        )
-        .join('')
-      :
-      `
-        <div class="loading-panel">
-          Aucun blazon disponible.
-        </div>
-      `;
-
-
-  grid
-    .querySelectorAll(
-      '[data-blazon-index]'
-    )
-    .forEach(
-      card => {
-
-        card.addEventListener(
-
-          'click',
-
-          () => {
-
-            openBlazon(
-              Number(
-                card.dataset.blazonIndex
-              ),
-              list
-            );
-
-          }
-
-        );
-
-      }
-    );
-
-}
-
-
-
-function openBlazon(
-  index,
-  list =
-    state.blazons
-) {
-
-  const blazon =
-    list[
-      index
-    ];
-
-
-  if (!blazon) {
-
-    return;
-
-  }
-
-
-  const rules =
-    getBlazonRules(
-      blazon
-    );
-
-
-  const sections = [
-
-    ...(
-      rules.series ||
-      []
-    ),
-
-    ...(
-      rules.options ||
-      []
-    ),
-
-    ...(
-      rules.fullSeriesOptions ||
-      []
-    )
-
-  ];
-
-
-  let html = `
-
-    <div class="modal-inner">
-
-      <span class="overline">
-        PROGRESSION EAH
-      </span>
-
-      <h2>
-        ${esc(blazon.name)}
-      </h2>
-
-      ${
-        rules.summary
-        ?
-        `
-          <div class="modal-note">
-            ${esc(rules.summary)}
-          </div>
-        `
-        :
+    const raw =
+      String(
+        window.location.hash ||
         ''
-      }
-
-  `;
-
-
-  sections.forEach(
-    serie => {
-
-      const label =
-        serie.label
-        ||
-        (
-          Number(
-            serie.height
-          ) ===
-          0
-          ?
-          'Bord / plot'
-          :
-          `${serie.height} m`
-        );
-
-
-      html += `
-
-        <div class="blazon-series">
-
-          <h3>
-            ${esc(label)}
-          </h3>
-
-          <p>
-
-            <strong>
-              Validation :
-            </strong>
-
-            ${esc(
-              serie.minWa ??
-              '—'
-            )}/10 WA
-
-            ou
-
-            ${esc(
-              serie.minEah ??
-              '—'
-            )}/10 EAH
-
-          </p>
-
-      `;
-
-
-      (
-        serie.codes ||
-        []
       )
-      .forEach(
-        code => {
 
-          const choices =
-            serie
-              .choiceGroups
-              ?.[code];
+      .replace(
+        /^#/,
+        ''
+      )
+
+      .trim();
+
+
+    return PAGE_IDS.has(
+      raw
+    )
+      ?
+      raw
+      :
+      'accueil';
+
+  }
+
+
+  function initRouter() {
+
+
+    /*
+      Navigation centrale.
+    */
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+
+        const pageLink =
+          event.target.closest(
+            '[data-page]'
+          );
+
+
+        if (
+          pageLink
+        ) {
+
+          const page =
+            pageLink.dataset.page;
 
 
           if (
-            Array.isArray(
-              choices
+            PAGE_IDS.has(
+              page
             )
           ) {
 
-            html += `
+            event.preventDefault();
 
-              <p>
 
-                <strong>
-                  Au choix :
-                </strong>
+            showPage(
+              page
+            );
 
-                ${
-                  choices
-                    .map(
-                      choice =>
-                        esc(choice)
-                        +
-                        (
-                          DIVE_NAMES[
-                            choice
-                          ]
-                          ?
-                          ' — '
-                          +
-                          esc(
-                            DIVE_NAMES[
-                              choice
-                            ]
-                          )
-                          :
-                          ''
-                        )
-                    )
-                    .join('<br>')
-                }
 
-              </p>
-
-            `;
-
-          } else {
-
-            html += `
-
-              <p>
-
-                <strong>
-                  ${esc(code)}
-                </strong>
-
-                ${
-                  DIVE_NAMES[
-                    code
-                  ]
-                  ?
-                  ' — '
-                  +
-                  esc(
-                    DIVE_NAMES[
-                      code
-                    ]
-                  )
-                  :
-                  ''
-                }
-
-              </p>
-
-            `;
+            return;
 
           }
+
+        }
+
+
+        const pageButton =
+          event.target.closest(
+            '[data-page-button]'
+          );
+
+
+        if (
+          pageButton
+        ) {
+
+          const page =
+            pageButton
+              .dataset
+              .pageButton;
+
+
+          if (
+            PAGE_IDS.has(
+              page
+            )
+          ) {
+
+            event.preventDefault();
+
+
+            showPage(
+              page
+            );
+
+
+            return;
+
+          }
+
+        }
+
+
+        const openCard =
+          event.target.closest(
+            '[data-open]'
+          );
+
+
+        if (
+          openCard
+        ) {
+
+          const page =
+            openCard
+              .dataset
+              .open;
+
+
+          if (
+            PAGE_IDS.has(
+              page
+            )
+          ) {
+
+            event.preventDefault();
+
+
+            showPage(
+              page
+            );
+
+          }
+
+        }
+
+      }
+
+    );
+
+
+    /*
+      Navigation bouton précédent
+      / modification du hash.
+    */
+
+
+    window.addEventListener(
+
+      'hashchange',
+
+      function() {
+
+        showPage(
+
+          pageFromHash(),
+
+          {
+
+            updateHash:
+              false
+
+          }
+
+        );
+
+      }
+
+    );
+
+
+    /*
+      Menu mobile.
+    */
+
+
+    byId(
+      'mobileMenu'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      function() {
+
+        const navigation =
+          byId(
+            'navigation'
+          );
+
+
+        const button =
+          byId(
+            'mobileMenu'
+          );
+
+
+        navigation
+          ?.classList
+          .toggle(
+            'open'
+          );
+
+
+        navigation
+          ?.classList
+          .toggle(
+            'active'
+          );
+
+
+        button
+          ?.classList
+          .toggle(
+            'open'
+          );
+
+
+        button
+          ?.classList
+          .toggle(
+            'active'
+          );
+
+      }
+
+    );
+
+
+    /*
+      Dropdown disciplines.
+    */
+
+
+    qsa(
+      '.nav-dropdown-button'
+    )
+    .forEach(
+      function(button) {
+
+        button.addEventListener(
+
+          'click',
+
+          function(event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            button
+              .closest(
+                '.nav-dropdown'
+              )
+              ?.classList
+              .toggle(
+                'open'
+              );
+
+          }
+
+        );
+
+      }
+    );
+
+
+    /*
+      Fermer dropdown
+      en cliquant ailleurs.
+    */
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+        if (
+          !event.target.closest(
+            '.nav-dropdown'
+          )
+        ) {
+
+          qsa(
+            '.nav-dropdown.open'
+          )
+          .forEach(
+            function(element) {
+
+              element.classList.remove(
+                'open'
+              );
+
+            }
+          );
+
+        }
+
+      }
+
+    );
+
+
+    /*
+      Première page.
+    */
+
+
+    showPage(
+
+      pageFromHash(),
+
+      {
+
+        updateHash:
+          false,
+
+        scroll:
+          false
+
+      }
+
+    );
+
+  }
+
+
+  /* ============================================================
+     MODAL
+  ============================================================ */
+
+
+  function openModal(
+    html
+  ) {
+
+    const modal =
+      byId(
+        'siteModal'
+      );
+
+
+    const content =
+      byId(
+        'modalContent'
+      );
+
+
+    if (
+      !modal
+      ||
+      !content
+    ) {
+
+      return;
+
+    }
+
+
+    content.innerHTML =
+      html;
+
+
+    modal.classList.add(
+
+      'open',
+
+      'active'
+
+    );
+
+
+    modal.setAttribute(
+
+      'aria-hidden',
+
+      'false'
+
+    );
+
+
+    document
+      .body
+      .classList
+      .add(
+        'modal-open'
+      );
+
+  }
+
+
+  function closeModal() {
+
+    const modal =
+      byId(
+        'siteModal'
+      );
+
+
+    if (!modal) {
+
+      return;
+
+    }
+
+
+    modal.classList.remove(
+
+      'open',
+
+      'active'
+
+    );
+
+
+    modal.setAttribute(
+
+      'aria-hidden',
+
+      'true'
+
+    );
+
+
+    document
+      .body
+      .classList
+      .remove(
+        'modal-open'
+      );
+
+  }
+
+
+  function initModal() {
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+        if (
+          event.target.closest(
+            '[data-close-modal]'
+          )
+        ) {
+
+          event.preventDefault();
+
+
+          closeModal();
+
+        }
+
+      }
+
+    );
+
+
+    document.addEventListener(
+
+      'keydown',
+
+      function(event) {
+
+        if (
+          event.key ===
+          'Escape'
+        ) {
+
+          closeModal();
+
+        }
+
+      }
+
+    );
+
+  }
+
+
+  /* ============================================================
+     CHARGER UNE TABLE PUBLIQUE
+  ============================================================ */
+
+
+  async function loadTableSafe(
+    table,
+    filterActive = true
+  ) {
+
+    try {
+
+
+      let query =
+        requireSupabase()
+          .from(
+            table
+          )
+          .select(
+            '*'
+          );
+
+
+      if (
+        filterActive
+      ) {
+
+        query =
+          query.eq(
+            'active',
+            true
+          );
+
+      }
+
+
+      const {
+
+        data,
+
+        error
+
+      } =
+        await query;
+
+
+      if (
+        error
+      ) {
+
+        throw error;
+
+      }
+
+
+      return data || [];
+
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+
+        'EAH '
+        +
+        table
+        +
+        ':',
+
+        error
+
+      );
+
+
+      return [];
+
+    }
+
+  }
+
+
+  /* ============================================================
+     DONNEES PUBLIQUES
+  ============================================================ */
+
+
+  async function loadPublicData() {
+
+
+    const [
+
+      blazons,
+
+      spots,
+
+      news,
+
+      pricing
+
+    ] =
+      await Promise.all([
+
+        loadTableSafe(
+          'blazon_definitions',
+          true
+        ),
+
+        loadTableSafe(
+          'spots',
+          true
+        ),
+
+        loadTableSafe(
+          'news',
+          true
+        ),
+
+        loadTableSafe(
+          'pricing',
+          true
+        )
+
+      ]);
+
+
+    state.blazons =
+      blazons.sort(
+        function(a,b) {
+
+          return (
+
+            Number(
+              a.sort_order
+              ||
+              a.order
+              ||
+              0
+            )
+
+            -
+
+            Number(
+              b.sort_order
+              ||
+              b.order
+              ||
+              0
+            )
+
+          );
 
         }
       );
 
 
-      html += `
-        </div>
-      `;
+    state.spots =
+      spots.sort(
+        function(a,b) {
+
+          return String(
+            a.city ||
+            ''
+          )
+          .localeCompare(
+
+            String(
+              b.city ||
+              ''
+            ),
+
+            'fr'
+
+          );
+
+        }
+      );
+
+
+    state.news =
+      news.sort(
+        function(a,b) {
+
+          return (
+
+            new Date(
+              b.published_at
+              ||
+              b.date
+              ||
+              0
+            )
+
+            -
+
+            new Date(
+              a.published_at
+              ||
+              a.date
+              ||
+              0
+            )
+
+          );
+
+        }
+      );
+
+
+    state.pricing =
+      pricing.sort(
+        function(a,b) {
+
+          return (
+
+            Number(
+              a.sort_order
+              ||
+              a.order
+              ||
+              0
+            )
+
+            -
+
+            Number(
+              b.sort_order
+              ||
+              b.order
+              ||
+              0
+            )
+
+          );
+
+        }
+      );
+
+
+    renderBlazons();
+
+    renderSpots();
+
+    renderNews();
+
+    renderPricing();
+
+    renderSpotSelect();
+
+  }
+
+
+  /* ============================================================
+     BLAZONS
+  ============================================================ */
+
+
+  function renderBlazons() {
+
+    const root =
+      byId(
+        'blazonGrid'
+      );
+
+
+    if (!root) {
+
+      return;
 
     }
-  );
 
 
-  html += `
-    </div>
-  `;
+    if (
+      !state.blazons.length
+    ) {
+
+      root.innerHTML =
+
+        '<div class="loading-panel">'
+        +
+        'Les blazons ne sont pas disponibles pour le moment.'
+        +
+        '</div>';
 
 
-  openModal(
-    html
-  );
+      return;
 
-}
+    }
 
 
-
-/* ============================================================
-   TARIFS
-============================================================ */
-
-function renderPricing() {
-
-  const grid =
-    document.getElementById(
-      'pricingGrid'
-    );
-
-
-  if (!grid) {
-
-    return;
-
-  }
-
-
-  const list =
-    (
-      state.pricing ||
-      PRICING_FALLBACK
-    )
-    .slice()
-    .sort(
-      (a,b) =>
-        Number(
-          a.sort_order ??
-          999
-        )
-        -
-        Number(
-          b.sort_order ??
-          999
-        )
-    );
-
-
-  grid.innerHTML =
-    list
+    root.innerHTML =
+      state.blazons
       .map(
-        item => `
-
-          <article class="price-card">
-
-            <small>
-              ${esc(
-                item.id ||
-                'EAH'
-              )}
-            </small>
-
-            <h3>
-              ${esc(
-                item.name ||
-                ''
-              )}
-            </h3>
-
-            <div class="price">
-              ${esc(
-                item.price ??
-                '—'
-              )}
-            </div>
-
-            <p>
-              ${esc(
-                item.description ||
-                ''
-              )}
-            </p>
-
-            ${
-              item.renewal &&
-              item.renewal !==
-                '—'
-              ?
-              `
-                <div class="price-renewal">
-                  Renouvellement :
-                  ${esc(item.renewal)}
-                </div>
-              `
-              :
-              ''
-            }
-
-          </article>
-
-        `
-      )
-      .join('');
-
-}
+        function(
+          item,
+          index
+        ) {
 
 
+          const name =
 
-/* ============================================================
-   SPOTS
-============================================================ */
+            item.name
 
-function renderSpots() {
+            ||
 
-  const grid =
-    document.getElementById(
-      'spotsGrid'
-    );
+            item.blazon_name
 
+            ||
 
-  if (!grid) {
+            item.key
 
-    return;
+            ||
 
-  }
-
-
-  if (
-    !state.spots.length
-  ) {
-
-    grid.innerHTML = `
-
-      <div class="loading-panel">
-        Aucun spot EAH publié actuellement.
-      </div>
-
-    `;
-
-
-    return;
-
-  }
-
-
-  grid.innerHTML =
-    state.spots
-      .map(
-        spot => {
-
-          const heights =
-            String(
-              spot.heights ||
-              ''
-            )
-            .split(
-              /[,;]+/
-            )
-            .map(
-              value =>
-                value.trim()
-            )
-            .filter(
-              Boolean
-            );
-
-
-          const originalImage =
-            String(
-              spot.photo_url ||
-              ''
-            )
-            .trim();
+            'Blazon EAH';
 
 
           const image =
-            eahFastPhotoUrl(
-              originalImage,
-              'w1800'
-            );
+
+            item.image_url
+
+            ||
+
+            item.photo_url
+
+            ||
+
+            '';
 
 
           return `
 
             <article
-              class="spot"
-              data-eah-spot
-              aria-expanded="false"
+
+              class="blazon-card"
+
+              data-blazon-index="${index}"
+
             >
 
-              <div class="spot-picture">
 
-                ${
-                  image
-                  ?
-                  `
+              ${
 
-                    <img
-                      class="eah-cms-image"
-                      src="${esc(image)}"
-                      data-eah-original-image="${esc(originalImage)}"
-                      alt="${esc(
-                        spot.name ||
-                        'Spot EAH'
-                      )}"
-                      loading="eager"
-                      decoding="async"
-                    >
+                image
 
-                  `
-                  :
-                  `
+                ?
 
-                    <div
-                      class="eah-cms-image-fallback"
-                    >
-                      EAH DIVING
-                    </div>
+                `
 
-                  `
-                }
+                <img
+
+                  src="${escapeAttr(image)}"
+
+                  alt="${escapeAttr(name)}"
+
+                  loading="eager"
+
+                >
+
+                `
+
+                :
+
+                ''
+
+              }
+
+
+              <div class="blazon-card-content">
+
+
+                <span class="overline">
+
+                  PROGRESSION
+
+                </span>
+
+
+                <h3>
+
+                  ${escapeHtml(name)}
+
+                </h3>
+
+
+                <p>
+
+                  ${escapeHtml(
+                    item.summary
+                    ||
+                    item.description
+                    ||
+                    'Voir les conditions du blazon.'
+                  )}
+
+                </p>
+
 
               </div>
 
 
-              <div class="spot-content">
+            </article>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     SPOTS
+  ============================================================ */
+
+
+  function renderSpots() {
+
+    const root =
+      byId(
+        'spotsGrid'
+      );
+
+
+    if (!root) {
+
+      return;
+
+    }
+
+
+    if (
+      !state.spots.length
+    ) {
+
+      root.innerHTML =
+
+        '<div class="loading-panel">'
+        +
+        'Aucun spot disponible.'
+        +
+        '</div>';
+
+
+      return;
+
+    }
+
+
+    root.innerHTML =
+      state.spots
+      .map(
+        function(
+          spot,
+          index
+        ) {
+
+          return `
+
+            <article
+
+              class="spot-card"
+
+              data-spot-index="${index}"
+
+            >
+
+
+              ${
+
+                spot.photo_url
+
+                ?
+
+                `
+
+                <img
+
+                  src="${escapeAttr(
+                    spot.photo_url
+                  )}"
+
+                  alt="${escapeAttr(
+                    spot.name ||
+                    'Spot EAH'
+                  )}"
+
+                  loading="eager"
+
+                >
+
+                `
+
+                :
+
+                ''
+
+              }
+
+
+              <div>
+
 
                 <span class="overline">
 
-                  ${esc(
+                  ${escapeHtml(
                     spot.city ||
                     'SPOT EAH'
                   )}
@@ -3645,91 +2342,28 @@ function renderSpots() {
                 </span>
 
 
-                <h2>
-                  ${esc(
+                <h3>
+
+                  ${escapeHtml(
                     spot.name ||
+                    'Spot'
+                  )}
+
+                </h3>
+
+
+                <p>
+
+                  ${escapeHtml(
+                    spot.heights ||
                     ''
                   )}
-                </h2>
 
+                </p>
 
-                <div class="tags">
-
-                  ${
-                    heights
-                      .map(
-                        height => `
-
-                          <span>
-                            ${esc(height)}
-                          </span>
-
-                        `
-                      )
-                      .join('')
-                  }
-
-                </div>
-
-
-                <div
-                  class="spot-details"
-                  hidden
-                >
-
-                  ${
-                    spot.address
-                    ?
-                    `
-
-                      <div class="spot-detail-block">
-
-                        <strong>
-                          Adresse
-                        </strong>
-
-                        <p>
-                          ${esc(spot.address)}
-                        </p>
-
-                      </div>
-
-                    `
-                    :
-                    ''
-                  }
-
-
-                  ${
-                    spot.description
-                    ?
-                    `
-
-                      <div class="spot-detail-block">
-
-                        <strong>
-                          Description
-                        </strong>
-
-                        <p>
-                          ${esc(spot.description)}
-                        </p>
-
-                      </div>
-
-                    `
-                    :
-                    ''
-                  }
-
-                </div>
-
-
-                <div class="spot-open-label">
-                  Voir les informations
-                </div>
 
               </div>
+
 
             </article>
 
@@ -3737,368 +2371,142 @@ function renderSpots() {
 
         }
       )
-      .join('');
-
-
-  grid
-    .querySelectorAll(
-      '.eah-cms-image'
-    )
-    .forEach(
-      img => {
-
-        img.addEventListener(
-
-          'error',
-
-          function() {
-
-            console.warn(
-
-              'Image spot inaccessible :',
-
-              this.dataset.eahOriginalImage
-              ||
-              this.src
-
-            );
-
-
-            this.style.display =
-              'none';
-
-
-            const parent =
-              this.parentElement;
-
-
-            if (
-              parent &&
-              !parent.querySelector(
-                '.eah-cms-image-fallback'
-              )
-            ) {
-
-              const fallback =
-                document.createElement(
-                  'div'
-                );
-
-
-              fallback.className =
-                'eah-cms-image-fallback';
-
-
-              fallback.textContent =
-                'EAH DIVING';
-
-
-              parent.appendChild(
-                fallback
-              );
-
-            }
-
-          },
-
-          {
-            once:
-              true
-          }
-
-        );
-
-      }
-    );
-
-
-  grid
-    .querySelectorAll(
-      '[data-eah-spot]'
-    )
-    .forEach(
-      card => {
-
-        card.addEventListener(
-
-          'click',
-
-          () => {
-
-            const details =
-              card.querySelector(
-                '.spot-details'
-              );
-
-
-            const expanded =
-              card.getAttribute(
-                'aria-expanded'
-              ) ===
-              'true';
-
-
-            card.setAttribute(
-
-              'aria-expanded',
-
-              expanded
-                ?
-                'false'
-                :
-                'true'
-
-            );
-
-
-            if (details) {
-
-              details.hidden =
-                expanded;
-
-            }
-
-
-            const label =
-              card.querySelector(
-                '.spot-open-label'
-              );
-
-
-            if (label) {
-
-              label.textContent =
-                expanded
-                  ?
-                  'Voir les informations'
-                  :
-                  'Masquer les informations';
-
-            }
-
-          }
-
-        );
-
-      }
-    );
-
-}
-
-
-
-function renderSpotSelect() {
-
-  const select =
-    document.getElementById(
-      'spotId'
-    );
-
-
-  if (!select) {
-
-    return;
+      .join(
+        ''
+      );
 
   }
 
 
-  select.innerHTML = `
+  /* ============================================================
+     ACTUALITES
+  ============================================================ */
 
-    <option value="">
-      Autre / non répertorié
-    </option>
 
-    ${
-      state.spots
-        .map(
-          spot => `
+  function renderNews() {
 
-            <option
-              value="${esc(spot.id)}"
-              data-name="${esc(spot.name)}"
-            >
+    const root =
+      byId(
+        'newsGrid'
+      );
 
-              ${esc(spot.name)}
 
-              ${
-                spot.city
-                ?
-                ' — '
-                +
-                esc(
-                  spot.city
-                )
-                :
-                ''
-              }
+    if (!root) {
 
-            </option>
+      return;
 
-          `
-        )
-        .join('')
     }
 
-  `;
 
-}
+    if (
+      !state.news.length
+    ) {
 
+      root.innerHTML =
 
-
-/* ============================================================
-   ACTUALITES
-============================================================ */
-
-function renderNews() {
-
-  const grid =
-    document.getElementById(
-      'newsGrid'
-    );
+        '<div class="loading-panel">'
+        +
+        'Aucune actualité disponible.'
+        +
+        '</div>';
 
 
-  if (!grid) {
+      return;
 
-    return;
-
-  }
+    }
 
 
-  if (
-    !state.news.length
-  ) {
-
-    grid.innerHTML = `
-
-      <div class="loading-panel">
-        Aucune actualité publiée actuellement.
-      </div>
-
-    `;
-
-
-    return;
-
-  }
-
-
-  grid.innerHTML =
-    state.news
+    root.innerHTML =
+      state.news
       .map(
-        news => {
-
-          const originalImage =
-            String(
-              news.image_url ||
-              ''
-            )
-            .trim();
-
-
-          const image =
-            eahFastPhotoUrl(
-              originalImage,
-              'w1800'
-            );
-
+        function(
+          item,
+          index
+        ) {
 
           return `
 
             <article
+
               class="news-card"
-              data-eah-news-id="${esc(
-                news.id ||
-                ''
-              )}"
+
+              data-news-index="${index}"
+
             >
 
+
               ${
-                image
+
+                item.image_url
+
                 ?
-                `
-
-                  <img
-                    class="news-image eah-cms-image"
-                    src="${esc(image)}"
-                    data-eah-original-image="${esc(originalImage)}"
-                    alt="${esc(
-                      news.title ||
-                      'Actualité EAH Diving'
-                    )}"
-                    loading="eager"
-                    decoding="async"
-                  >
 
                 `
+
+                <img
+
+                  src="${escapeAttr(
+                    item.image_url
+                  )}"
+
+                  alt="${escapeAttr(
+                    item.title ||
+                    'Actualité'
+                  )}"
+
+                  loading="eager"
+
+                >
+
+                `
+
                 :
-                `
 
-                  <div
-                    class="news-image eah-cms-image-fallback"
-                  >
-                    EAH DIVING
-                  </div>
+                ''
 
-                `
               }
 
 
-              <div class="news-body">
+              <div>
+
 
                 <span class="overline">
 
-                  ${esc(
-                    news.category ||
-                    'EAH DIVING'
+                  ${escapeHtml(
+                    item.category
+                    ||
+                    fmtDate(
+                      item.published_at
+                      ||
+                      item.date
+                    )
                   )}
 
                 </span>
 
 
                 <h3>
-                  ${esc(
-                    news.title ||
-                    ''
+
+                  ${escapeHtml(
+                    item.title ||
+                    'Actualité'
                   )}
+
                 </h3>
 
 
-                ${
-                  news.published_at
-                  ?
-                  `
+                <p>
 
-                    <small class="muted">
+                  ${escapeHtml(
+                    item.summary ||
+                    ''
+                  )}
 
-                      ${esc(
-                        fmtDate(
-                          news.published_at
-                        )
-                      )}
+                </p>
 
-                    </small>
-
-                  `
-                  :
-                  ''
-                }
-
-
-                ${
-                  news.summary
-                  ?
-                  `
-
-                    <p>
-                      ${esc(news.summary)}
-                    </p>
-
-                  `
-                  :
-                  ''
-                }
 
               </div>
+
 
             </article>
 
@@ -4106,159 +2514,476 @@ function renderNews() {
 
         }
       )
-      .join('');
+      .join(
+        ''
+      );
+
+  }
 
 
-  grid
-    .querySelectorAll(
-      '.eah-cms-image'
-    )
-    .forEach(
-      img => {
+  /* ============================================================
+     TARIFS
+  ============================================================ */
 
-        img.addEventListener(
 
-          'error',
+  function renderPricing() {
 
-          function() {
+    const root =
+      byId(
+        'pricingGrid'
+      );
 
-            console.warn(
 
-              'Image actualité inaccessible :',
+    if (!root) {
 
-              this.dataset.eahOriginalImage
+      return;
+
+    }
+
+
+    if (
+      !state.pricing.length
+    ) {
+
+      root.innerHTML =
+
+        '<div class="loading-panel">'
+        +
+        'Les offres ne sont pas disponibles pour le moment.'
+        +
+        '</div>';
+
+
+      return;
+
+    }
+
+
+    root.innerHTML =
+      state.pricing
+      .map(
+        function(item) {
+
+
+          const price =
+
+            item.price ==
+            null
+
+            ?
+
+            ''
+
+            :
+
+            fmtNumber(
+              item.price
+            )
+            +
+            ' €';
+
+
+          return `
+
+            <article
+
+              class="pricing-card ${item.featured ? 'featured' : ''}"
+
+            >
+
+
+              <span class="overline">
+
+                EAH DIVING PRO
+
+              </span>
+
+
+              <h3>
+
+                ${escapeHtml(
+                  item.name
+                  ||
+                  item.offer_name
+                  ||
+                  'Offre'
+                )}
+
+              </h3>
+
+
+              ${
+
+                price
+
+                ?
+
+                `
+
+                <strong class="price">
+
+                  ${escapeHtml(price)}
+
+                </strong>
+
+                `
+
+                :
+
+                ''
+
+              }
+
+
+              <p>
+
+                ${escapeHtml(
+                  item.description ||
+                  ''
+                )}
+
+              </p>
+
+
+              ${
+
+                item.renewal
+
+                ?
+
+                `
+
+                <small>
+
+                  ${escapeHtml(
+                    item.renewal
+                  )}
+
+                </small>
+
+                `
+
+                :
+
+                ''
+
+              }
+
+
+            </article>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     SELECT SPOTS EVALUATION
+  ============================================================ */
+
+
+  function renderSpotSelect() {
+
+    const select =
+      byId(
+        'spotId'
+      );
+
+
+    if (!select) {
+
+      return;
+
+    }
+
+
+    const current =
+      select.value;
+
+
+    select.innerHTML =
+
+      '<option value="">'
+      +
+      'Autre / non répertorié'
+      +
+      '</option>'
+
+      +
+
+      state.spots
+      .map(
+        function(spot) {
+
+          return `
+
+            <option
+
+              value="${escapeAttr(
+                spot.id ||
+                ''
+              )}"
+
+            >
+
+              ${escapeHtml(
+
+                (
+                  spot.name ||
+                  'Spot'
+                )
+
+                +
+
+                (
+                  spot.city
+                  ?
+                  ' — ' +
+                  spot.city
+                  :
+                  ''
+                )
+
+              )}
+
+            </option>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+
+    if (
+      current
+    ) {
+
+      select.value =
+        current;
+
+    }
+
+  }
+
+
+  /* ============================================================
+     CLIC BLAZONS / SPOTS / ACTUALITES
+  ============================================================ */
+
+
+  function bindPublicCards() {
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+
+        /*
+          BLAZON
+        */
+
+
+        const blazonCard =
+          event.target.closest(
+            '[data-blazon-index]'
+          );
+
+
+        if (
+          blazonCard
+        ) {
+
+
+          const item =
+            state.blazons[
+
+              Number(
+                blazonCard
+                  .dataset
+                  .blazonIndex
+              )
+
+            ];
+
+
+          if (!item) {
+
+            return;
+
+          }
+
+
+          const rules =
+            safeJson(
+
+              item.rules_json
+
               ||
-              this.src
+
+              item.rules
+
+              ||
+
+              {},
+
+              {}
 
             );
 
 
-            this.style.display =
-              'none';
+          const rulesText =
+            typeof rules ===
+              'string'
+            ?
+            rules
+            :
+            JSON.stringify(
+              rules,
+              null,
+              2
+            );
 
 
-            const parent =
-              this.parentElement;
+          openModal(`
+
+            <span class="overline">
+
+              BLAZON EAH
+
+            </span>
 
 
-            if (
-              parent &&
-              !parent.querySelector(
-                '.eah-cms-image-fallback'
-              )
-            ) {
+            <h2>
 
-              const fallback =
-                document.createElement(
-                  'div'
-                );
+              ${escapeHtml(
+                item.name
+                ||
+                item.blazon_name
+                ||
+                item.key
+                ||
+                'Blazon'
+              )}
 
-
-              fallback.className =
-                'news-image eah-cms-image-fallback';
+            </h2>
 
 
-              fallback.textContent =
-                'EAH DIVING';
+            ${
 
+              item.image_url
 
-              parent.insertBefore(
+              ?
 
-                fallback,
+              `
 
-                parent.firstChild
+              <img
 
-              );
+                class="modal-image"
+
+                src="${escapeAttr(
+                  item.image_url
+                )}"
+
+                alt=""
+
+              >
+
+              `
+
+              :
+
+              ''
 
             }
 
-          },
 
-          {
-            once:
-              true
-          }
+            <p>
 
-        );
+              ${escapeHtml(
+                item.description
+                ||
+                item.summary
+                ||
+                ''
+              )}
 
-      }
-    );
-
-}
-
+            </p>
 
 
-/* ============================================================
-   GRADING
-============================================================ */
+            ${
 
-const gradingSheets = {
+              rulesText
+              &&
+              rulesText !==
+                '{}'
 
-  D: {
+              ?
 
-    title:
-      'Takeoff — Départ',
+              `
 
-    image:
-      'grading-takeoff.png',
+              <pre class="modal-rules">
 
-    text:
-      'Coordination, impulsion, trajectoire, fixation et amplitude des bras.'
+${escapeHtml(rulesText)}
 
-  },
+              </pre>
 
+              `
 
-  T: {
+              :
 
-    title:
-      'Trick — Phase aérienne',
+              ''
 
-    image:
-      'grading-trick.png',
+            }
 
-    text:
-      'Rotations, contrôle des saltos et vrilles, ligne, ouverture et rythme.'
-
-  },
+          `);
 
 
-  E: {
+          return;
 
-    title:
-      'Entry — Entrée',
-
-    image:
-      'grading-entry.png',
-
-    text:
-      "Angle, éclaboussures, position des bras, jambes et axe d'entrée."
-
-  }
-
-};
+        }
 
 
+        /*
+          SPOT
+        */
 
-document
-  .querySelectorAll(
-    '.grading-card[data-sheet]'
-  )
-  .forEach(
-    card => {
 
-      card.addEventListener(
+        const spotCard =
+          event.target.closest(
+            '[data-spot-index]'
+          );
 
-        'click',
 
-        () => {
+        if (
+          spotCard
+        ) {
 
-          const data =
-            gradingSheets[
-              card.dataset.sheet
+
+          const spot =
+            state.spots[
+
+              Number(
+                spotCard
+                  .dataset
+                  .spotIndex
+              )
+
             ];
 
 
-          if (!data) {
+          if (!spot) {
 
             return;
 
@@ -4267,640 +2992,4085 @@ document
 
           openModal(`
 
-            <div class="modal-inner">
+            <span class="overline">
 
-              <span class="overline">
-                GRILLE EAH
-              </span>
+              SPOT EAH
 
-              <h2>
-                ${esc(data.title)}
-              </h2>
+            </span>
 
-              <p>
-                ${esc(data.text)}
-              </p>
+
+            <h2>
+
+              ${escapeHtml(
+                spot.name ||
+                'Spot'
+              )}
+
+            </h2>
+
+
+            ${
+
+              spot.photo_url
+
+              ?
+
+              `
 
               <img
+
                 class="modal-image"
-                src="${esc(data.image)}"
-                alt="${esc(data.title)}"
+
+                src="${escapeAttr(
+                  spot.photo_url
+                )}"
+
+                alt=""
+
               >
 
+              `
+
+              :
+
+              ''
+
+            }
+
+
+            <p>
+
+              <strong>
+
+                ${escapeHtml(
+                  spot.city ||
+                  ''
+                )}
+
+              </strong>
+
+            </p>
+
+
+            ${
+
+              spot.heights
+
+              ?
+
+              `
+
+              <p>
+
+                Hauteurs :
+                ${escapeHtml(
+                  spot.heights
+                )}
+
+              </p>
+
+              `
+
+              :
+
+              ''
+
+            }
+
+
+            ${
+
+              spot.address
+
+              ?
+
+              `
+
+              <p>
+
+                ${escapeHtml(
+                  spot.address
+                )}
+
+              </p>
+
+              `
+
+              :
+
+              ''
+
+            }
+
+
+            ${
+
+              spot.description
+
+              ?
+
+              `
+
+              <p>
+
+                ${escapeHtml(
+                  spot.description
+                )}
+
+              </p>
+
+              `
+
+              :
+
+              ''
+
+            }
+
+          `);
+
+
+          return;
+
+        }
+
+
+        /*
+          ACTUALITE
+        */
+
+
+        const newsCard =
+          event.target.closest(
+            '[data-news-index]'
+          );
+
+
+        if (
+          newsCard
+        ) {
+
+
+          const item =
+            state.news[
+
+              Number(
+                newsCard
+                  .dataset
+                  .newsIndex
+              )
+
+            ];
+
+
+          if (!item) {
+
+            return;
+
+          }
+
+
+          openModal(`
+
+            <span class="overline">
+
+              ${escapeHtml(
+                item.category ||
+                'EAH DIVING'
+              )}
+
+            </span>
+
+
+            <h2>
+
+              ${escapeHtml(
+                item.title ||
+                'Actualité'
+              )}
+
+            </h2>
+
+
+            <p class="muted">
+
+              ${escapeHtml(
+                fmtDate(
+                  item.published_at
+                  ||
+                  item.date
+                )
+              )}
+
+            </p>
+
+
+            ${
+
+              item.image_url
+
+              ?
+
+              `
+
+              <img
+
+                class="modal-image"
+
+                src="${escapeAttr(
+                  item.image_url
+                )}"
+
+                alt=""
+
+              >
+
+              `
+
+              :
+
+              ''
+
+            }
+
+
+            ${
+
+              item.video_url
+
+              ?
+
+              `
+
+              <p>
+
+                <a
+
+                  class="button small"
+
+                  href="${escapeAttr(
+                    item.video_url
+                  )}"
+
+                  target="_blank"
+
+                  rel="noopener"
+
+                >
+
+                  Voir la vidéo
+
+                </a>
+
+              </p>
+
+              `
+
+              :
+
+              ''
+
+            }
+
+
+            <div class="article-content">
+
+              ${escapeHtml(
+                item.content
+                ||
+                item.summary
+                ||
+                ''
+              )
+              .replace(
+                /\n/g,
+                '<br>'
+              )}
+
             </div>
+
+
+            ${
+
+              item.link_url
+
+              ?
+
+              `
+
+              <p>
+
+                <a
+
+                  class="button secondary small"
+
+                  href="${escapeAttr(
+                    item.link_url
+                  )}"
+
+                  target="_blank"
+
+                  rel="noopener"
+
+                >
+
+                  En savoir plus
+
+                </a>
+
+              </p>
+
+              `
+
+              :
+
+              ''
+
+            }
 
           `);
 
         }
 
-      );
+      }
+
+    );
+
+  }
+
+
+  /* ============================================================
+     RPC AVEC PLUSIEURS SIGNATURES POSSIBLES
+  ============================================================ */
+
+
+  async function rpcAttempt(
+    name,
+    payloads
+  ) {
+
+    let lastError =
+      null;
+
+
+    for (
+      const payload
+      of payloads
+    ) {
+
+
+      try {
+
+
+        const {
+
+          data,
+
+          error
+
+        } =
+          await requireSupabase()
+            .rpc(
+              name,
+              payload
+            );
+
+
+        if (
+          !error
+        ) {
+
+          return data;
+
+        }
+
+
+        lastError =
+          error;
+
+
+      } catch (
+        error
+      ) {
+
+        lastError =
+          error;
+
+      }
 
     }
-  );
 
 
+    throw (
 
-/* ============================================================
-   CRITERES
-============================================================ */
+      lastError
 
-function renderCriteria() {
+      ||
 
-  Object.entries(
-    CRITERIA
-  )
-  .forEach(
-    (
-      [
-        prefix,
-        items
-      ]
-    ) => {
+      new Error(
+        'RPC '
+        +
+        name
+        +
+        ' indisponible.'
+      )
 
-      const container =
-        document.getElementById(
-          `criteria${prefix}`
+    );
+
+  }
+
+
+  /* ============================================================
+     SHA256
+  ============================================================ */
+
+
+  async function sha256Hex(
+    text
+  ) {
+
+    const bytes =
+      new TextEncoder()
+        .encode(
+          String(
+            text || ''
+          )
         );
 
 
-      if (!container) {
+    const digest =
+      await crypto
+        .subtle
+        .digest(
+
+          'SHA-256',
+
+          bytes
+
+        );
+
+
+    return Array
+      .from(
+        new Uint8Array(
+          digest
+        )
+      )
+      .map(
+        function(byte) {
+
+          return byte
+            .toString(
+              16
+            )
+            .padStart(
+              2,
+              '0'
+            );
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     POPULATION
+  ============================================================ */
+
+
+  async function searchPopulation() {
+
+
+    const code =
+      normalizeDiveCode(
+        val(
+          'populationCode'
+        )
+      );
+
+
+    const name =
+      String(
+        val(
+          'populationName'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    const root =
+      byId(
+        'populationResults'
+      );
+
+
+    if (!root) {
+
+      return;
+
+    }
+
+
+    if (
+      !code
+      &&
+      !name
+    ) {
+
+      root.innerHTML =
+
+        '<div class="loading-panel">'
+        +
+        'Entre un code, un nom ou un prénom.'
+        +
+        '</div>';
+
+
+      return;
+
+    }
+
+
+    root.innerHTML =
+
+      '<div class="loading-panel">'
+      +
+      'Recherche…'
+      +
+      '</div>';
+
+
+    let rows =
+      [];
+
+
+    let rpcError =
+      null;
+
+
+    try {
+
+
+      const data =
+        await rpcAttempt(
+
+          'eah_population_search_v3',
+
+          [
+
+            {
+
+              p_dive_code:
+                code ||
+                null,
+
+              p_search:
+                name ||
+                null
+
+            },
+
+            {
+
+              p_dive_code:
+                code ||
+                null,
+
+              p_name:
+                name ||
+                null
+
+            },
+
+            {
+
+              p_code:
+                code ||
+                null,
+
+              p_query:
+                name ||
+                null
+
+            },
+
+            {
+
+              p_club_slug:
+                CLUB_SLUG ||
+                null,
+
+              p_dive_code:
+                code ||
+                null,
+
+              p_search:
+                name ||
+                null
+
+            }
+
+          ]
+
+        );
+
+
+      rows =
+        Array.isArray(
+          data
+        )
+        ?
+        data
+        :
+        (
+          data?.results
+          ||
+          data?.items
+          ||
+          []
+        );
+
+
+    } catch (
+      error
+    ) {
+
+      rpcError =
+        error;
+
+    }
+
+
+    /*
+      Fallback direct pour une recherche nom/prénom.
+    */
+
+
+    if (
+      !rows.length
+      &&
+      name
+    ) {
+
+
+      try {
+
+
+        const clean =
+          name
+
+          .replace(
+            /[,%()]/g,
+            ' '
+          )
+
+          .trim();
+
+
+        const {
+
+          data,
+
+          error
+
+        } =
+          await requireSupabase()
+
+          .from(
+            'divers'
+          )
+
+          .select(
+
+            'eah_id,first_name,last_name,sex,current_blazon,profile_visibility,club_slug,photo_url,public_name,public_photo,active'
+
+          )
+
+          .eq(
+            'active',
+            true
+          )
+
+          .or(
+
+            'first_name.ilike.%'
+            +
+            clean
+            +
+            '%,last_name.ilike.%'
+            +
+            clean
+            +
+            '%'
+
+          )
+
+          .limit(
+            50
+          );
+
+
+        if (
+          !error
+        ) {
+
+          rows =
+            data || [];
+
+        }
+
+
+      } catch (_) {}
+
+    }
+
+
+    if (
+      !rows.length
+      &&
+      rpcError
+    ) {
+
+      console.warn(
+        'Population RPC:',
+        rpcError
+      );
+
+    }
+
+
+    renderPopulationResults(
+      rows
+    );
+
+  }
+
+
+  function renderPopulationResults(
+    rows
+  ) {
+
+    const root =
+      byId(
+        'populationResults'
+      );
+
+
+    if (!root) {
+
+      return;
+
+    }
+
+
+    if (
+      !rows
+      ||
+      !rows.length
+    ) {
+
+      root.innerHTML =
+
+        '<div class="loading-panel">'
+        +
+        'Aucun résultat.'
+        +
+        '</div>';
+
+
+      return;
+
+    }
+
+
+    root.innerHTML =
+      rows
+      .map(
+        function(
+          row,
+          index
+        ) {
+
+
+          const eahId =
+
+            row.eah_id
+
+            ||
+
+            row.EAH_ID
+
+            ||
+
+            '';
+
+
+          const visibility =
+            normalizeVisibility(
+
+              row.profile_visibility
+
+              ||
+
+              row.visibility
+
+            );
+
+
+          const isPublic =
+            visibility ===
+            'PUBLIC';
+
+
+          const first =
+            row.first_name
+            ||
+            row.firstName
+            ||
+            '';
+
+
+          const last =
+            row.last_name
+            ||
+            row.lastName
+            ||
+            '';
+
+
+          const display =
+
+            row.diver_display
+
+            ||
+
+            row.public_name_display
+
+            ||
+
+            [
+              first,
+              last
+            ]
+            .filter(
+              Boolean
+            )
+            .join(
+              ' '
+            )
+
+            ||
+
+            eahId
+
+            ||
+
+            'Plongeur EAH';
+
+
+          const score =
+
+            row.eah_score
+
+            ??
+
+            row.EAH_SCORE
+
+            ??
+
+            row.score;
+
+
+          const diveCode =
+
+            row.dive_code
+
+            ||
+
+            row.DIVE_CODE
+
+            ||
+
+            '';
+
+
+          const clubSlug =
+
+            row.club_slug
+
+            ||
+
+            row.CLUB_SLUG
+
+            ||
+
+            CLUB_SLUG
+
+            ||
+
+            '';
+
+
+          return `
+
+            <article
+
+              class="population-card"
+
+              data-pop-index="${index}"
+
+            >
+
+
+              <div>
+
+
+                <span class="overline">
+
+                  ${escapeHtml(
+                    isPublic
+                    ?
+                    'PROFIL PUBLIC'
+                    :
+                    'PROFIL PRIVÉ'
+                  )}
+
+                </span>
+
+
+                <h3>
+
+                  ${escapeHtml(
+                    display
+                  )}
+
+                </h3>
+
+
+                <p>
+
+                  ${escapeHtml(
+                    eahId
+                  )}
+
+                </p>
+
+
+                ${
+
+                  diveCode
+
+                  ?
+
+                  `
+
+                  <p>
+
+                    <strong>
+
+                      ${escapeHtml(
+                        diveCode
+                      )}
+
+                    </strong>
+
+                    ${
+
+                      score != null
+
+                      ?
+
+                      ' — EAH '
+                      +
+                      escapeHtml(
+                        fmtNumber(
+                          score
+                        )
+                      )
+                      +
+                      '/10'
+
+                      :
+
+                      ''
+
+                    }
+
+                  </p>
+
+                  `
+
+                  :
+
+                  ''
+
+                }
+
+
+                ${
+
+                  row.current_blazon
+
+                  ?
+
+                  `
+
+                  <p>
+
+                    ${escapeHtml(
+                      row.current_blazon
+                    )}
+
+                  </p>
+
+                  `
+
+                  :
+
+                  ''
+
+                }
+
+
+              </div>
+
+
+              ${
+
+                isPublic
+
+                ?
+
+                `
+
+                <button
+
+                  type="button"
+
+                  class="button small"
+
+                  data-public-profile="${escapeAttr(
+                    eahId
+                  )}"
+
+                  data-club-slug="${escapeAttr(
+                    clubSlug
+                  )}"
+
+                >
+
+                  Voir le profil
+
+                </button>
+
+                `
+
+                :
+
+                `
+
+                <span class="badge">
+
+                  Détails privés
+
+                </span>
+
+                `
+
+              }
+
+
+            </article>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  function bindPopulation() {
+
+
+    byId(
+      'populationSearchButton'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      searchPopulation
+
+    );
+
+
+    [
+      'populationCode',
+      'populationName'
+    ]
+    .forEach(
+      function(id) {
+
+        byId(
+          id
+        )
+        ?.addEventListener(
+
+          'keydown',
+
+          function(event) {
+
+            if (
+              event.key ===
+              'Enter'
+            ) {
+
+              event.preventDefault();
+
+
+              searchPopulation();
+
+            }
+
+          }
+
+        );
+
+      }
+    );
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+
+        const button =
+          event.target.closest(
+            '[data-public-profile]'
+          );
+
+
+        if (!button) {
+
+          return;
+
+        }
+
+
+        const eahId =
+          button
+            .dataset
+            .publicProfile;
+
+
+        const clubSlug =
+          button
+            .dataset
+            .clubSlug
+
+          ||
+
+          CLUB_SLUG;
+
+
+        if (!eahId) {
+
+          return;
+
+        }
+
+
+        loadPublicProfile(
+
+          eahId,
+
+          clubSlug
+
+        );
+
+      }
+
+    );
+
+  }
+
+
+  /* ============================================================
+     ETATS PROFIL
+  ============================================================ */
+
+
+  function showProfileState(
+    mode
+  ) {
+
+
+    const loading =
+      byId(
+        'profileLoading'
+      );
+
+
+    const noAuth =
+      byId(
+        'profileNoAuth'
+      );
+
+
+    const setup =
+      byId(
+        'profileSetup'
+      );
+
+
+    const view =
+      byId(
+        'profileView'
+      );
+
+
+    [
+      loading,
+      noAuth,
+      setup,
+      view
+    ]
+    .forEach(
+      function(element) {
+
+        element
+          ?.classList
+          .add(
+            'hidden'
+          );
+
+      }
+    );
+
+
+    if (
+      mode ===
+      'loading'
+    ) {
+
+      loading
+        ?.classList
+        .remove(
+          'hidden'
+        );
+
+    }
+
+
+    if (
+      mode ===
+      'noauth'
+    ) {
+
+      noAuth
+        ?.classList
+        .remove(
+          'hidden'
+        );
+
+    }
+
+
+    if (
+      mode ===
+      'setup'
+    ) {
+
+      setup
+        ?.classList
+        .remove(
+          'hidden'
+        );
+
+    }
+
+
+    if (
+      mode ===
+      'view'
+    ) {
+
+      view
+        ?.classList
+        .remove(
+          'hidden'
+        );
+
+    }
+
+  }
+
+
+  /* ============================================================
+     NORMALISATION PROFIL
+  ============================================================ */
+
+
+  function normalizeProfilePayload(
+    data
+  ) {
+
+
+    const root =
+      firstObject(
+        data
+      )
+      ||
+      {};
+
+
+    const profile =
+
+      root.profile
+
+      ||
+
+      root.diver
+
+      ||
+
+      root.athlete
+
+      ||
+
+      root;
+
+
+    const evaluations =
+
+      root.evaluations
+
+      ||
+
+      root.history
+
+      ||
+
+      root.profile_history
+
+      ||
+
+      profile?.evaluations
+
+      ||
+
+      [];
+
+
+    const blazons =
+
+      root.blazons
+
+      ||
+
+      root.progress
+
+      ||
+
+      root.blazon_progress
+
+      ||
+
+      profile?.blazons
+
+      ||
+
+      [];
+
+
+    return {
+
+      raw:
+        root,
+
+      profile:
+        profile || {},
+
+      evaluations:
+        Array.isArray(
+          evaluations
+        )
+        ?
+        evaluations
+        :
+        [],
+
+      blazons:
+        Array.isArray(
+          blazons
+        )
+        ?
+        blazons
+        :
+        []
+
+    };
+
+  }
+
+
+  /* ============================================================
+     CRITERES D'UNE EVALUATION EXISTANTE
+  ============================================================ */
+
+
+  function evaluationCriteriaData(
+    evaluation = {}
+  ) {
+
+    return safeJson(
+
+      evaluation.criteria
+
+      ??
+
+      evaluation.criteria_json
+
+      ??
+
+      evaluation.CRITERIA_JSON
+
+      ??
+
+      {},
+
+      {}
+
+    );
+
+  }
+
+
+  /* ============================================================
+     NOTE PRINCIPALE D'UNE EVALUATION
+  ============================================================ */
+
+
+  function evaluationScoreData(
+    evaluation = {}
+  ) {
+
+
+    const criteria =
+      evaluationCriteriaData(
+        evaluation
+      );
+
+
+    const eah =
+      numberOrNull(
+
+        evaluation.eah_score
+
+        ??
+
+        evaluation.eahScore
+
+        ??
+
+        evaluation.EAH_SCORE
+
+        ??
+
+        evaluation.score_eah
+
+        ??
+
+        evaluation.final_eah_score
+
+      );
+
+
+    const wa =
+      numberOrNull(
+
+        evaluation.wa_score
+
+        ??
+
+        evaluation.waScore
+
+        ??
+
+        evaluation.WA_SCORE
+
+        ??
+
+        evaluation.score_wa
+
+      );
+
+
+    let type =
+      String(
+
+        evaluation.primary_score_type
+
+        ??
+
+        evaluation.primaryScoreType
+
+        ??
+
+        evaluation.PRIMARY_SCORE_TYPE
+
+        ??
+
+        evaluation.scoring_mode
+
+        ??
+
+        evaluation.SCORING_MODE
+
+        ??
+
+        evaluation.score_type
+
+        ??
+
+        evaluation.SCORE_TYPE
+
+        ??
+
+        criteria._primaryScoreType
+
+        ??
+
+        criteria._scoreType
+
+        ??
+
+        ''
+
+      )
+      .trim()
+      .toUpperCase();
+
+
+    if (
+      type !==
+        'WA'
+      &&
+      type !==
+        'EAH'
+    ) {
+
+      type =
+        eah !==
+        null
+
+        ?
+
+        'EAH'
+
+        :
+
+        (
+          wa !==
+          null
+          ?
+          'WA'
+          :
+          'EAH'
+        );
+
+    }
+
+
+    if (
+      type ===
+        'WA'
+      &&
+      wa ===
+        null
+      &&
+      eah !==
+        null
+    ) {
+
+      type =
+        'EAH';
+
+    }
+
+
+    if (
+      type ===
+        'EAH'
+      &&
+      eah ===
+        null
+      &&
+      wa !==
+        null
+    ) {
+
+      type =
+        'WA';
+
+    }
+
+
+    return {
+
+      type,
+
+      eah,
+
+      wa,
+
+      main:
+        type ===
+          'WA'
+        ?
+        wa
+        :
+        eah
+
+    };
+
+  }
+
+
+  /* ============================================================
+     SCORE TAKEOFF / TRICK / ENTRY EXISTANT
+  ============================================================ */
+
+
+  function phaseScore(
+    evaluation,
+    phase
+  ) {
+
+
+    const criteria =
+      evaluationCriteriaData(
+        evaluation
+      );
+
+
+    const directMap = {
+
+      D:
+
+        evaluation.takeoff
+
+        ??
+
+        evaluation.TAKEOFF,
+
+
+      T:
+
+        evaluation.trick
+
+        ??
+
+        evaluation.TRICK,
+
+
+      E:
+
+        evaluation.entry_score
+
+        ??
+
+        evaluation.entry
+
+        ??
+
+        evaluation.ENTRY
+
+    };
+
+
+    const direct =
+      numberOrNull(
+        directMap[
+          phase
+        ]
+      );
+
+
+    if (
+      direct !==
+      null
+    ) {
+
+      return direct;
+
+    }
+
+
+    const keys =
+      CRITERIA[
+        phase
+      ]
+      .map(
+        function(item) {
+
+          return item[0];
+
+        }
+      );
+
+
+    const values =
+      keys
+
+      .map(
+        function(key) {
+
+          return criteria[
+            key
+          ];
+
+        }
+      )
+
+      .filter(
+        function(value) {
+
+          return (
+
+            value !==
+              null
+
+            &&
+
+            value !==
+              'NA'
+
+            &&
+
+            value !==
+              'N/A'
+
+            &&
+
+            value !==
+              ''
+
+            &&
+
+            typeof value !==
+              'undefined'
+
+          );
+
+        }
+      )
+
+      .map(
+        Number
+      )
+
+      .filter(
+        Number.isFinite
+      );
+
+
+    if (
+      !values.length
+    ) {
+
+      return null;
+
+    }
+
+
+    return (
+
+      Math.round(
+
+        (
+          values.reduce(
+            function(a,b) {
+
+              return a + b;
+
+            },
+            0
+          )
+
+          /
+
+          (
+            values.length
+            *
+            2
+          )
+
+        )
+
+        *
+
+        100
+
+      )
+
+      /
+
+      10
+
+    );
+
+  }
+
+
+  /* ============================================================
+     LIENS REPORT / VIDEO
+  ============================================================ */
+
+
+  function evaluationReportUrl(
+    evaluation
+  ) {
+
+    return (
+
+      evaluation.report_url
+
+      ||
+
+      evaluation.REPORT_URL
+
+      ||
+
+      evaluation.grade_report_url
+
+      ||
+
+      ''
+
+    );
+
+  }
+
+
+  function evaluationVideoUrl(
+    evaluation
+  ) {
+
+    return (
+
+      evaluation.video_url
+
+      ||
+
+      evaluation.VIDEO_URL
+
+      ||
+
+      evaluation.videoUrl
+
+      ||
+
+      ''
+
+    );
+
+  }
+
+
+  /* ============================================================
+     CARTE HISTORIQUE
+  ============================================================ */
+
+
+  function evaluationCardHtml(
+    evaluation,
+    detailed = true
+  ) {
+
+
+    const score =
+      evaluationScoreData(
+        evaluation
+      );
+
+
+    const code =
+      normalizeDiveCode(
+
+        evaluation.dive_code
+
+        ||
+
+        evaluation.DIVE_CODE
+
+        ||
+
+        ''
+
+      );
+
+
+    const diveName =
+
+      evaluation.dive_name
+
+      ||
+
+      evaluation.DIVE_NAME
+
+      ||
+
+      DIVE_NAMES[
+        code
+      ]
+
+      ||
+
+      code
+
+      ||
+
+      'Plongeon';
+
+
+    const date =
+
+      evaluation.evaluated_at
+
+      ||
+
+      evaluation.EVALUATED_AT
+
+      ||
+
+      evaluation.date
+
+      ||
+
+      evaluation.DATE
+
+      ||
+
+      evaluation.created_at;
+
+
+    const height =
+
+      evaluation.height
+
+      ??
+
+      evaluation.HEIGHT;
+
+
+    const reportUrl =
+      evaluationReportUrl(
+        evaluation
+      );
+
+
+    const videoUrl =
+      evaluationVideoUrl(
+        evaluation
+      );
+
+
+    const takeoff =
+      phaseScore(
+        evaluation,
+        'D'
+      );
+
+
+    const trick =
+      phaseScore(
+        evaluation,
+        'T'
+      );
+
+
+    const entry =
+      phaseScore(
+        evaluation,
+        'E'
+      );
+
+
+    return `
+
+      <article class="history-card evaluation-history-card">
+
+
+        <div class="history-card-head">
+
+
+          <div>
+
+
+            <span class="overline">
+
+              ${escapeHtml(
+                code ||
+                'EAH DIVING'
+              )}
+
+            </span>
+
+
+            <h3>
+
+              ${escapeHtml(
+                diveName
+              )}
+
+            </h3>
+
+
+            <p>
+
+              ${escapeHtml(
+                fmtDate(
+                  date
+                )
+              )}
+
+              ${
+
+                height !==
+                  null
+                &&
+                height !==
+                  ''
+                &&
+                typeof height !==
+                  'undefined'
+
+                ?
+
+                ' • '
+                +
+                escapeHtml(
+                  fmtNumber(
+                    height
+                  )
+                )
+                +
+                ' m'
+
+                :
+
+                ''
+
+              }
+
+            </p>
+
+
+          </div>
+
+
+          <strong class="history-main-score">
+
+            ${escapeHtml(
+              score.type
+            )}
+
+            ${escapeHtml(
+              fmtNumber(
+                score.main
+              )
+            )}/10
+
+          </strong>
+
+
+        </div>
+
+
+        ${
+
+          detailed
+
+          ?
+
+          `
+
+          <div class="history-phase-scores">
+
+
+            <span>
+
+              Takeoff
+
+              <strong>
+
+                ${escapeHtml(
+                  fmtNumber(
+                    takeoff
+                  )
+                )}/10
+
+              </strong>
+
+            </span>
+
+
+            <span>
+
+              Trick
+
+              <strong>
+
+                ${escapeHtml(
+                  fmtNumber(
+                    trick
+                  )
+                )}/10
+
+              </strong>
+
+            </span>
+
+
+            <span>
+
+              Entry
+
+              <strong>
+
+                ${escapeHtml(
+                  fmtNumber(
+                    entry
+                  )
+                )}/10
+
+              </strong>
+
+            </span>
+
+
+          </div>
+
+          `
+
+          :
+
+          ''
+
+        }
+
+
+        <div class="history-actions">
+
+
+          ${
+
+            reportUrl
+
+            ?
+
+            `
+
+            <a
+
+              class="button small"
+
+              href="${escapeAttr(
+                reportUrl
+              )}"
+
+              target="_blank"
+
+              rel="noopener"
+
+            >
+
+              Grade Report
+
+            </a>
+
+            `
+
+            :
+
+            ''
+
+          }
+
+
+          ${
+
+            videoUrl
+
+            ?
+
+            `
+
+            <a
+
+              class="button secondary small"
+
+              href="${escapeAttr(
+                videoUrl
+              )}"
+
+              target="_blank"
+
+              rel="noopener"
+
+            >
+
+              Vidéo
+
+            </a>
+
+            `
+
+            :
+
+            ''
+
+          }
+
+
+        </div>
+
+
+      </article>
+
+    `;
+
+  }
+
+
+  /* ============================================================
+     AFFICHER PROFIL
+  ============================================================ */
+
+
+  function renderProfile(
+    profileData
+  ) {
+
+
+    const profile =
+      profileData.profile
+      ||
+      {};
+
+
+    const evaluations =
+      profileData.evaluations
+      ||
+      [];
+
+
+    const blazons =
+      profileData.blazons
+      ||
+      [];
+
+
+    state.profile =
+      profile;
+
+
+    state.profileHistory =
+      evaluations;
+
+
+    state.profileBlazons =
+      blazons;
+
+
+    const eahId =
+
+      profile.eah_id
+
+      ||
+
+      profile.EAH_ID
+
+      ||
+
+      state.cardContext?.eahId
+
+      ||
+
+      '';
+
+
+    const first =
+
+      profile.first_name
+
+      ||
+
+      profile.firstName
+
+      ||
+
+      '';
+
+
+    const last =
+
+      profile.last_name
+
+      ||
+
+      profile.lastName
+
+      ||
+
+      '';
+
+
+    const name =
+
+      [
+        first,
+        last
+      ]
+      .filter(
+        Boolean
+      )
+      .join(
+        ' '
+      )
+
+      ||
+
+      profile.public_name
+
+      ||
+
+      profile.display_name
+
+      ||
+
+      eahId
+
+      ||
+
+      'Profil EAH';
+
+
+    const photo =
+
+      profile.photo_url
+
+      ||
+
+      profile.photoUrl
+
+      ||
+
+      '';
+
+
+    const currentBlazon =
+
+      profile.manual_blazon
+
+      ||
+
+      profile.current_blazon
+
+      ||
+
+      profile.currentBlazon
+
+      ||
+
+      'En progression';
+
+
+    const sex =
+      profile.sex
+      ||
+      '—';
+
+
+    const group =
+      profile.group_name
+      ||
+      profile.group
+      ||
+      '—';
+
+
+    const visibility =
+      normalizeVisibility(
+
+        profile.profile_visibility
+
+        ||
+
+        profile.visibility
+
+      );
+
+
+    const root =
+      byId(
+        'profileView'
+      );
+
+
+    if (!root) {
+
+      return;
+
+    }
+
+
+    root.innerHTML = `
+
+
+      <article class="profile-hero-card">
+
+
+        ${
+
+          photo
+
+          ?
+
+          `
+
+          <img
+
+            class="profile-avatar"
+
+            src="${escapeAttr(
+              photo
+            )}"
+
+            alt="${escapeAttr(
+              name
+            )}"
+
+          >
+
+          `
+
+          :
+
+          `
+
+          <div class="profile-avatar profile-avatar-fallback">
+
+            EAH
+
+          </div>
+
+          `
+
+        }
+
+
+        <div class="profile-main-info">
+
+
+          <span class="overline">
+
+            PROFIL EAH
+
+          </span>
+
+
+          <h1>
+
+            ${escapeHtml(
+              name
+            )}
+
+          </h1>
+
+
+          <p>
+
+            ${escapeHtml(
+              eahId
+            )}
+
+          </p>
+
+
+          <div class="profile-tags">
+
+
+            <span>
+
+              ${escapeHtml(
+                sex
+              )}
+
+            </span>
+
+
+            <span>
+
+              ${escapeHtml(
+                group
+              )}
+
+            </span>
+
+
+            <span>
+
+              ${escapeHtml(
+                visibility ===
+                  'PUBLIC'
+                ?
+                'PUBLIC'
+                :
+                'PRIVÉ'
+              )}
+
+            </span>
+
+
+          </div>
+
+
+        </div>
+
+
+        <div class="profile-blazon-box">
+
+
+          <span>
+
+            Blazon actuel
+
+          </span>
+
+
+          <strong>
+
+            ${escapeHtml(
+              currentBlazon
+            )}
+
+          </strong>
+
+
+        </div>
+
+
+      </article>
+
+
+      <section class="profile-history-block">
+
+
+        <div class="section-title left">
+
+
+          <span class="overline">
+
+            HISTORIQUE
+
+          </span>
+
+
+          <h2>
+
+            Évaluations
+
+          </h2>
+
+
+        </div>
+
+
+        <div class="profile-history-list">
+
+
+          ${
+
+            evaluations.length
+
+            ?
+
+            evaluations
+            .map(
+              function(item) {
+
+                return evaluationCardHtml(
+                  item,
+                  true
+                );
+
+              }
+            )
+            .join(
+              ''
+            )
+
+            :
+
+            `
+
+            <div class="loading-panel">
+
+              Aucune évaluation.
+
+            </div>
+
+            `
+
+          }
+
+
+        </div>
+
+
+      </section>
+
+    `;
+
+
+    showProfileState(
+      'view'
+    );
+
+
+    showPage(
+      'profil'
+    );
+
+  }
+
+
+  /* ============================================================
+     PROFIL PUBLIC
+  ============================================================ */
+
+
+  async function loadPublicProfile(
+    eahId,
+    clubSlug
+  ) {
+
+
+    showPage(
+      'profil'
+    );
+
+
+    showProfileState(
+      'loading'
+    );
+
+
+    try {
+
+
+      const data =
+        await rpcAttempt(
+
+          'eah_public_profile_v2',
+
+          [
+
+            {
+
+              p_eah_id:
+                normalizeEahId(
+                  eahId
+                ),
+
+              p_club_slug:
+                clubSlug ||
+                null
+
+            },
+
+            {
+
+              p_eah_id:
+                normalizeEahId(
+                  eahId
+                )
+
+            }
+
+          ]
+
+        );
+
+
+      const normalized =
+        normalizeProfilePayload(
+          data
+        );
+
+
+      const raw =
+        normalized.raw
+        ||
+        {};
+
+
+      if (
+        raw.profile_visibility
+        &&
+        normalizeVisibility(
+          raw.profile_visibility
+        )
+        !==
+        'PUBLIC'
+      ) {
+
+        throw new Error(
+          'Ce profil est privé.'
+        );
+
+      }
+
+
+      renderProfile(
+        normalized
+      );
+
+
+    } catch (
+      error
+    ) {
+
+
+      console.error(
+        'Public profile:',
+        error
+      );
+
+
+      showProfileState(
+        'noauth'
+      );
+
+
+      const panel =
+        byId(
+          'profileNoAuth'
+        );
+
+
+      if (
+        panel
+      ) {
+
+
+        const title =
+          panel.querySelector(
+            'h2'
+          );
+
+
+        const paragraph =
+          panel.querySelector(
+            'p'
+          );
+
+
+        if (
+          title
+        ) {
+
+          title.textContent =
+            'Profil non disponible';
+
+        }
+
+
+        if (
+          paragraph
+        ) {
+
+          paragraph.textContent =
+
+            error?.message
+
+            ||
+
+            'Impossible d’ouvrir ce profil.';
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  /* ============================================================
+     CARTE NFC PLONGEUR
+  ============================================================ */
+
+
+  async function loadPrivateProfileByCard(
+    clubSlug,
+    eahId,
+    token
+  ) {
+
+
+    state.cardContext = {
+
+      clubSlug:
+        String(
+          clubSlug || ''
+        )
+        .trim(),
+
+      eahId:
+        normalizeEahId(
+          eahId
+        ),
+
+      token:
+        String(
+          token || ''
+        )
+        .trim()
+
+    };
+
+
+    if (
+      state.cardContext.clubSlug
+    ) {
+
+      CLUB_SLUG =
+        state.cardContext.clubSlug;
+
+    }
+
+
+    showPage(
+      'profil'
+    );
+
+
+    showProfileState(
+      'loading'
+    );
+
+
+    try {
+
+
+      const data =
+        await rpcAttempt(
+
+          'eah_open_profile_fast',
+
+          [
+
+            {
+
+              p_club_slug:
+                state.cardContext.clubSlug,
+
+              p_eah_id:
+                state.cardContext.eahId,
+
+              p_token:
+                state.cardContext.token
+
+            }
+
+          ]
+
+        );
+
+
+      const root =
+        firstObject(
+          data
+        )
+        ||
+        {};
+
+
+      if (
+        root.assigned ===
+          false
+
+        ||
+
+        root.needs_setup ===
+          true
+
+        ||
+
+        root.status ===
+          'UNASSIGNED'
+      ) {
+
+
+        prepareProfileSetup(
+          root
+        );
+
 
         return;
 
       }
 
 
-      container.innerHTML =
-        items
-          .map(
-            (
-              item,
-              index
-            ) => `
+      renderProfile(
 
-              <div>
-
-                <strong>
-                  ${prefix}${index + 1}
-                </strong>
-
-                &nbsp;—&nbsp;
-
-                ${esc(item)}
-
-              </div>
-
-
-              <select
-                id="${prefix}${index + 1}"
-              >
-
-                <option value="2">
-                  2 — Validé
-                </option>
-
-                <option value="1">
-                  1 — Partiel
-                </option>
-
-                <option value="0">
-                  0 — Non validé
-                </option>
-
-                <option value="NA">
-                  N/A
-                </option>
-
-              </select>
-
-            `
-          )
-          .join('');
-
-    }
-  );
-
-}
-
-
-
-function criterionScore(
-  prefix
-) {
-
-  let sum =
-    0;
-
-
-  let max =
-    0;
-
-
-  for (
-    let i = 1;
-    i <= 5;
-    i++
-  ) {
-
-    const raw =
-      val(
-        `${prefix}${i}`
-      );
-
-
-    if (
-      raw ===
-        'NA'
-      ||
-      raw ===
-        ''
-    ) {
-
-      continue;
-
-    }
-
-
-    const n =
-      Number(
-        raw
-      );
-
-
-    if (
-      !Number.isFinite(
-        n
-      )
-    ) {
-
-      continue;
-
-    }
-
-
-    sum +=
-      Math.max(
-        0,
-        Math.min(
-          2,
-          n
+        normalizeProfilePayload(
+          data
         )
+
       );
 
 
-    max +=
-      2;
-
-  }
-
-
-  if (!max) {
-
-    return 0;
-
-  }
+    } catch (
+      error
+    ) {
 
 
-  return Math.round(
-    (
-      sum /
-      max
-    )
-    *
-    10
-  );
-
-}
+      console.error(
+        'Private profile:',
+        error
+      );
 
 
-
-function finalEahScore(
-  takeoff,
-  trick,
-  entry
-) {
-
-  const values = [
-
-    Number(
-      takeoff
-    ),
-
-    Number(
-      trick
-    ),
-
-    Number(
-      entry
-    )
-
-  ];
+      showProfileState(
+        'noauth'
+      );
 
 
-  const min =
-    Math.min(
-      ...values
-    );
+      const panel =
+        byId(
+          'profileNoAuth'
+        );
 
 
-  const count =
-    values
-      .filter(
-        value =>
-          value ===
-          min
-      )
-      .length;
-
-
-  return Math.min(
-
-    10,
-
-    count ===
-      1
-      ?
-      min + 0.5
-      :
-      min
-
-  );
-
-}
-
-
-
-function collectCriteria() {
-
-  const result =
-    {};
-
-
-  [
-    'D',
-    'T',
-    'E'
-  ]
-  .forEach(
-    prefix => {
-
-      for (
-        let i = 1;
-        i <= 5;
-        i++
+      if (
+        panel
       ) {
 
-        result[
-          `${prefix}${i}`
-        ] =
-          val(
-            `${prefix}${i}`
+
+        const title =
+          panel.querySelector(
+            'h2'
           );
+
+
+        const paragraph =
+          panel.querySelector(
+            'p'
+          );
+
+
+        if (
+          title
+        ) {
+
+          title.textContent =
+            'Impossible d’ouvrir la carte';
+
+        }
+
+
+        if (
+          paragraph
+        ) {
+
+          paragraph.textContent =
+
+            error?.message
+
+            ||
+
+            'Carte ou accès invalide.';
+
+        }
 
       }
 
     }
-  );
-
-
-  const scoreType =
-    String(
-      val(
-        'scoreType'
-      )
-      ||
-      'EAH'
-    )
-    .toUpperCase();
-
-
-  result._scoreType =
-    scoreType;
-
-
-  result._primaryScoreType =
-    scoreType;
-
-
-  return result;
-
-}
-
-
-
-/* ============================================================
-   CODES PLONGEONS
-============================================================ */
-
-function renderDiveCodes() {
-
-  const datalist =
-    document.getElementById(
-      'diveCodes'
-    );
-
-
-  if (!datalist) {
-
-    return;
 
   }
 
 
-  datalist.innerHTML =
-    Object.entries(
-      DIVE_NAMES
-    )
-    .map(
-      (
-        [
-          code,
-          name
-        ]
-      ) => `
-
-        <option value="${esc(code)}">
-          ${esc(name)}
-        </option>
-
-      `
-    )
-    .join('');
-
-}
+  /* ============================================================
+     PREPARER ACTIVATION PROFIL
+  ============================================================ */
 
 
-
-/* ============================================================
-   COACH
-============================================================ */
-
-async function eahFastCoachMembership(
-  userId
-) {
-
-  const sb =
-    requireSupabase();
+  function prepareProfileSetup(
+    data = {}
+  ) {
 
 
-  const {
-    data:
-      memberships,
-    error
-  } =
-    await sb
+    showProfileState(
+      'setup'
+    );
+
+
+    if (
+      data.first_name
+      &&
+      byId(
+        'setupFirstName'
+      )
+    ) {
+
+      byId(
+        'setupFirstName'
+      ).value =
+        data.first_name;
+
+    }
+
+
+    if (
+      data.last_name
+      &&
+      byId(
+        'setupLastName'
+      )
+    ) {
+
+      byId(
+        'setupLastName'
+      ).value =
+        data.last_name;
+
+    }
+
+
+    if (
+      data.birth_date
+      &&
+      byId(
+        'setupBirthDate'
+      )
+    ) {
+
+      byId(
+        'setupBirthDate'
+      ).value =
+        String(
+          data.birth_date
+        )
+        .slice(
+          0,
+          10
+        );
+
+    }
+
+
+    if (
+      data.sex
+      &&
+      byId(
+        'setupSex'
+      )
+    ) {
+
+      byId(
+        'setupSex'
+      ).value =
+        data.sex;
+
+    }
+
+
+    if (
+      data.group_name
+      &&
+      byId(
+        'setupGroup'
+      )
+    ) {
+
+      byId(
+        'setupGroup'
+      ).value =
+        data.group_name;
+
+    }
+
+
+    if (
+      data.profile_visibility
+      &&
+      byId(
+        'setupProfileVisibility'
+      )
+    ) {
+
+      byId(
+        'setupProfileVisibility'
+      ).value =
+
+        normalizeVisibility(
+          data.profile_visibility
+        )
+        ===
+        'PUBLIC'
+
+        ?
+
+        'PUBLIC'
+
+        :
+
+        'PRIVÉ';
+
+    }
+
+  }
+
+
+  /* ============================================================
+     ACTIVER PROFIL
+  ============================================================ */
+
+
+  async function setupProfile() {
+
+
+    const context =
+      state.cardContext;
+
+
+    if (
+      !context?.eahId
+      ||
+      !context?.token
+    ) {
+
+      showMessage(
+
+        'setupProfileMsg',
+
+        'Carte EAH introuvable.',
+
+        'error'
+
+      );
+
+
+      return;
+
+    }
+
+
+    const firstName =
+      String(
+        val(
+          'setupFirstName'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    const lastName =
+      String(
+        val(
+          'setupLastName'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    const pin =
+      String(
+        val(
+          'setupAccessPin'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    const visibility =
+
+      val(
+        'setupProfileVisibility'
+      )
+      ===
+      'PUBLIC'
+
+      ?
+
+      'PUBLIC'
+
+      :
+
+      'PRIVATE';
+
+
+    if (
+      !firstName
+      ||
+      !lastName
+      ||
+      !/^\d{4,8}$/.test(
+        pin
+      )
+    ) {
+
+      showMessage(
+
+        'setupProfileMsg',
+
+        'Renseigne le prénom, le nom et un code personnel de 4 à 8 chiffres.',
+
+        'error'
+
+      );
+
+
+      return;
+
+    }
+
+
+    showMessage(
+
+      'setupProfileMsg',
+
+      'Activation…'
+
+    );
+
+
+    try {
+
+
+      const {
+
+        error
+
+      } =
+        await requireSupabase()
+        .rpc(
+
+          'activate_diver_profile',
+
+          {
+
+            p_eah_id:
+              context.eahId,
+
+            p_token:
+              context.token,
+
+            p_first_name:
+              firstName,
+
+            p_last_name:
+              lastName,
+
+            p_photo_url:
+              String(
+                val(
+                  'setupPhotoUrl'
+                )
+                ||
+                ''
+              )
+              .trim()
+              ||
+              null,
+
+            p_birth_date:
+              val(
+                'setupBirthDate'
+              )
+              ||
+              null,
+
+            p_sex:
+              val(
+                'setupSex'
+              )
+              ||
+              null,
+
+            p_group_name:
+              String(
+                val(
+                  'setupGroup'
+                )
+                ||
+                ''
+              )
+              .trim()
+              ||
+              null,
+
+            p_pin:
+              pin
+
+          }
+
+        );
+
+
+      if (
+        error
+      ) {
+
+        throw error;
+
+      }
+
+
+      /*
+        Visibilité.
+      */
+
+
+      try {
+
+
+        const {
+
+          error:
+            visibilityError
+
+        } =
+          await requireSupabase()
+          .rpc(
+
+            'eah_set_diver_visibility',
+
+            {
+
+              p_eah_id:
+                context.eahId,
+
+              p_token:
+                context.token,
+
+              p_visibility:
+                visibility
+
+            }
+
+          );
+
+
+        if (
+          visibilityError
+        ) {
+
+          console.warn(
+            'Visibility:',
+            visibilityError
+          );
+
+        }
+
+
+      } catch (
+        visibilityError
+      ) {
+
+        console.warn(
+          'Visibility:',
+          visibilityError
+        );
+
+      }
+
+
+      showMessage(
+
+        'setupProfileMsg',
+
+        'Profil activé.',
+
+        'success'
+
+      );
+
+
+      await loadPrivateProfileByCard(
+
+        context.clubSlug,
+
+        context.eahId,
+
+        context.token
+
+      );
+
+
+    } catch (
+      error
+    ) {
+
+
+      console.error(
+        'Setup profile:',
+        error
+      );
+
+
+      showMessage(
+
+        'setupProfileMsg',
+
+        error?.message
+
+        ||
+
+        'Activation impossible.',
+
+        'error'
+
+      );
+
+    }
+
+  }
+
+
+  /* ============================================================
+     CONNEXION PLONGEUR
+  ============================================================ */
+
+
+  async function diverLogin(
+    event
+  ) {
+
+
+    event
+      ?.preventDefault();
+
+
+    const eahId =
+      normalizeEahId(
+        val(
+          'diverEahId'
+        )
+      );
+
+
+    const pin =
+      String(
+        val(
+          'diverPin'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    if (
+      !eahId
+      ||
+      !pin
+    ) {
+
+      showMessage(
+
+        'diverLoginMsg',
+
+        'Numéro EAH et code personnel obligatoires.',
+
+        'error'
+
+      );
+
+
+      return;
+
+    }
+
+
+    showMessage(
+
+      'diverLoginMsg',
+
+      'Connexion…'
+
+    );
+
+
+    try {
+
+
+      const pinHash =
+        await sha256Hex(
+          pin
+        );
+
+
+      let data =
+        null;
+
+
+      let globalError =
+        null;
+
+
+      /*
+        Connexion globale.
+      */
+
+
+      try {
+
+
+        const result =
+          await requireSupabase()
+          .rpc(
+
+            'eah_diver_login_global_fast',
+
+            {
+
+              p_eah_id:
+                eahId,
+
+              p_pin_hash:
+                pinHash
+
+            }
+
+          );
+
+
+        if (
+          result.error
+        ) {
+
+          throw result.error;
+
+        }
+
+
+        data =
+          result.data;
+
+
+      } catch (
+        error
+      ) {
+
+        globalError =
+          error;
+
+      }
+
+
+      /*
+        Fallback club.
+      */
+
+
+      if (
+        !data
+        &&
+        CLUB_SLUG
+      ) {
+
+
+        const {
+
+          data:
+            localData,
+
+          error
+
+        } =
+          await requireSupabase()
+          .rpc(
+
+            'eah_diver_login_fast',
+
+            {
+
+              p_club_slug:
+                CLUB_SLUG,
+
+              p_eah_id:
+                eahId,
+
+              p_pin_hash:
+                pinHash
+
+            }
+
+          );
+
+
+        if (
+          error
+        ) {
+
+          throw error;
+
+        }
+
+
+        data =
+          localData;
+
+      }
+
+
+      if (
+        !data
+      ) {
+
+        throw (
+
+          globalError
+
+          ||
+
+          new Error(
+            'Connexion plongeur impossible.'
+          )
+
+        );
+
+      }
+
+
+      const normalized =
+        normalizeProfilePayload(
+          data
+        );
+
+
+      const raw =
+        normalized.raw
+        ||
+        {};
+
+
+      CLUB_SLUG =
+
+        raw.club_slug
+
+        ||
+
+        raw.club?.slug
+
+        ||
+
+        normalized.profile?.club_slug
+
+        ||
+
+        CLUB_SLUG;
+
+
+      showMessage(
+
+        'diverLoginMsg',
+
+        'Connexion réussie.',
+
+        'success'
+
+      );
+
+
+      renderProfile(
+        normalized
+      );
+
+
+    } catch (
+      error
+    ) {
+
+
+      console.error(
+        'Diver login:',
+        error
+      );
+
+
+      showMessage(
+
+        'diverLoginMsg',
+
+        error?.message
+
+        ||
+
+        'Numéro EAH ou code personnel incorrect.',
+
+        'error'
+
+      );
+
+    }
+
+  }
+
+
+  /* ============================================================
+     TROUVER L'ADHESION COACH
+  ============================================================ */
+
+
+  async function loadCoachMembership(
+    userId
+  ) {
+
+
+    const {
+
+      data:
+        members,
+
+      error:
+        memberError
+
+    } =
+      await requireSupabase()
+
       .from(
         'club_members'
       )
+
       .select(
-        'id,club_id,user_id,display_name,email,role,active'
+
+        'id,club_id,user_id,display_name,email,role,active,photo_url'
+
       )
+
       .eq(
         'user_id',
         userId
       )
+
       .eq(
         'active',
         true
       );
 
 
-  if (error) {
+    if (
+      memberError
+    ) {
 
-    throw error;
+      throw memberError;
 
-  }
-
-
-  if (
-    !memberships
-      ?.length
-  ) {
-
-    throw new Error(
-      'Ce compte n’est rattaché à aucun club actif.'
-    );
-
-  }
+    }
 
 
-  let membership =
-    null;
+    if (
+      !members?.length
+    ) {
+
+      throw new Error(
+        'Aucun espace coach actif trouvé pour ce compte.'
+      );
+
+    }
 
 
-  let club =
-    null;
+    let membership =
+      members[0];
 
 
-  if (CLUB_SLUG) {
+    let club =
+      null;
 
-    const {
-      data
-    } =
-      await sb
+
+    /*
+      Si une URL contient ?club=
+      on privilégie ce club.
+    */
+
+
+    if (
+      CLUB_SLUG
+    ) {
+
+
+      const {
+
+        data:
+          requestedClub,
+
+        error
+
+      } =
+        await requireSupabase()
+
         .from(
           'clubs'
         )
+
         .select(
-          'id,slug,name,city,logo_url,primary_color,secondary_color,season,welcome_text,offer,card_quota,active'
+          '*'
         )
+
         .eq(
           'slug',
           CLUB_SLUG
         )
+
         .eq(
           'active',
           true
         )
+
         .maybeSingle();
 
 
-    if (data) {
+      if (
+        !error
+        &&
+        requestedClub
+      ) {
 
-      club =
-        data;
+
+        const matching =
+          members.find(
+            function(item) {
+
+              return (
+                item.club_id ===
+                requestedClub.id
+              );
+
+            }
+          );
 
 
-      membership =
-        memberships.find(
-          item =>
-            item.club_id ===
-            data.id
-        )
-        ||
-        null;
+        if (
+          matching
+        ) {
+
+          membership =
+            matching;
+
+
+          club =
+            requestedClub;
+
+        }
+
+      }
 
     }
 
-  }
+
+    /*
+      Sinon club de l'adhésion.
+    */
 
 
-  if (!membership) {
-
-    membership =
-      memberships[
-        0
-      ];
+    if (
+      !club
+    ) {
 
 
-    const {
-      data,
-      error:
-        clubError
-    } =
-      await sb
+      const {
+
+        data:
+          clubData,
+
+        error:
+          clubError
+
+      } =
+        await requireSupabase()
+
         .from(
           'clubs'
         )
+
         .select(
-          'id,slug,name,city,logo_url,primary_color,secondary_color,season,welcome_text,offer,card_quota,active'
+          '*'
         )
+
         .eq(
           'id',
           membership.club_id
         )
+
+        .eq(
+          'active',
+          true
+        )
+
         .single();
 
 
-    if (
-      clubError
-    ) {
+      if (
+        clubError
+      ) {
 
-      throw clubError;
+        throw clubError;
+
+      }
+
+
+      club =
+        clubData;
 
     }
 
 
-    club =
-      data;
+    state.membership =
+      membership;
+
+
+    state.coach =
+      membership;
+
+
+    state.club =
+      club;
+
+
+    CLUB_SLUG =
+      club.slug
+      ||
+      CLUB_SLUG;
+
+
+    return {
+
+      membership,
+
+      club
+
+    };
 
   }
 
 
-  state.membership =
-    membership;
+  /* ============================================================
+     LOGIN COACH
+  ============================================================ */
 
 
-  state.club =
-    club;
-
-
-  CLUB_SLUG =
-    club.slug;
-
-
-  state.coach = {
-
-    id:
-      membership.id,
-
-    userId:
-      userId,
-
-    name:
-      membership.display_name
-      ||
-      state.user?.email
-      ||
-      'Coach',
-
-    role:
-      membership.role
-      ||
-      'COACH',
-
-    email:
-      membership.email
-      ||
-      state.user?.email
-      ||
-      ''
-
-  };
-
-
-  applyClubBranding(
-    club
-  );
-
-
-  return membership;
-
-}
-
-
-
-async function coachLogin(
-  event
-) {
-
-  event
-    ?.preventDefault();
-
-
-  const email =
-    val(
-      'coachEmail'
-    )
-    .trim()
-    .toLowerCase();
-
-
-  const password =
-    val(
-      'coachPassword'
-    );
-
-
-  const button =
-    document.getElementById(
-      'coachLoginButton'
-    );
-
-
-  if (
-    !email ||
-    !password
+  async function coachLogin(
+    event
   ) {
 
-    setMessage(
+
+    event
+      ?.preventDefault();
+
+
+    const email =
+      String(
+        val(
+          'coachEmail'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    const password =
+      String(
+        val(
+          'coachPassword'
+        )
+        ||
+        ''
+      );
+
+
+    if (
+      !email
+      ||
+      !password
+    ) {
+
+      showMessage(
+
+        'loginMsg',
+
+        'E-mail et mot de passe obligatoires.',
+
+        'error'
+
+      );
+
+
+      return;
+
+    }
+
+
+    const button =
+      byId(
+        'coachLoginButton'
+      );
+
+
+    if (
+      button
+    ) {
+
+      button.disabled =
+        true;
+
+    }
+
+
+    showMessage(
 
       'loginMsg',
 
-      `
-        <div class="notice error">
-          E-mail et mot de passe obligatoires.
-        </div>
-      `
+      'Connexion…'
 
     );
 
 
-    return;
-
-  }
+    try {
 
 
-  setLoadingButton(
+      const {
 
-    button,
+        data,
 
-    true,
+        error
 
-    'Connexion…',
-
-    "Accéder à l'espace coach"
-
-  );
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
+      } =
+        await requireSupabase()
         .auth
         .signInWithPassword({
 
@@ -4911,1069 +7081,1299 @@ async function coachLogin(
         });
 
 
-    if (
-      error ||
-      !data?.user
+      if (
+        error
+      ) {
+
+        throw error;
+
+      }
+
+
+      if (
+        !data?.user
+      ) {
+
+        throw new Error(
+          'Connexion impossible.'
+        );
+
+      }
+
+
+      await loadCoachMembership(
+        data.user.id
+      );
+
+
+      await enterCoachWorkspace();
+
+
+      showMessage(
+
+        'loginMsg',
+
+        'Connexion réussie.',
+
+        'success'
+
+      );
+
+
+    } catch (
+      error
     ) {
 
-      throw (
-        error ||
-        new Error(
-          'Connexion impossible.'
-        )
+
+      console.error(
+        'Coach login:',
+        error
+      );
+
+
+      showMessage(
+
+        'loginMsg',
+
+        error?.message
+
+        ||
+
+        'Connexion coach impossible.',
+
+        'error'
+
+      );
+
+
+    } finally {
+
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+      }
+
+    }
+
+  }
+
+
+  /* ============================================================
+     RESTAURER SESSION COACH
+  ============================================================ */
+
+
+  async function restoreCoachSession() {
+
+
+    try {
+
+
+      const {
+
+        data,
+
+        error
+
+      } =
+        await requireSupabase()
+        .auth
+        .getSession();
+
+
+      if (
+        error
+        ||
+        !data?.session?.user
+      ) {
+
+        return;
+
+      }
+
+
+      await loadCoachMembership(
+
+        data.session.user.id
+
+      );
+
+
+      await enterCoachWorkspace(
+        false
+      );
+
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+        'Restore coach:',
+        error
       );
 
     }
 
-
-    state.user =
-      data.user;
+  }
 
 
-    await eahFastCoachMembership(
-      data.user.id
-    );
+  /* ============================================================
+     CARTE NFC COACH
+
+     Remplace coach-card.js.
+  ============================================================ */
 
 
-    showCoachPrivate();
-
-
-    setMessage(
-      'loginMsg',
-      ''
-    );
-
-
-    showToast(
-      'Connexion réussie.',
-      'success'
-    );
-
-
-    loadCoachData()
-      .catch(
-        console.warn
-      );
-
-
-  } catch (
-    error
+  async function openCoachCard(
+    coachToken
   ) {
 
-    setMessage(
 
-      'loginMsg',
+    if (
+      !coachToken
+    ) {
 
-      `
-        <div class="notice error">
+      return false;
 
-          ${esc(
-            handleSupabaseError(
-              error,
-              'Connexion refusée.'
-            )
-          )}
+    }
 
-        </div>
-      `
 
-    );
+    try {
 
 
-  } finally {
+      const {
 
-    setLoadingButton(
+        data,
 
-      button,
+        error
 
-      false,
+      } =
+        await requireSupabase()
+        .rpc(
 
-      '',
+          'eah_coach_card_workspace',
 
-      "Accéder à l'espace coach"
-
-    );
-
-  }
-
-}
-
-
-
-async function restoreCoachSession() {
-
-  if (!supabaseClient) {
-
-    return false;
-
-  }
-
-
-  if (
-    state.user &&
-    state.membership
-  ) {
-
-    showCoachPrivate();
-
-    return true;
-
-  }
-
-
-  const {
-    data
-  } =
-    await supabaseClient
-      .auth
-      .getSession();
-
-
-  const user =
-    data
-      ?.session
-      ?.user;
-
-
-  if (!user) {
-
-    showCoachLoggedOut();
-
-    return false;
-
-  }
-
-
-  try {
-
-    state.user =
-      user;
-
-
-    await eahFastCoachMembership(
-      user.id
-    );
-
-
-    showCoachPrivate();
-
-
-    loadCoachData()
-      .catch(
-        console.warn
-      );
-
-
-    return true;
-
-
-  } catch (
-    error
-  ) {
-
-    console.warn(
-      error
-    );
-
-
-    showCoachLoggedOut();
-
-
-    return false;
-
-  }
-
-}
-
-
-
-function showCoachPrivate() {
-
-  document
-    .getElementById(
-      'clubAccess'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'coachPrivate'
-    )
-    ?.classList
-    .remove(
-      'hidden'
-    );
-
-
-  const label =
-    (
-      state.coach
-        ?.name
-      ||
-      'Coach'
-    )
-    +
-    ' • '
-    +
-    (
-      state.coach
-        ?.role
-      ||
-      'COACH'
-    );
-
-
-  const badge =
-    document.getElementById(
-      'dashboardCoachBadge'
-    );
-
-
-  const evalBadge =
-    document.getElementById(
-      'coachBadge'
-    );
-
-
-  if (badge) {
-
-    badge.textContent =
-      label;
-
-  }
-
-
-  if (evalBadge) {
-
-    evalBadge.textContent =
-      label;
-
-  }
-
-
-  updateEvaluationAccess();
-
-}
-
-
-
-function showCoachLoggedOut() {
-
-  document
-    .getElementById(
-      'coachPrivate'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'clubAccess'
-    )
-    ?.classList
-    .remove(
-      'hidden'
-    );
-
-
-  updateEvaluationAccess();
-
-}
-
-
-
-async function logoutCoach() {
-
-  try {
-
-    await supabaseClient
-      ?.auth
-      .signOut();
-
-  } catch (_) {}
-
-
-  state.user =
-    null;
-
-
-  state.membership =
-    null;
-
-
-  state.coach =
-    null;
-
-
-  state.divers =
-    [];
-
-
-  state.groups =
-    [];
-
-
-  showCoachLoggedOut();
-
-
-  showPage(
-    'club'
-  );
-
-}
-
-
-
-/* ============================================================
-   EVALUATION ACCESS
-============================================================ */
-
-function updateEvaluationAccess() {
-
-  const locked =
-    document.getElementById(
-      'evaluationLocked'
-    );
-
-
-  const form =
-    document.getElementById(
-      'evaluationForm'
-    );
-
-
-  const allowed =
-    Boolean(
-
-      state.user &&
-
-      state.membership &&
-
-      state.club
-
-    );
-
-
-  locked
-    ?.classList
-    .toggle(
-      'hidden',
-      allowed
-    );
-
-
-  form
-    ?.classList
-    .toggle(
-      'hidden',
-      !allowed
-    );
-
-}
-
-
-
-/* ============================================================
-   DASHBOARD
-============================================================ */
-
-async function loadCoachData() {
-
-  if (
-    !state.club?.id ||
-    !state.user
-  ) {
-
-    return;
-
-  }
-
-
-  const sb =
-    requireSupabase();
-
-
-  const clubId =
-    state.club.id;
-
-
-  const [
-
-    diversRes,
-
-    evalsRes,
-
-    progressRes,
-
-    groupsRes,
-
-    totalRes
-
-  ] =
-    await Promise.all([
-
-
-      sb
-        .from(
-          'divers'
-        )
-        .select(
-          'id,eah_id,first_name,last_name,photo_url,group_id,group_name,current_blazon,profile_visibility,sex,active,created_at'
-        )
-        .eq(
-          'club_id',
-          clubId
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'last_name'
-        ),
-
-
-      sb
-        .from(
-          'evaluations'
-        )
-        .select('*')
-        .eq(
-          'club_id',
-          clubId
-        )
-        .order(
-          'evaluated_at',
           {
-            ascending:
-              false
-          }
-        )
-        .limit(
-          100
-        ),
 
-
-      sb
-        .from(
-          'blazon_progress'
-        )
-        .select(
-          'id,eah_id,blazon_key,blazon_name,status,progress,earned_at'
-        )
-        .eq(
-          'club_id',
-          clubId
-        ),
-
-
-      sb
-        .from(
-          'groups'
-        )
-        .select(
-          'id,name,description,active'
-        )
-        .eq(
-          'club_id',
-          clubId
-        )
-        .eq(
-          'active',
-          true
-        )
-        .order(
-          'name'
-        ),
-
-
-      sb
-        .from(
-          'evaluations'
-        )
-        .select(
-          'id',
-          {
-            count:
-              'exact',
-            head:
-              true
-          }
-        )
-        .eq(
-          'club_id',
-          clubId
-        )
-
-    ]);
-
-
-  if (
-    diversRes.error
-  ) {
-
-    throw diversRes.error;
-
-  }
-
-
-  if (
-    evalsRes.error
-  ) {
-
-    throw evalsRes.error;
-
-  }
-
-
-  state.divers =
-    diversRes.data ||
-    [];
-
-
-  state.groups =
-    groupsRes.data ||
-    [];
-
-
-  renderDiversSelect();
-
-
-  renderDashboard({
-
-    divers:
-      state.divers,
-
-    evaluations:
-      evalsRes.data ||
-      [],
-
-    evaluationTotal:
-      totalRes.count
-      ??
-      (
-        evalsRes.data ||
-        []
-      ).length,
-
-    progress:
-      progressRes.data ||
-      [],
-
-    groups:
-      state.groups
-
-  });
-  renderCoachDivers(
-    state.divers
-  );
-}
-
-
-
-function renderDashboard({
-
-  divers,
-
-  evaluations,
-
-  evaluationTotal,
-
-  progress
-
-}) {
-
-  const statsBox =
-    document.getElementById(
-      'dashboardStats'
-    );
-
-
-  if (!statsBox) {
-
-    return;
-
-  }
-
-
-  const verified =
-    evaluations
-      .filter(
-        item =>
-          bool(
-            item.eah_verified
-          )
-      )
-      .length;
-
-
-  const obtained =
-    progress
-      .filter(
-        item =>
-          item.status ===
-          'OBTENU'
-      )
-      .length;
-
-
-  const stats = [
-
-    [
-      divers.length,
-      'Plongeurs'
-    ],
-
-    [
-      evaluationTotal,
-      'Grade Reports'
-    ],
-
-    [
-      verified,
-      'EAH Verified'
-    ],
-
-    [
-      obtained,
-      'Blazons obtenus'
-    ]
-
-  ];
-
-
-  statsBox.innerHTML =
-    stats
-      .map(
-        (
-          [
-            value,
-            label
-          ]
-        ) => `
-
-          <div class="stat-card">
-
-            <strong>
-              ${esc(value)}
-            </strong>
-
-            <span>
-              ${esc(label)}
-            </span>
-
-          </div>
-
-        `
-      )
-      .join('');
-
-
-  const recent =
-    document.getElementById(
-      'recentDashboard'
-    );
-
-
-  if (recent) {
-
-    recent.innerHTML =
-      evaluations
-        .slice(
-          0,
-          10
-        )
-        .map(
-          item => `
-
-            <div class="history-item">
-
-              <span>
-
-                <strong>
-                  ${esc(
-                    item.dive_code ||
-                    '—'
-                  )}
-                </strong>
-
-                <br>
-
-                <small>
-                  ${esc(
-                    fmtDate(
-                      item.evaluated_at
-                    )
-                  )}
-                  •
-                  ${esc(
-                    item.eah_id ||
-                    ''
-                  )}
-                </small>
-
-              </span>
-
-
-              <span class="history-score">
-
-                <strong>
-                  EAH
-                  ${esc(
-                    fmtNumber(
-                      item.eah_score
-                    )
-                  )}
-                </strong>
-
-                ${
-                  item.report_url
-                  ?
-                  `
-                    <a
-                      href="${esc(item.report_url)}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Grade Report
-                    </a>
-                  `
-                  :
-                  ''
-                }
-
-              </span>
-
-            </div>
-
-          `
-        )
-        .join('')
-      ||
-      'Aucune évaluation.';
-
-  }
-
-
-  const groupBox =
-    document.getElementById(
-      'groupsDashboard'
-    );
-
-
-  if (groupBox) {
-
-    const counts =
-      {};
-
-
-    divers.forEach(
-      diver => {
-
-        const name =
-          diver.group_name
-          ||
-          'Sans groupe';
-
-
-        counts[
-          name
-        ] =
-          (
-            counts[
-              name
-            ]
-            ||
-            0
-          )
-          +
-          1;
-
-      }
-    );
-
-
-    groupBox.innerHTML =
-      Object.entries(
-        counts
-      )
-      .map(
-        (
-          [
-            name,
-            count
-          ]
-        ) => `
-
-          <div class="history-item">
-
-            <strong>
-              ${esc(name)}
-            </strong>
-
-            <span>
-              ${esc(count)}
-              plongeur(s)
-            </span>
-
-          </div>
-
-        `
-      )
-      .join('')
-      ||
-      'Aucun groupe.';
-
-  }
-
-}
-
-/* ============================================================
-   COACH — LISTE DES PLONGEURS
-============================================================ */
-
-function renderCoachDivers(
-  divers = []
-) {
-
-  const box =
-    document.getElementById(
-      'coachDiversList'
-    );
-
-
-  if (!box) {
-
-    return;
-
-  }
-
-
-  if (
-    !divers.length
-  ) {
-
-    box.innerHTML =
-      'Aucun plongeur.';
-
-
-    return;
-
-  }
-
-
-  box.innerHTML =
-    divers
-      .map(
-        diver => {
-
-          const name =
-            (
-              (
-                diver.first_name ||
-                ''
-              )
-              +
-              ' '
-              +
-              (
-                diver.last_name ||
-                ''
-              )
-            )
-            .trim()
-            ||
-            diver.eah_id;
-
-
-          return `
-
-            <div
-              class="history-item"
-              style="
-                margin-top:12px;
-                align-items:center;
-              "
-            >
-
-              <span>
-
-                <strong>
-                  ${esc(name)}
-                </strong>
-
-                <br>
-
-                <small class="muted">
-
-                  ${esc(
-                    diver.eah_id ||
-                    ''
-                  )}
-
-                  ${
-                    diver.group_name
-                    ?
-                    ' • '
-                    +
-                    esc(
-                      diver.group_name
-                    )
-                    :
-                    ''
-                  }
-
-                  ${
-                    diver.current_blazon
-                    ?
-                    ' • '
-                    +
-                    esc(
-                      diver.current_blazon
-                    )
-                    :
-                    ''
-                  }
-
-                </small>
-
-              </span>
-
-
-              <button
-                type="button"
-                class="button small"
-                data-coach-diver-detail="${esc(
-                  diver.eah_id
-                )}"
-              >
-                Voir le détail
-              </button>
-
-            </div>
-
-          `;
-
-        }
-      )
-      .join('');
-
-
-  box
-    .querySelectorAll(
-      '[data-coach-diver-detail]'
-    )
-    .forEach(
-      button => {
-
-        button.addEventListener(
-
-          'click',
-
-          () => {
-
-            openCoachDiverDetail(
-              button.dataset.coachDiverDetail
-            );
+            p_token:
+              coachToken
 
           }
 
         );
 
+
+      if (
+        error
+      ) {
+
+        throw error;
+
       }
-    );
-
-}
 
 
-
-/* ============================================================
-   COACH — DETAIL D'UN PLONGEUR
-============================================================ */
-
-async function openCoachDiverDetail(
-  eahId
-) {
-
-  const diver =
-    state.divers.find(
-      item =>
-        String(
-          item.eah_id
-        ) ===
-        String(
-          eahId
+      const payload =
+        firstObject(
+          data
         )
-    );
+        ||
+        {};
 
 
-  if (!diver) {
+      const club =
 
-    return;
+        payload.club
+
+        ||
+
+        payload.club_data
+
+        ||
+
+        payload.workspace?.club
+
+        ||
+
+        null;
+
+
+      const member =
+
+        payload.member
+
+        ||
+
+        payload.coach
+
+        ||
+
+        payload.membership
+
+        ||
+
+        payload.workspace?.member
+
+        ||
+
+        null;
+
+
+      if (
+        !club
+        ||
+        !member
+      ) {
+
+        throw new Error(
+          'Carte coach non attribuée ou invalide.'
+        );
+
+      }
+
+
+      state.club =
+        club;
+
+
+      state.membership =
+        member;
+
+
+      state.coach =
+        member;
+
+
+      CLUB_SLUG =
+        club.slug
+        ||
+        CLUB_SLUG;
+
+
+      await enterCoachWorkspace();
+
+
+      return true;
+
+
+    } catch (
+      error
+    ) {
+
+
+      console.error(
+        'Coach card:',
+        error
+      );
+
+
+      showPage(
+        'club'
+      );
+
+
+      showMessage(
+
+        'loginMsg',
+
+        error?.message
+
+        ||
+
+        "Impossible d'ouvrir cette carte coach.",
+
+        'error'
+
+      );
+
+
+      return false;
+
+    }
 
   }
 
 
-  const name =
-    (
-      (
-        diver.first_name ||
-        ''
-      )
-      +
-      ' '
-      +
-      (
-        diver.last_name ||
-        ''
-      )
+  /* ============================================================
+     ENTRER DANS L'ESPACE COACH
+  ============================================================ */
+
+
+  async function enterCoachWorkspace(
+    navigate = true
+  ) {
+
+
+    if (
+      !state.club
+      ||
+      !state.membership
+    ) {
+
+      return;
+
+    }
+
+
+    byId(
+      'clubAccess'
     )
-    .trim()
-    ||
-    diver.eah_id;
+    ?.classList
+    .add(
+      'hidden'
+    );
 
 
-  openModal(`
-
-    <div class="modal-inner">
-
-      <span class="overline">
-        PROFIL PLONGEUR
-      </span>
-
-      <h2>
-        ${esc(name)}
-      </h2>
-
-      <div class="loading-panel">
-        Chargement de l'historique…
-      </div>
-
-    </div>
-
-  `);
+    byId(
+      'coachPrivate'
+    )
+    ?.classList
+    .remove(
+      'hidden'
+    );
 
 
-  try {
+    setText(
 
-    const {
-      data,
-      error
-    } =
+      'dashboardClubName',
+
+      state.club.name
+
+      ||
+
+      'EAH Diving Club'
+
+    );
+
+
+    setText(
+
+      'dashboardCoachBadge',
+
+      state.membership.display_name
+
+      ||
+
+      state.membership.email
+
+      ||
+
+      state.membership.role
+
+      ||
+
+      'Coach'
+
+    );
+
+
+    setText(
+
+      'coachBadge',
+
+      state.membership.display_name
+
+      ||
+
+      state.membership.role
+
+      ||
+
+      'Coach'
+
+    );
+
+
+    if (
+      navigate
+    ) {
+
+      showPage(
+        'club'
+      );
+
+    }
+
+
+    await loadCoachData();
+
+
+    updateEvaluationAccess();
+
+  }
+
+
+  /* ============================================================
+     DECONNEXION COACH
+  ============================================================ */
+
+
+  async function logoutCoach() {
+
+
+    try {
+
       await requireSupabase()
+        .auth
+        .signOut();
+
+    } catch (_) {}
+
+
+    state.club =
+      null;
+
+
+    state.membership =
+      null;
+
+
+    state.coach =
+      null;
+
+
+    state.divers =
+      [];
+
+
+    state.evaluations =
+      [];
+
+
+    byId(
+      'coachPrivate'
+    )
+    ?.classList
+    .add(
+      'hidden'
+    );
+
+
+    byId(
+      'clubAccess'
+    )
+    ?.classList
+    .remove(
+      'hidden'
+    );
+
+
+    updateEvaluationAccess();
+
+
+    showPage(
+      'club'
+    );
+
+
+    toast(
+
+      'Déconnexion effectuée.',
+
+      'success'
+
+    );
+
+  }
+
+
+  /* ============================================================
+     CHARGER DASHBOARD COACH
+  ============================================================ */
+
+
+  async function loadCoachData() {
+
+
+    if (
+      !state.club?.id
+    ) {
+
+      return;
+
+    }
+
+
+    const supabase =
+      requireSupabase();
+
+
+    const [
+
+      diversResult,
+
+      evalResult
+
+    ] =
+      await Promise.all([
+
+
+        supabase
+
+        .from(
+          'divers'
+        )
+
+        .select(
+          '*'
+        )
+
+        .eq(
+          'club_id',
+          state.club.id
+        )
+
+        .eq(
+          'active',
+          true
+        )
+
+        .order(
+
+          'last_name',
+
+          {
+
+            ascending:
+              true
+
+          }
+
+        ),
+
+
+        supabase
 
         .from(
           'evaluations'
         )
 
-        .select('*')
+        .select(
+          '*'
+        )
+
+        .eq(
+          'club_id',
+          state.club.id
+        )
+
+        .order(
+
+          'evaluated_at',
+
+          {
+
+            ascending:
+              false
+
+          }
+
+        )
+
+        .limit(
+          100
+        )
+
+
+      ]);
+
+
+    if (
+      diversResult.error
+    ) {
+
+      throw diversResult.error;
+
+    }
+
+
+    if (
+      evalResult.error
+    ) {
+
+      console.warn(
+        'Evaluations:',
+        evalResult.error
+      );
+
+    }
+
+
+    state.divers =
+      diversResult.data
+      ||
+      [];
+
+
+    state.evaluations =
+      evalResult.data
+      ||
+      [];
+
+
+    renderDashboard();
+
+
+    renderDiversSelect();
+
+
+    renderCoachDivers(
+      state.divers
+    );
+
+  }
+
+
+  /* ============================================================
+     DASHBOARD
+  ============================================================ */
+
+
+  function renderDashboard() {
+
+
+    const divers =
+      state.divers
+      ||
+      [];
+
+
+    const evaluations =
+      state.evaluations
+      ||
+      [];
+
+
+    const groups =
+      [
+        ...
+        new Set(
+
+          divers
+          .map(
+            function(diver) {
+
+              return diver.group_name;
+
+            }
+          )
+          .filter(
+            Boolean
+          )
+
+        )
+      ];
+
+
+    const verified =
+      evaluations
+      .filter(
+        function(evaluation) {
+
+          return (
+            evaluation.eah_verified ===
+            true
+          );
+
+        }
+      )
+      .length;
+
+
+    const scores =
+      evaluations
+      .map(
+        function(evaluation) {
+
+          return numberOrNull(
+            evaluation.eah_score
+          );
+
+        }
+      )
+      .filter(
+        function(value) {
+
+          return value !==
+          null;
+
+        }
+      );
+
+
+    const average =
+      scores.length
+
+      ?
+
+      scores.reduce(
+        function(a,b) {
+
+          return a + b;
+
+        },
+        0
+      )
+      /
+      scores.length
+
+      :
+
+      null;
+
+
+    /*
+      STATS
+    */
+
+
+    const stats =
+      byId(
+        'dashboardStats'
+      );
+
+
+    if (
+      stats
+    ) {
+
+      stats.innerHTML = `
+
+
+        <article class="stat-card">
+
+          <span>
+            Plongeurs
+          </span>
+
+          <strong>
+            ${divers.length}
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span>
+            Évaluations
+          </span>
+
+          <strong>
+            ${evaluations.length}
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span>
+            EAH Verified
+          </span>
+
+          <strong>
+            ${verified}
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span>
+            Moyenne EAH
+          </span>
+
+          <strong>
+
+            ${escapeHtml(
+              fmtNumber(
+                average
+              )
+            )}
+
+          </strong>
+
+        </article>
+
+      `;
+
+    }
+
+
+    /*
+      DERNIERES EVALUATIONS
+    */
+
+
+    const recent =
+      byId(
+        'recentDashboard'
+      );
+
+
+    if (
+      recent
+    ) {
+
+      recent.innerHTML =
+
+        evaluations.length
+
+        ?
+
+        evaluations
+        .slice(
+          0,
+          6
+        )
+        .map(
+          function(item) {
+
+            return evaluationCardHtml(
+              item,
+              false
+            );
+
+          }
+        )
+        .join(
+          ''
+        )
+
+        :
+
+        '<div class="mini-loading">Aucune évaluation.</div>';
+
+    }
+
+
+    /*
+      GROUPES
+    */
+
+
+    const groupsRoot =
+      byId(
+        'groupsDashboard'
+      );
+
+
+    if (
+      groupsRoot
+    ) {
+
+      groupsRoot.innerHTML =
+
+        groups.length
+
+        ?
+
+        groups
+        .map(
+          function(group) {
+
+
+            const count =
+              divers
+              .filter(
+                function(diver) {
+
+                  return (
+                    diver.group_name ===
+                    group
+                  );
+
+                }
+              )
+              .length;
+
+
+            return `
+
+              <div class="dashboard-group-row">
+
+
+                <span>
+
+                  ${escapeHtml(
+                    group
+                  )}
+
+                </span>
+
+
+                <strong>
+
+                  ${count}
+
+                </strong>
+
+
+              </div>
+
+            `;
+
+          }
+        )
+        .join(
+          ''
+        )
+
+        :
+
+        '<div class="mini-loading">Aucun groupe.</div>';
+
+    }
+
+  }
+
+
+  /* ============================================================
+     SELECT PLONGEUR EVALUATION
+  ============================================================ */
+
+
+  function renderDiversSelect() {
+
+    const select =
+      byId(
+        'eahId'
+      );
+
+
+    if (!select) {
+
+      return;
+
+    }
+
+
+    select.innerHTML =
+
+      '<option value="">'
+      +
+      'Choisir un plongeur'
+      +
+      '</option>'
+
+      +
+
+      state.divers
+      .map(
+        function(diver) {
+
+
+          const name =
+
+            [
+              diver.first_name,
+              diver.last_name
+            ]
+            .filter(
+              Boolean
+            )
+            .join(
+              ' '
+            )
+
+            ||
+
+            diver.eah_id;
+
+
+          return `
+
+            <option
+
+              value="${escapeAttr(
+                diver.eah_id
+              )}"
+
+            >
+
+              ${escapeHtml(
+                name
+              )}
+
+              —
+
+              ${escapeHtml(
+                diver.eah_id
+              )}
+
+            </option>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     LISTE DES PLONGEURS COACH
+  ============================================================ */
+
+
+  function renderCoachDivers(
+    divers
+  ) {
+
+    const root =
+      byId(
+        'coachDiversList'
+      );
+
+
+    if (!root) {
+
+      return;
+
+    }
+
+
+    if (
+      !divers?.length
+    ) {
+
+      root.innerHTML =
+
+        '<div class="mini-loading">'
+        +
+        'Aucun plongeur.'
+        +
+        '</div>';
+
+
+      return;
+
+    }
+
+
+    root.innerHTML =
+      divers
+      .map(
+        function(diver) {
+
+
+          const name =
+
+            [
+              diver.first_name,
+              diver.last_name
+            ]
+            .filter(
+              Boolean
+            )
+            .join(
+              ' '
+            )
+
+            ||
+
+            diver.eah_id;
+
+
+          return `
+
+            <article class="coach-diver-row">
+
+
+              <div class="coach-diver-identity">
+
+
+                ${
+
+                  diver.photo_url
+
+                  ?
+
+                  `
+
+                  <img
+
+                    src="${escapeAttr(
+                      diver.photo_url
+                    )}"
+
+                    alt=""
+
+                  >
+
+                  `
+
+                  :
+
+                  `
+
+                  <span class="coach-diver-avatar">
+
+                    EAH
+
+                  </span>
+
+                  `
+
+                }
+
+
+                <div>
+
+
+                  <strong>
+
+                    ${escapeHtml(
+                      name
+                    )}
+
+                  </strong>
+
+
+                  <small>
+
+                    ${escapeHtml(
+                      diver.eah_id ||
+                      ''
+                    )}
+
+                    ${
+
+                      diver.group_name
+
+                      ?
+
+                      ' • '
+                      +
+                      escapeHtml(
+                        diver.group_name
+                      )
+
+                      :
+
+                      ''
+
+                    }
+
+                  </small>
+
+
+                </div>
+
+
+              </div>
+
+
+              <button
+
+                type="button"
+
+                class="button small"
+
+                data-coach-diver-detail="${escapeAttr(
+                  diver.eah_id
+                )}"
+
+              >
+
+                Voir le profil
+
+              </button>
+
+
+            </article>
+
+          `;
+
+        }
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     DETAIL PLONGEUR DEPUIS LE COACH
+  ============================================================ */
+
+
+  async function openCoachDiverDetail(
+    eahId
+  ) {
+
+
+    if (
+      !state.club?.id
+    ) {
+
+      return;
+
+    }
+
+
+    const diver =
+      state.divers
+      .find(
+        function(item) {
+
+          return (
+            item.eah_id ===
+            eahId
+          );
+
+        }
+      );
+
+
+    if (!diver) {
+
+      return;
+
+    }
+
+
+    openModal(
+
+      '<div class="loading-panel">'
+      +
+      'Chargement du profil…'
+      +
+      '</div>'
+
+    );
+
+
+    try {
+
+
+      const {
+
+        data,
+
+        error
+
+      } =
+        await requireSupabase()
+
+        .from(
+          'evaluations'
+        )
+
+        .select(
+          '*'
+        )
 
         .eq(
           'club_id',
@@ -5986,273 +8386,667 @@ async function openCoachDiverDetail(
         )
 
         .order(
+
           'evaluated_at',
+
           {
+
             ascending:
               false
+
           }
+
         );
 
 
-    if (error) {
+      if (
+        error
+      ) {
 
-      throw error;
+        throw error;
+
+      }
+
+
+      const name =
+
+        [
+          diver.first_name,
+          diver.last_name
+        ]
+        .filter(
+          Boolean
+        )
+        .join(
+          ' '
+        )
+
+        ||
+
+        diver.eah_id;
+
+
+      openModal(`
+
+
+        <div class="coach-profile-modal">
+
+
+          <span class="overline">
+
+            PLONGEUR DU CLUB
+
+          </span>
+
+
+          <h2>
+
+            ${escapeHtml(
+              name
+            )}
+
+          </h2>
+
+
+          <p>
+
+            ${escapeHtml(
+              diver.eah_id ||
+              ''
+            )}
+
+          </p>
+
+
+          <p>
+
+            ${escapeHtml(
+              diver.sex ||
+              '—'
+            )}
+
+            •
+
+            ${escapeHtml(
+              diver.group_name ||
+              'Sans groupe'
+            )}
+
+          </p>
+
+
+          <p>
+
+            <strong>
+
+              Blazon :
+
+              ${escapeHtml(
+
+                diver.manual_blazon
+
+                ||
+
+                diver.current_blazon
+
+                ||
+
+                'En progression'
+
+              )}
+
+            </strong>
+
+          </p>
+
+
+          <div class="profile-history-list">
+
+
+            ${
+
+              (
+                data ||
+                []
+              )
+              .length
+
+              ?
+
+              data
+              .map(
+                function(item) {
+
+                  return evaluationCardHtml(
+                    item,
+                    true
+                  );
+
+                }
+              )
+              .join(
+                ''
+              )
+
+              :
+
+              `
+
+              <div class="loading-panel">
+
+                Aucune évaluation.
+
+              </div>
+
+              `
+
+            }
+
+
+          </div>
+
+
+        </div>
+
+      `);
+
+
+    } catch (
+      error
+    ) {
+
+
+      openModal(`
+
+        <div class="content-panel">
+
+          <h2>
+            Erreur
+          </h2>
+
+          <p>
+
+            ${escapeHtml(
+              error?.message
+              ||
+              'Profil impossible à charger.'
+            )}
+
+          </p>
+
+        </div>
+
+      `);
+
+    }
+
+  }
+
+
+  /* ============================================================
+     CRITERES DU FORMULAIRE
+  ============================================================ */
+
+
+  function renderCriteria() {
+
+
+    const targets = {
+
+      D:
+        byId(
+          'criteriaD'
+        ),
+
+      T:
+        byId(
+          'criteriaT'
+        ),
+
+      E:
+        byId(
+          'criteriaE'
+        )
+
+    };
+
+
+    Object
+      .entries(
+        CRITERIA
+      )
+      .forEach(
+        function(entry) {
+
+
+          const phase =
+            entry[0];
+
+
+          const items =
+            entry[1];
+
+
+          const root =
+            targets[
+              phase
+            ];
+
+
+          if (!root) {
+
+            return;
+
+          }
+
+
+          root.innerHTML =
+            items
+            .map(
+              function(item) {
+
+
+                const code =
+                  item[0];
+
+
+                const label =
+                  item[1];
+
+
+                return `
+
+                  <label class="criterion-row">
+
+
+                    <span>
+
+                      <strong>
+
+                        ${escapeHtml(
+                          code
+                        )}
+
+                      </strong>
+
+                      —
+
+                      ${escapeHtml(
+                        label
+                      )}
+
+                    </span>
+
+
+                    <select
+
+                      data-criterion="${escapeAttr(
+                        code
+                      )}"
+
+                    >
+
+                      <option value="0">
+
+                        0 — Non validé
+
+                      </option>
+
+                      <option value="1">
+
+                        1 — Partiel
+
+                      </option>
+
+                      <option value="2">
+
+                        2 — Validé
+
+                      </option>
+
+                      <option value="NA">
+
+                        N/A
+
+                      </option>
+
+                    </select>
+
+
+                  </label>
+
+                `;
+
+              }
+            )
+            .join(
+              ''
+            );
+
+        }
+      );
+
+  }
+
+
+  /* ============================================================
+     RECUPERER CRITERES
+  ============================================================ */
+
+
+  function collectCriteria() {
+
+
+    const result =
+      {};
+
+
+    qsa(
+      '[data-criterion]'
+    )
+    .forEach(
+      function(select) {
+
+
+        const raw =
+          select.value;
+
+
+        result[
+          select.dataset.criterion
+        ] =
+          raw ===
+            'NA'
+          ?
+          null
+          :
+          Number(
+            raw
+          );
+
+      }
+    );
+
+
+    const scoreType =
+      String(
+        val(
+          'scoreType'
+        )
+        ||
+        'EAH'
+      )
+      .toUpperCase();
+
+
+    result._scoreType =
+      scoreType;
+
+
+    result._primaryScoreType =
+      scoreType;
+
+
+    return result;
+
+  }
+
+
+  /* ============================================================
+     CALCUL PHASE
+  ============================================================ */
+
+
+  function calculatePhaseScore(
+    criteria,
+    phase
+  ) {
+
+
+    const values =
+      CRITERIA[
+        phase
+      ]
+
+      .map(
+        function(item) {
+
+          return criteria[
+            item[0]
+          ];
+
+        }
+      )
+
+      .filter(
+        function(value) {
+
+          return (
+
+            value !==
+              null
+
+            &&
+
+            Number.isFinite(
+              Number(
+                value
+              )
+            )
+
+          );
+
+        }
+      )
+
+      .map(
+        Number
+      );
+
+
+    if (
+      !values.length
+    ) {
+
+      return 0;
 
     }
 
 
-    const photo =
-      eahFastPhotoUrl(
-        diver.photo_url ||
-        ''
+    return (
+
+      Math.round(
+
+        (
+          values.reduce(
+            function(a,b) {
+
+              return a + b;
+
+            },
+            0
+          )
+
+          /
+
+          (
+            values.length
+            *
+            2
+          )
+
+        )
+
+        *
+
+        100
+
+      )
+
+      /
+
+      10
+
+    );
+
+  }
+
+
+  /* ============================================================
+     CALCUL NOTE EAH
+  ============================================================ */
+
+
+  function calculateEahScore(
+    takeoff,
+    trick,
+    entry
+  ) {
+
+
+    const values = [
+
+      takeoff,
+
+      trick,
+
+      entry
+
+    ];
+
+
+    const minimum =
+      Math.min(
+        ...values
       );
 
 
-    openModal(`
+    const count =
+      values
+      .filter(
+        function(value) {
 
-      <div class="modal-inner">
+          return (
+            value ===
+            minimum
+          );
 
-        <span class="overline">
-          PROFIL PLONGEUR
-        </span>
-
-
-        <div
-          style="
-            display:flex;
-            align-items:center;
-            gap:18px;
-            margin-bottom:25px;
-          "
-        >
-
-          ${
-            photo
-            ?
-            `
-
-              <img
-                src="${esc(photo)}"
-                alt="${esc(name)}"
-                style="
-                  width:90px;
-                  height:90px;
-                  object-fit:cover;
-                  border-radius:22px;
-                "
-              >
-
-            `
-            :
-            ''
-          }
-
-
-          <div>
-
-            <h2
-              style="
-                margin-bottom:5px;
-              "
-            >
-              ${esc(name)}
-            </h2>
-
-
-            <small class="muted">
-
-              ${esc(
-                diver.eah_id ||
-                ''
-              )}
-
-              ${
-                diver.sex
-                ?
-                ' • '
-                +
-                esc(
-                  diver.sex
-                )
-                :
-                ''
-              }
-
-              ${
-                diver.group_name
-                ?
-                ' • '
-                +
-                esc(
-                  diver.group_name
-                )
-                :
-                ''
-              }
-
-            </small>
-
-
-            ${
-              diver.current_blazon
-              ?
-              `
-
-                <div
-                  style="
-                    margin-top:8px;
-                  "
-                >
-
-                  <strong>
-                    ${esc(
-                      diver.current_blazon
-                    )}
-                  </strong>
-
-                </div>
-
-              `
-              :
-              ''
-            }
-
-          </div>
-
-        </div>
-
-
-        <h3>
-          Historique des plongeons
-        </h3>
-
-
-        ${
-          data?.length
-          ?
-          data
-            .map(
-              evaluation =>
-                evaluationCardHtml(
-                  evaluation,
-                  true
-                )
-            )
-            .join('')
-          :
-          `
-
-            <div class="notice">
-              Aucun plongeon gradé.
-            </div>
-
-          `
         }
-
-      </div>
-
-    `);
+      )
+      .length;
 
 
-  } catch (
-    error
-  ) {
+    return Math.min(
 
-    openModal(`
+      10,
 
-      <div class="modal-inner">
+      Math.round(
 
-        <h2>
-          ${esc(name)}
-        </h2>
+        (
+          count ===
+            1
 
-        <div class="notice error">
+          ?
 
-          ${esc(
-            error.message ||
-            'Historique impossible à charger.'
-          )}
+          minimum + 0.5
 
-        </div>
+          :
 
-      </div>
+          minimum
+        )
 
-    `);
+        *
 
-  }
+        10
 
-}
+      )
 
-function renderDiversSelect() {
+      /
 
-  const select =
-    document.getElementById(
-      'eahId'
+      10
+
     );
 
+  }
 
-  if (!select) {
 
-    return;
+  /* ============================================================
+     NOM AUTOMATIQUE PLONGEON
+  ============================================================ */
+
+
+  function updateDiveName() {
+
+
+    const code =
+      normalizeDiveCode(
+        val(
+          'diveCode'
+        )
+      );
+
+
+    const input =
+      byId(
+        'diveName'
+      );
+
+
+    if (!input) {
+
+      return;
+
+    }
+
+
+    if (
+      DIVE_NAMES[
+        code
+      ]
+    ) {
+
+      input.value =
+        DIVE_NAMES[
+          code
+        ];
+
+    }
 
   }
 
 
-  if (
-    !state.divers.length
-  ) {
-
-    select.innerHTML = `
-
-      <option value="">
-        Aucun plongeur
-      </option>
-
-    `;
+  function fillDiveCodes() {
 
 
-    return;
+    const list =
+      byId(
+        'diveCodes'
+      );
 
-  }
+
+    if (!list) {
+
+      return;
+
+    }
 
 
-  select.innerHTML =
-    state.divers
+    list.innerHTML =
+      Object
+      .keys(
+        DIVE_NAMES
+      )
       .map(
-        diver => {
-
-          const name =
-            (
-              (
-                diver.first_name ||
-                ''
-              )
-              +
-              ' '
-              +
-              (
-                diver.last_name ||
-                ''
-              )
-            )
-            .trim()
-            ||
-            diver.eah_id;
-
+        function(code) {
 
           return `
 
-            <option
-              value="${esc(diver.eah_id)}"
-            >
+            <option value="${escapeAttr(code)}">
 
-              ${esc(name)}
-
-              —
-
-              ${esc(
-                diver.group_name ||
-                'Sans groupe'
+              ${escapeHtml(
+                DIVE_NAMES[
+                  code
+                ]
               )}
 
             </option>
@@ -6261,4158 +9055,293 @@ function renderDiversSelect() {
 
         }
       )
-      .join('');
-
-}
-
-
-
-/* ============================================================
-   POPULATION
-============================================================ */
-
-function normalizePopulationResult(
-  data
-) {
-
-  const result =
-    Array.isArray(
-      data
-    )
-    ?
-    (
-      data[0] ||
-      {}
-    )
-    :
-    (
-      data ||
-      {}
-    );
-
-
-  return {
-
-    ok:
-      result.ok !==
-      false,
-
-    people:
-      Number(
-        result.people ??
-        0
-      ),
-
-    count:
-      Number(
-        result.count ??
-        0
-      ),
-
-    avg_eah:
-      result.avg_eah ??
-      null,
-
-    avg_wa:
-      result.avg_wa ??
-      null,
-
-    divers:
-      Array.isArray(
-        result.divers
-      )
-      ?
-      result.divers
-      :
-      [],
-
-    gradings:
-      Array.isArray(
-        result.gradings
-      )
-      ?
-      result.gradings
-      :
-      []
-
-  };
-
-}
-
-
-
-function publicProfileUrl(
-  diver
-) {
-
-  const url =
-    new URL(
-      window.location.href
-    );
-
-
-  url.search =
-    '';
-
-
-  const clubSlug =
-    diver.club_slug
-    ||
-    diver.clubSlug
-    ||
-    CLUB_SLUG;
-
-
-  if (clubSlug) {
-
-    url.searchParams.set(
-      'club',
-      clubSlug
-    );
+      .join(
+        ''
+      );
 
   }
 
 
-  url.searchParams.set(
-
-    'id',
-
-    diver.eah_id
-    ||
-    diver.eahId
-
-  );
+  /* ============================================================
+     AUTORISATION FORMULAIRE COACH
+  ============================================================ */
 
 
-  url.hash =
-    'profil';
+  function updateEvaluationAccess() {
 
 
-  return url.toString();
-
-}
-
-
-
-function renderPopulationResults(
-  box,
-  result,
-  code,
-  name
-) {
-
-  const divers =
-    result.divers ||
-    [];
+    const form =
+      byId(
+        'evaluationForm'
+      );
 
 
-  const gradings =
-    result.gradings ||
-    [];
+    const locked =
+      byId(
+        'evaluationLocked'
+      );
 
 
-  box.innerHTML = `
+    const connected =
+      Boolean(
 
-    <div class="population-stats">
+        state.club?.id
 
-      <div class="stat-card">
+        &&
 
-        <strong>
-          ${esc(result.people)}
-        </strong>
+        state.membership
 
-        <span>
-          Plongeurs EAH
-        </span>
-
-      </div>
+      );
 
 
-      <div class="stat-card">
+    form
+      ?.classList
+      .toggle(
 
-        <strong>
-          ${esc(result.count)}
-        </strong>
+        'hidden',
 
-        <span>
-          Gradings
-        </span>
+        !connected
 
-      </div>
+      );
 
 
-      <div class="stat-card">
+    locked
+      ?.classList
+      .toggle(
 
-        <strong>
-          ${esc(
-            fmtNumber(
-              result.avg_eah
+        'hidden',
+
+        connected
+
+      );
+
+  }
+
+
+  /* ============================================================
+     PAYLOAD EVALUATION
+  ============================================================ */
+
+
+  function evaluationPayload() {
+
+
+    const diver =
+      state.divers
+      .find(
+        function(item) {
+
+          return (
+            item.eah_id ===
+            val(
+              'eahId'
             )
-          )}
-        </strong>
+          );
 
-        <span>
-          Moyenne EAH
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong>
-          ${esc(
-            fmtNumber(
-              result.avg_wa
-            )
-          )}
-        </strong>
-
-        <span>
-          Moyenne WA
-        </span>
-
-      </div>
-
-    </div>
-
-
-    <div
-      class="dashboard-card"
-      style="margin-top:25px"
-    >
-
-      <span class="overline">
-        PROFILS PUBLICS
-      </span>
-
-      <h2>
-
-        ${
-          name
-          ?
-          'Résultats pour '
-          +
-          esc(name)
-          :
-          code
-          ?
-          'Plongeurs ayant un grading '
-          +
-          esc(code)
-          :
-          'Population EAH'
         }
-
-      </h2>
-
-
-      ${
-        divers.length
-        ?
-        divers
-          .map(
-            diver => {
-
-              const firstName =
-                diver.first_name
-                ||
-                diver.firstName
-                ||
-                '';
+      );
 
 
-              const lastName =
-                diver.last_name
-                ||
-                diver.lastName
-                ||
-                '';
+    if (!diver) {
 
+      throw new Error(
+        'Choisis un plongeur.'
+      );
 
-              const displayName =
-                diver.display_name
-                ||
-                (
-                  firstName
-                  +
-                  ' '
-                  +
-                  lastName
-                )
-                .trim()
-                ||
-                diver.eah_id;
-
-
-              const photo =
-                eahFastPhotoUrl(
-
-                  diver.photo_url
-                  ||
-                  diver.photoUrl
-                  ||
-                  ''
-
-                );
-
-
-              return `
-
-                <article
-                  class="history-item"
-                  style="
-                    margin-top:14px;
-                    align-items:center;
-                  "
-                >
-
-                  <div
-                    style="
-                      display:flex;
-                      align-items:center;
-                      gap:14px;
-                    "
-                  >
-
-                    ${
-                      photo
-                      ?
-                      `
-                        <img
-                          src="${esc(photo)}"
-                          alt="${esc(displayName)}"
-                          style="
-                            width:70px;
-                            height:70px;
-                            object-fit:cover;
-                            border-radius:18px;
-                          "
-                        >
-                      `
-                      :
-                      ''
-                    }
-
-
-                    <div>
-
-                      <span class="badge verified">
-                        PROFIL PUBLIC
-                      </span>
-
-                      <h3>
-                        ${esc(displayName)}
-                      </h3>
-
-                      <small class="muted">
-
-                        ${esc(
-                          diver.sex ||
-                          ''
-                        )}
-
-                        ${
-                          diver.group_name
-                          ?
-                          ' • '
-                          +
-                          esc(
-                            diver.group_name
-                          )
-                          :
-                          ''
-                        }
-
-                        ${
-                          diver.current_blazon
-                          ?
-                          ' • '
-                          +
-                          esc(
-                            diver.current_blazon
-                          )
-                          :
-                          ''
-                        }
-
-                      </small>
-
-                    </div>
-
-                  </div>
-
-
-                  <a
-                    class="button small"
-                    href="${esc(
-                      publicProfileUrl(
-                        diver
-                      )
-                    )}"
-                  >
-                    Voir le profil
-                  </a>
-
-                </article>
-
-              `;
-
-            }
-          )
-          .join('')
-        :
-        `
-          <div class="notice">
-            Aucun profil PUBLIC disponible pour cette recherche.
-          </div>
-        `
-      }
-
-    </div>
-
-
-    ${
-      gradings.length
-      ?
-      `
-
-        <div
-          class="dashboard-card"
-          style="margin-top:25px"
-        >
-
-          <span class="overline">
-            GRADINGS
-          </span>
-
-          <h2>
-            Résultats
-          </h2>
-
-
-          ${
-            gradings
-              .map(
-                grading => `
-
-                  <div class="history-item">
-
-                    <span>
-
-                      <strong>
-                        ${esc(
-                          grading.dive_code ||
-                          '—'
-                        )}
-                      </strong>
-
-                      <br>
-
-                      <small class="muted">
-
-                        ${esc(
-                          grading.display_name ||
-                          grading.eah_id ||
-                          ''
-                        )}
-
-                      </small>
-
-                    </span>
-
-
-                    <span class="history-score">
-
-                      <strong>
-
-                        EAH
-
-                        ${esc(
-                          fmtNumber(
-                            grading.eah_score
-                          )
-                        )}/10
-
-                      </strong>
-
-                      ${
-                        grading.wa_score !==
-                        null
-                        &&
-                        typeof grading.wa_score !==
-                        'undefined'
-                        ?
-                        `
-                          <small>
-                            WA
-                            ${esc(
-                              fmtNumber(
-                                grading.wa_score
-                              )
-                            )}/10
-                          </small>
-                        `
-                        :
-                        ''
-                      }
-
-                    </span>
-
-                  </div>
-
-                `
-              )
-              .join('')
-          }
-
-        </div>
-
-      `
-      :
-      ''
     }
 
-  `;
 
-}
+    const criteria =
+      collectCriteria();
 
 
+    const takeoff =
+      calculatePhaseScore(
+        criteria,
+        'D'
+      );
 
-async function loadPopulation() {
 
-  const code =
-    normalizeCode(
-      val(
-        'populationCode'
+    const trick =
+      calculatePhaseScore(
+        criteria,
+        'T'
+      );
+
+
+    const entry =
+      calculatePhaseScore(
+        criteria,
+        'E'
+      );
+
+
+    const eahScore =
+      calculateEahScore(
+
+        takeoff,
+
+        trick,
+
+        entry
+
+      );
+
+
+    const scoreType =
+      String(
+        val(
+          'scoreType'
+        )
+        ||
+        'EAH'
       )
-    );
+      .toUpperCase();
 
 
-  const name =
-    val(
-      'populationName'
-    )
-    .trim();
-
-
-  const box =
-    document.getElementById(
-      'populationResults'
-    );
-
-
-  const button =
-    document.getElementById(
-      'populationSearchButton'
-    );
-
-
-  if (!box) {
-
-    return;
-
-  }
-
-
-  box.innerHTML = `
-
-    <div class="loading-panel">
-      Recherche…
-    </div>
-
-  `;
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Recherche…',
-
-    'Rechercher'
-
-  );
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'eah_population_search_v3',
-
-          {
-
-            p_code:
-              code ||
-              null,
-
-            p_name:
-              name ||
-              null,
-
-            p_club_slug:
-              CLUB_SLUG ||
-              null
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    const result =
-      normalizePopulationResult(
-        data
+    const waScore =
+      numberOrNull(
+        val(
+          'waScore'
+        )
       );
 
 
     if (
-      result.ok ===
-      false
+      scoreType ===
+        'WA'
+      &&
+      waScore ===
+        null
     ) {
 
       throw new Error(
-        'Recherche Population impossible.'
+        'Renseigne la note World Aquatics si elle est choisie comme note principale.'
       );
 
     }
 
 
-    renderPopulationResults(
+    const code =
+      normalizeDiveCode(
+        val(
+          'diveCode'
+        )
+      );
 
-      box,
 
-      result,
+    const diveName =
+      String(
 
-      code,
+        val(
+          'diveName'
+        )
 
-      name
+        ||
 
-    );
-
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      'EAH POPULATION:',
-      error
-    );
-
-
-    box.innerHTML = `
-
-      <div class="notice error">
-        ${esc(
-          error.message ||
-          'Recherche impossible.'
-        )}
-      </div>
-
-    `;
-
-
-  } finally {
-
-    setLoadingButton(
-
-      button,
-
-      false,
-
-      '',
-
-      'Rechercher'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   PROFIL
-============================================================ */
-
-function setProfileLoading() {
-
-  document
-    .getElementById(
-      'profileLoading'
-    )
-    ?.classList
-    .remove(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileNoAuth'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileSetup'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileView'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-}
-
-function renderProfileError(
-  message
-) {
-
-  document
-    .getElementById(
-      'profileLoading'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileSetup'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileNoAuth'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  const view =
-    document.getElementById(
-      'profileView'
-    );
-
-
-  if (!view) {
-
-    return;
-
-  }
-
-
-  view.classList.remove(
-    'hidden'
-  );
-
-
-  view.innerHTML = `
-
-    <div class="notice error">
-
-      ${esc(
-        message ||
-        'Profil inaccessible.'
-      )}
-
-    </div>
-
-  `;
-
-}
-
-function renderPopulationResults(
-  box,
-  result,
-  code,
-  name
-) {
-
-  const divers =
-    Array.isArray(
-      result.divers
-    )
-    ?
-    result.divers
-    :
-    [];
-
-
-  const gradings =
-    Array.isArray(
-      result.gradings
-    )
-    ?
-    result.gradings
-    :
-    [];
-
-
-  box.innerHTML = `
-
-    <div class="population-stats">
-
-      <div class="stat-card">
-
-        <strong>
-          ${esc(result.people)}
-        </strong>
-
-        <span>
-          Plongeurs EAH
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong>
-          ${esc(result.count)}
-        </strong>
-
-        <span>
-          Gradings
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong>
-          ${esc(
-            fmtNumber(
-              result.avg_eah
-            )
-          )}
-        </strong>
-
-        <span>
-          Moyenne EAH
-        </span>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <strong>
-          ${esc(
-            fmtNumber(
-              result.avg_wa
-            )
-          )}
-        </strong>
-
-        <span>
-          Moyenne WA
-        </span>
-
-      </div>
-
-    </div>
-
-
-    <div
-      class="dashboard-card eah-population-directory"
-      style="margin-top:25px"
-    >
-
-      <span class="overline">
-        POPULATION EAH
-      </span>
-
-
-      <h2>
-
-        ${
-          name
-          ?
-          'Résultats pour '
-          +
-          esc(name)
-          :
+        DIVE_NAMES[
           code
-          ?
-          'Plongeurs ayant réalisé '
-          +
-          esc(code)
-          :
-          'Plongeurs EAH'
-        }
+        ]
 
-      </h2>
+        ||
 
+        code
 
-      ${
-        divers.length
-        ?
-        divers
-          .map(
-            diver => {
+      )
+      .trim();
 
-              const firstName =
-                String(
-                  diver.first_name ||
-                  ''
-                )
-                .trim();
 
-
-              const lastName =
-                String(
-                  diver.last_name ||
-                  ''
-                )
-                .trim();
-
-
-              const displayName =
-                String(
-                  diver.display_name ||
-                  ''
-                )
-                .trim()
-
-                ||
-
-                (
-                  firstName
-                  +
-                  ' '
-                  +
-                  lastName
-                )
-                .trim()
-
-                ||
-
-                'Plongeur EAH';
-
-
-              const sex =
-                String(
-                  diver.sex ||
-                  ''
-                )
-                .trim();
-
-
-              const isPublic =
-                diver.profile_public ===
-                  true
-                ||
-                String(
-                  diver.profile_public
-                )
-                .toLowerCase() ===
-                  'true';
-
-
-              const photo =
-                (
-                  isPublic &&
-                  diver.photo_url
-                )
-                ?
-                eahFastPhotoUrl(
-                  diver.photo_url
-                )
-                :
-                '';
-
-
-              const eahScore =
-                diver.latest_eah_score;
-
-
-              const waScore =
-                diver.latest_wa_score;
-
-
-              const latestCode =
-                diver.latest_dive_code
-                ||
-                code
-                ||
-                '';
-
-
-              const latestName =
-                diver.latest_dive_name
-                ||
-                (
-                  latestCode
-                  ?
-                  DIVE_NAMES[
-                    normalizeCode(
-                      latestCode
-                    )
-                  ]
-                  :
-                  ''
-                )
-                ||
-                '';
-
-
-              const profileUrl =
-                (
-                  isPublic &&
-                  diver.eah_id
-                )
-                ?
-                publicProfileUrl(
-                  diver
-                )
-                :
-                '';
-
-
-              return `
-
-                <article
-                  class="
-                    eah-population-person-card
-                    ${
-                      isPublic
-                      ?
-                      'is-public'
-                      :
-                      'is-private'
-                    }
-                  "
-                >
-
-
-                  <div
-                    class="eah-population-person-main"
-                  >
-
-
-                    <div
-                      class="eah-population-person-photo"
-                    >
-
-                      ${
-                        photo
-                        ?
-                        `
-
-                          <img
-                            src="${esc(photo)}"
-                            alt="${esc(displayName)}"
-                          >
-
-                        `
-                        :
-                        `
-
-                          <div
-                            class="eah-population-person-placeholder"
-                          >
-                            ${
-                              esc(
-                                (
-                                  (
-                                    firstName[0] ||
-                                    ''
-                                  )
-                                  +
-                                  (
-                                    lastName[0] ||
-                                    ''
-                                  )
-                                )
-                                .toUpperCase()
-                                ||
-                                'EAH'
-                              )
-                            }
-                          </div>
-
-                        `
-                      }
-
-                    </div>
-
-
-                    <div
-                      class="eah-population-person-info"
-                    >
-
-
-                      <div
-                        class="eah-population-profile-state"
-                      >
-
-                        ${
-                          isPublic
-                          ?
-                          `
-
-                            <span
-                              class="eah-population-public-badge"
-                            >
-                              PROFIL PUBLIC
-                            </span>
-
-                          `
-                          :
-                          `
-
-                            <span
-                              class="eah-population-private-badge"
-                            >
-                              PROFIL PRIVÉ
-                            </span>
-
-                          `
-                        }
-
-                      </div>
-
-
-                      <h3>
-                        ${esc(displayName)}
-                      </h3>
-
-
-                      <div
-                        class="eah-population-meta"
-                      >
-
-                        ${
-                          sex
-                          ?
-                          `
-
-                            <span>
-                              ${esc(sex)}
-                            </span>
-
-                          `
-                          :
-                          ''
-                        }
-
-
-                        ${
-                          isPublic &&
-                          diver.group_name
-                          ?
-                          `
-
-                            <span>
-                              ${esc(
-                                diver.group_name
-                              )}
-                            </span>
-
-                          `
-                          :
-                          ''
-                        }
-
-
-                        ${
-                          isPublic &&
-                          diver.current_blazon
-                          ?
-                          `
-
-                            <span>
-                              ${esc(
-                                diver.current_blazon
-                              )}
-                            </span>
-
-                          `
-                          :
-                          ''
-                        }
-
-
-                        <span>
-
-                          ${esc(
-                            diver.grading_count
-                            ??
-                            0
-                          )}
-
-                          grading(s)
-
-                        </span>
-
-                      </div>
-
-
-                      ${
-                        latestCode
-                        ?
-                        `
-
-                          <div
-                            class="eah-population-last-dive"
-                          >
-
-                            <small>
-                              ${
-                                code
-                                ?
-                                'NOTE SUR CE PLONGEON'
-                                :
-                                'DERNIER GRADING'
-                              }
-                            </small>
-
-
-                            <strong>
-
-                              ${esc(
-                                latestCode
-                              )}
-
-                              ${
-                                latestName
-                                ?
-                                `
-                                  —
-                                  ${esc(latestName)}
-                                `
-                                :
-                                ''
-                              }
-
-                            </strong>
-
-                          </div>
-
-                        `
-                        :
-                        ''
-                      }
-
-                    </div>
-
-                  </div>
-
-
-                  <div
-                    class="eah-population-person-score"
-                  >
-
-
-                    ${
-                      eahScore !==
-                        null
-                      &&
-                      typeof eahScore !==
-                        'undefined'
-                      ?
-                      `
-
-                        <div
-                          class="eah-population-score-main"
-                        >
-
-                          <small>
-                            EAH
-                          </small>
-
-                          <strong>
-
-                            ${esc(
-                              fmtNumber(
-                                eahScore
-                              )
-                            )}
-
-                            <span>
-                              /10
-                            </span>
-
-                          </strong>
-
-                        </div>
-
-                      `
-                      :
-                      `
-
-                        <div
-                          class="eah-population-score-empty"
-                        >
-                          Aucune note EAH
-                        </div>
-
-                      `
-                    }
-
-
-                    ${
-                      waScore !==
-                        null
-                      &&
-                      typeof waScore !==
-                        'undefined'
-                      ?
-                      `
-
-                        <div
-                          class="eah-population-wa-score"
-                        >
-
-                          WA
-
-                          <strong>
-                            ${esc(
-                              fmtNumber(
-                                waScore
-                              )
-                            )}/10
-                          </strong>
-
-                        </div>
-
-                      `
-                      :
-                      ''
-                    }
-
-
-                    ${
-                      isPublic &&
-                      profileUrl
-                      ?
-                      `
-
-                        <a
-                          class="button"
-                          href="${esc(profileUrl)}"
-                        >
-                          Voir le profil
-                        </a>
-
-                      `
-                      :
-                      `
-
-                        <div
-                          class="eah-population-private-info"
-                        >
-
-                          Profil complet privé
-
-                        </div>
-
-                      `
-                    }
-
-                  </div>
-
-
-                </article>
-
-              `;
-
-            }
-          )
-          .join('')
-
-        :
-
-        `
-
-          <div class="notice">
-
-            Aucun plongeur trouvé
-            pour cette recherche.
-
-          </div>
-
-        `
-      }
-
-    </div>
-
-
-    ${
-      code &&
-      gradings.length
-      ?
-      `
-
-        <div
-          class="dashboard-card"
-          style="margin-top:25px"
-        >
-
-          <span class="overline">
-            GRADINGS
-          </span>
-
-          <h2>
-            Tous les gradings ${esc(code)}
-          </h2>
-
-
-          ${
-            gradings
-              .map(
-                grading => {
-
-                  const gradingName =
-                    String(
-                      grading.display_name ||
-                      ''
-                    )
-                    .trim()
-
-                    ||
-
-                    (
-                      (
-                        grading.first_name ||
-                        ''
-                      )
-                      +
-                      ' '
-                      +
-                      (
-                        grading.last_name ||
-                        ''
-                      )
-                    )
-                    .trim()
-
-                    ||
-
-                    'Plongeur EAH';
-
-
-                  const gradingPublic =
-                    grading.profile_public ===
-                      true
-                    ||
-                    String(
-                      grading.profile_public
-                    )
-                    .toLowerCase() ===
-                      'true';
-
-
-                  return `
-
-                    <div
-                      class="history-item"
-                    >
-
-                      <span>
-
-                        <strong>
-                          ${esc(gradingName)}
-                        </strong>
-
-                        <br>
-
-                        <small class="muted">
-
-                          ${
-                            grading.sex
-                            ?
-                            esc(
-                              grading.sex
-                            )
-                            +
-                            ' • '
-                            :
-                            ''
-                          }
-
-                          ${esc(
-                            grading.dive_code ||
-                            ''
-                          )}
-
-                          ${
-                            grading.height !==
-                              null
-                            &&
-                            typeof grading.height !==
-                              'undefined'
-                            ?
-                            ' • '
-                            +
-                            esc(
-                              fmtNumber(
-                                grading.height
-                              )
-                            )
-                            +
-                            ' m'
-                            :
-                            ''
-                          }
-
-                          ${
-                            !gradingPublic
-                            ?
-                            ' • Profil privé'
-                            :
-                            ''
-                          }
-
-                        </small>
-
-                      </span>
-
-
-                      <span
-                        class="history-score"
-                      >
-
-                        ${
-                          grading.eah_score !==
-                            null
-                          &&
-                          typeof grading.eah_score !==
-                            'undefined'
-                          ?
-                          `
-
-                            <strong>
-
-                              EAH
-
-                              ${esc(
-                                fmtNumber(
-                                  grading.eah_score
-                                )
-                              )}/10
-
-                            </strong>
-
-                          `
-                          :
-                          ''
-                        }
-
-
-                        ${
-                          grading.wa_score !==
-                            null
-                          &&
-                          typeof grading.wa_score !==
-                            'undefined'
-                          ?
-                          `
-
-                            <small>
-
-                              WA
-
-                              ${esc(
-                                fmtNumber(
-                                  grading.wa_score
-                                )
-                              )}/10
-
-                            </small>
-
-                          `
-                          :
-                          ''
-                        }
-
-                      </span>
-
-                    </div>
-
-                  `;
-
-                }
-              )
-              .join('')
-          }
-
-        </div>
-
-      `
-      :
-      ''
-    }
-
-  `;
-
-}
-
-
-
-function normalizeRpcProfile(
-  profile,
-  club =
-    {}
-) {
-
-  return {
-
-    eahId:
-      profile.eah_id
-      ||
-      profile.eahId
-      ||
-      CARD_EAH_ID,
-
-    firstName:
-      profile.first_name
-      ||
-      profile.firstName
-      ||
-      '',
-
-    lastName:
-      profile.last_name
-      ||
-      profile.lastName
-      ||
-      '',
-
-    photoUrl:
-      profile.photo_url
-      ||
-      profile.photoUrl
-      ||
-      '',
-
-    group:
-      profile.group_name
-      ||
-      profile.groupName
-      ||
-      profile.group
-      ||
-      '',
-
-    sex:
-      profile.sex
-      ||
-      '',
-
-    currentBlazon:
-      profile.current_blazon
-      ||
-      profile.currentBlazon
-      ||
-      '',
-
-    profileVisibility:
-      profile.profile_visibility
-      ||
-      profile.profileVisibility
-      ||
-      '',
-
-    club:
-      club.name
-      ||
-      profile.club_name
-      ||
-      profile.clubName
-      ||
-      'EAH Diving',
-
-    cardStatus:
-      profile.card_status
-      ||
-      profile.cardStatus
-      ||
-      ''
-
-  };
-
-}
-
-
-
-function getProfileBlazonImage(
-  currentBlazon
-) {
-
-  const key =
-    normalizeBlazonName(
-      currentBlazon
-    );
-
-
-  return (
-    BLAZON_IMAGES[
-      key
-    ]
-    ||
-    ''
-  );
-
-}
-
-
-
-function renderProfileSummary(
-  profile,
-  privateAccess =
-    false
-) {
-
-  const view =
-    document.getElementById(
-      'profileView'
-    );
-
-
-  if (!view) {
-
-    return;
-
-  }
-
-
-  document
-    .getElementById(
-      'profileLoading'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileSetup'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileNoAuth'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  view.classList.remove(
-    'hidden'
-  );
-
-
-  const displayName =
-    (
-      (
-        profile.firstName ||
+    const videoUrl =
+      String(
+        val(
+          'videoUrl'
+        )
+        ||
         ''
       )
-      +
-      ' '
-      +
-      (
-        profile.lastName ||
-        ''
-      )
-    )
-    .trim()
-    ||
-    profile.eahId;
+      .trim();
 
-
-  const photo =
-    eahFastPhotoUrl(
-      profile.photoUrl
-    );
-
-
-  const blazonImage =
-    getProfileBlazonImage(
-      profile.currentBlazon
-    );
-
-
-  view.innerHTML = `
-
-    <div class="eah-fast-profile">
-
-      <div class="eah-fast-profile-top">
-
-        ${
-          photo
-          ?
-          `
-            <img
-              src="${esc(photo)}"
-              alt="${esc(displayName)}"
-              style="
-                width:180px;
-                height:180px;
-                object-fit:cover;
-                border-radius:30px;
-                border:3px solid rgba(48,207,255,.45);
-              "
-            >
-          `
-          :
-          ''
-        }
-
-
-        <div class="eah-fast-profile-text">
-
-          <span class="overline">
-
-            ${
-              privateAccess
-              ?
-              'ESPACE PERSONNEL EAH'
-              :
-              'PROFIL PUBLIC EAH'
-            }
-
-          </span>
-
-
-          <h1>
-            ${esc(displayName)}
-          </h1>
-
-
-          <p class="muted">
-
-            ${esc(
-              profile.club ||
-              'EAH Diving'
-            )}
-
-          </p>
-
-
-          <div class="eah-fast-profile-tags">
-
-            <span>
-              ${esc(
-                profile.eahId ||
-                ''
-              )}
-            </span>
-
-
-            ${
-              profile.sex
-              ?
-              `
-                <span>
-                  ${esc(profile.sex)}
-                </span>
-              `
-              :
-              ''
-            }
-
-
-            ${
-              profile.group
-              ?
-              `
-                <span>
-                  ${esc(profile.group)}
-                </span>
-              `
-              :
-              ''
-            }
-
-          </div>
-
-
-          <div
-            style="
-              margin-top:22px;
-              display:flex;
-              align-items:center;
-              gap:15px;
-            "
-          >
-
-            ${
-              blazonImage
-              ?
-              `
-                <img
-                  src="${esc(blazonImage)}"
-                  alt="${esc(
-                    profile.currentBlazon
-                  )}"
-                  style="
-                    width:75px;
-                    height:75px;
-                    object-fit:contain;
-                  "
-                >
-              `
-              :
-              ''
-            }
-
-
-            <div>
-
-              <small class="muted">
-                BLAZON ACTUEL
-              </small>
-
-              <strong
-                style="
-                  display:block;
-                  margin-top:4px;
-                "
-              >
-
-                ${esc(
-                  profile.currentBlazon ||
-                  'En progression'
-                )}
-
-              </strong>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div
-        class="profile-content-grid"
-        style="margin-top:30px"
-      >
-
-        <article class="dashboard-card">
-
-          <h3>
-            Progression des blazons
-          </h3>
-
-          <div id="profileBlazons"></div>
-
-        </article>
-
-
-        <article class="dashboard-card">
-
-          <h3>
-            Historique
-          </h3>
-
-          <div id="profileHistory"></div>
-
-        </article>
-
-      </div>
-
-    </div>
-
-  `;
-
-}
-
-/* ============================================================
-   EVALUATIONS — OUTILS COMMUNS
-============================================================ */
-
-function evaluationCriteriaData(
-  evaluation = {}
-) {
-
-  let criteria =
-    evaluation.criteria
-    ??
-    evaluation.criteria_json
-    ??
-    evaluation.CRITERIA_JSON
-    ??
-    {};
-
-
-  if (
-    typeof criteria ===
-    'string'
-  ) {
-
-    try {
-
-      criteria =
-        JSON.parse(
-          criteria
-        );
-
-    } catch (_) {
-
-      criteria =
-        {};
-
-    }
-
-  }
-
-
-  return (
-    criteria &&
-    typeof criteria ===
-      'object'
-  )
-    ?
-    criteria
-    :
-    {};
-
-}
-
-
-
-function evaluationScoreData(
-  evaluation = {}
-) {
-
-  const criteria =
-    evaluationCriteriaData(
-      evaluation
-    );
-
-
-  const eahScore =
-
-    evaluation.eah_score
-    ??
-    evaluation.eahScore
-    ??
-    evaluation.score_eah
-    ??
-    evaluation.final_eah_score
-    ??
-    null;
-
-
-  const waScore =
-
-    evaluation.wa_score
-    ??
-    evaluation.waScore
-    ??
-    evaluation.score_wa
-    ??
-    null;
-
-
-  let scoreType =
-    String(
-
-      evaluation.primary_score_type
-
-      ??
-
-      evaluation.primaryScoreType
-
-      ??
-
-      evaluation.scoring_mode
-
-      ??
-
-      evaluation.score_type
-
-      ??
-
-      criteria._primaryScoreType
-
-      ??
-
-      criteria._scoreType
-
-      ??
-
-      'EAH'
-
-    )
-    .trim()
-    .toUpperCase();
-
-
-  scoreType =
-    scoreType ===
-      'WA'
-    ?
-    'WA'
-    :
-    'EAH';
-
-
-  let mainScore =
-    scoreType ===
-      'WA'
-    ?
-    waScore
-    :
-    eahScore;
-
-
-  /*
-    Sécurité pour les anciennes évaluations.
-  */
-
-  if (
-    mainScore === null
-    ||
-    typeof mainScore ===
-      'undefined'
-    ||
-    mainScore === ''
-  ) {
-
-    if (
-      eahScore !== null
-      &&
-      typeof eahScore !==
-        'undefined'
-      &&
-      eahScore !== ''
-    ) {
-
-      scoreType =
-        'EAH';
-
-
-      mainScore =
-        eahScore;
-
-    } else if (
-      waScore !== null
-      &&
-      typeof waScore !==
-        'undefined'
-      &&
-      waScore !== ''
-    ) {
-
-      scoreType =
-        'WA';
-
-
-      mainScore =
-        waScore;
-
-    }
-
-  }
-
-
-  return {
-
-    type:
-      scoreType,
-
-    main:
-      mainScore,
-
-    eah:
-      eahScore,
-
-    wa:
-      waScore
-
-  };
-
-}
-
-
-
-function evaluationReportUrl(
-  evaluation = {}
-) {
-
-  return String(
-
-    evaluation.report_url
-
-    ??
-
-    evaluation.reportUrl
-
-    ??
-
-    evaluation.REPORT_URL
-
-    ??
-
-    ''
-
-  ).trim();
-
-}
-
-
-
-function evaluationVideoUrl(
-  evaluation = {}
-) {
-
-  return String(
-
-    evaluation.video_url
-
-    ??
-
-    evaluation.videoUrl
-
-    ??
-
-    evaluation.VIDEO_URL
-
-    ??
-
-    ''
-
-  ).trim();
-
-}
-
-
-
-function evaluationPhaseScore(
-  evaluation,
-  name
-) {
-
-  const lower =
-    String(
-      name ||
-      ''
-    )
-    .toLowerCase();
-
-
-  const upper =
-    lower.toUpperCase();
-
-
-  return (
-
-    evaluation[
-      lower
-    ]
-
-    ??
-
-    evaluation[
-      upper
-    ]
-
-    ??
-
-    null
-
-  );
-
-}
-
-
-
-function evaluationCardHtml(
-  evaluation,
-  detailed = true
-) {
-
-  const score =
-    evaluationScoreData(
-      evaluation
-    );
-
-
-  const diveCode =
-    normalizeCode(
-
-      evaluation.dive_code
-
-      ??
-
-      evaluation.diveCode
-
-      ??
-
-      evaluation.code
-
-      ??
-
-      ''
-
-    );
-
-
-  const diveName =
-
-    evaluation.dive_name
-
-    ??
-
-    evaluation.diveName
-
-    ??
-
-    DIVE_NAMES[
-      diveCode
-    ]
-
-    ??
-
-    '';
-
-
-  const takeoff =
-    evaluationPhaseScore(
-      evaluation,
-      'takeoff'
-    );
-
-
-  const trick =
-    evaluationPhaseScore(
-      evaluation,
-      'trick'
-    );
-
-
-  const entry =
-    evaluationPhaseScore(
-      evaluation,
-      'entry'
-    );
-
-
-  const reportUrl =
-    evaluationReportUrl(
-      evaluation
-    );
-
-
-  const videoUrl =
-    evaluationVideoUrl(
-      evaluation
-    );
-
-
-  return `
-
-    <div
-      class="history-item profile-history-item"
-      style="
-        align-items:flex-start;
-        gap:18px;
-      "
-    >
-
-      <span>
-
-        <strong
-          style="
-            font-size:1.08rem;
-          "
-        >
-
-          ${esc(
-            diveCode ||
-            '—'
-          )}
-
-        </strong>
-
-
-        ${
-          diveName
-          ?
-          `
-
-            <br>
-
-            <small>
-              ${esc(diveName)}
-            </small>
-
-          `
-          :
-          ''
-        }
-
-
-        <br>
-
-
-        <small class="muted">
-
-          ${esc(
-            fmtDate(
-
-              evaluation.evaluated_at
-
-              ??
-
-              evaluation.date
-
-              ??
-
-              evaluation.created_at
-
-            )
-          )}
-
-          ${
-            evaluation.height !==
-              null
-            &&
-            typeof evaluation.height !==
-              'undefined'
-            ?
-            ' • '
-            +
-            esc(
-              fmtNumber(
-                evaluation.height
-              )
-            )
-            +
-            ' m'
-            :
-            ''
-          }
-
-        </small>
-
-
-        ${
-          detailed
-          &&
-          (
-            takeoff !== null
-            ||
-            trick !== null
-            ||
-            entry !== null
-          )
-          ?
-          `
-
-            <div
-              style="
-                margin-top:10px;
-                font-size:.82rem;
-                line-height:1.7;
-              "
-            >
-
-              ${
-                takeoff !== null
-                ?
-                `
-                  Takeoff :
-                  <strong>
-                    ${esc(
-                      fmtNumber(
-                        takeoff
-                      )
-                    )}/10
-                  </strong>
-                `
-                :
-                ''
-              }
-
-              ${
-                trick !== null
-                ?
-                `
-                  &nbsp;•&nbsp;
-                  Trick :
-                  <strong>
-                    ${esc(
-                      fmtNumber(
-                        trick
-                      )
-                    )}/10
-                  </strong>
-                `
-                :
-                ''
-              }
-
-              ${
-                entry !== null
-                ?
-                `
-                  &nbsp;•&nbsp;
-                  Entry :
-                  <strong>
-                    ${esc(
-                      fmtNumber(
-                        entry
-                      )
-                    )}/10
-                  </strong>
-                `
-                :
-                ''
-              }
-
-            </div>
-
-          `
-          :
-          ''
-        }
-
-      </span>
-
-
-      <span
-        class="history-score"
-        style="
-          min-width:130px;
-        "
-      >
-
-        <strong>
-
-          ${esc(score.type)}
-
-          ${esc(
-            fmtNumber(
-              score.main
-            )
-          )}/10
-
-        </strong>
-
-
-        ${
-          score.type ===
-            'EAH'
-          &&
-          score.wa !==
-            null
-          &&
-          typeof score.wa !==
-            'undefined'
-          ?
-          `
-
-            <small>
-              WA
-              ${esc(
-                fmtNumber(
-                  score.wa
-                )
-              )}/10
-            </small>
-
-          `
-          :
-          ''
-        }
-
-
-        ${
-          score.type ===
-            'WA'
-          &&
-          score.eah !==
-            null
-          &&
-          typeof score.eah !==
-            'undefined'
-          ?
-          `
-
-            <small>
-              EAH
-              ${esc(
-                fmtNumber(
-                  score.eah
-                )
-              )}/10
-            </small>
-
-          `
-          :
-          ''
-        }
-
-
-        ${
-          reportUrl
-          ?
-          `
-
-            <a
-              class="button small"
-              href="${esc(reportUrl)}"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="
-                margin-top:8px;
-              "
-            >
-              Grade Report
-            </a>
-
-          `
-          :
-          ''
-        }
-
-
-        ${
-          videoUrl
-          ?
-          `
-
-            <a
-              class="button secondary small"
-              href="${esc(videoUrl)}"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="
-                margin-top:6px;
-              "
-            >
-              Vidéo
-            </a>
-
-          `
-          :
-          ''
-        }
-
-      </span>
-
-    </div>
-
-  `;
-
-}
-
-function renderProfileHistory(
-  data
-) {
-
-  const blazons =
-    document.getElementById(
-      'profileBlazons'
-    );
-
-
-  const history =
-    document.getElementById(
-      'profileHistory'
-    );
-
-
-  const blazonRows =
-    data?.blazons
-    ||
-    data?.progress
-    ||
-    [];
-
-
-  const evaluations =
-    data?.evaluations
-    ||
-    [];
-
-
-  if (blazons) {
-
-    blazons.innerHTML =
-      blazonRows.length
-      ?
-      blazonRows
-        .map(
-          item => {
-
-            const status =
-              item.status ||
-              '';
-
-
-            const progress =
-              item.progress ??
-              0;
-
-
-            return `
-
-              <div class="history-item">
-
-                <span>
-
-                  ${esc(
-                    item.blazon_name
-                    ||
-                    item.name
-                    ||
-                    item.blazon
-                    ||
-                    item.blazon_key
-                    ||
-                    ''
-                  )}
-
-                </span>
-
-
-                <span>
-
-                  ${
-                    status ===
-                    'OBTENU'
-                    ?
-                    `
-                      <span class="badge">
-                        OBTENU
-                      </span>
-                    `
-                    :
-                    esc(progress)
-                    +
-                    ' %'
-                  }
-
-                </span>
-
-              </div>
-
-            `;
-
-          }
-        )
-        .join('')
-      :
-      'Aucune progression enregistrée.';
-
-  }
-
-
-  if (history) {
-
-        history.innerHTML =
-      evaluations.length
-      ?
-      evaluations
-        .map(
-          evaluation =>
-            evaluationCardHtml(
-              evaluation,
-              true
-            )
-        )
-        .join('')
-      :
-      'Aucune évaluation.';
-
-
-            const eahScore =
-              evaluation.eah_score
-              ??
-              evaluation.eah;
-
-
-            const waScore =
-              evaluation.wa_score;
-
-
-            const mainScore =
-              scoreType ===
-              'WA'
-              ?
-              waScore
-              :
-              eahScore;
-
-
-            return `
-
-              <div
-                class="history-item profile-history-item"
-              >
-
-                <span>
-
-                  <strong>
-
-                    ${esc(
-                      evaluation.dive_code
-                      ||
-                      evaluation.code
-                      ||
-                      '—'
-                    )}
-
-                  </strong>
-
-
-                  ${
-                    evaluation.dive_name
-                    ?
-                    `
-                      <br>
-                      <small>
-                        ${esc(
-                          evaluation.dive_name
-                        )}
-                      </small>
-                    `
-                    :
-                    ''
-                  }
-
-
-                  <br>
-
-                  <small>
-
-                    ${esc(
-                      fmtDate(
-                        evaluation.evaluated_at
-                        ||
-                        evaluation.date
-                      )
-                    )}
-
-                    ${
-                      evaluation.height !==
-                      null
-                      &&
-                      typeof evaluation.height !==
-                      'undefined'
-                      ?
-                      ' • '
-                      +
-                      esc(
-                        fmtNumber(
-                          evaluation.height
-                        )
-                      )
-                      +
-                      ' m'
-                      :
-                      ''
-                    }
-
-                  </small>
-
-                </span>
-
-
-                <span class="history-score">
-
-                  <strong>
-
-                    ${esc(scoreType)}
-
-                    ${esc(
-                      fmtNumber(
-                        mainScore
-                      )
-                    )}/10
-
-                  </strong>
-
-
-                  ${
-                    evaluation.report_url
-                    ?
-                    `
-                      <a
-                        href="${esc(
-                          evaluation.report_url
-                        )}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Grade Report
-                      </a>
-                    `
-                    :
-                    ''
-                  }
-
-
-                  ${
-                    evaluation.video_url
-                    ?
-                    `
-                      <a
-                        href="${esc(
-                          evaluation.video_url
-                        )}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Vidéo
-                      </a>
-                    `
-                    :
-                    ''
-                  }
-
-                </span>
-
-              </div>
-
-            `;
-
-          }
-        )
-        .join('')
-      :
-      'Aucune évaluation.';
-
-  }
-
-}
-
-
-
-/* ============================================================
-   PROFIL PUBLIC
-============================================================ */
-
-async function loadPublicProfile(
-  eahId
-) {
-
-  setProfileLoading();
-
-
-  try {
-
-    const id =
-      normalizeCode(
-        eahId
-      );
-
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'eah_public_profile_v2',
-
-          {
-
-            p_eah_id:
-              id,
-
-            p_club_slug:
-              CLUB_SLUG ||
-              null
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    const result =
-      Array.isArray(
-        data
-      )
-      ?
-      data[0]
-      :
-      data;
-
-
-    if (
-      !result ||
-      result.ok !==
-      true
-    ) {
-
-      throw new Error(
-        result?.error
-        ||
-        'Profil public introuvable ou privé.'
-      );
-
-    }
-
-
-    const club =
-      result.club ||
-      {};
-
-
-    const profile =
-      normalizeRpcProfile(
-
-        result.profile ||
-        result.diver ||
-        {},
-
-        club
-
-      );
-
-
-    if (
-      club.slug
-    ) {
-
-      CLUB_SLUG =
-        club.slug;
-
-    }
-
-
-    state.club =
-      club
-      ||
-      state.club;
-
-
-    state.profile =
-      profile;
-
-
-    state.profileHistory = {
-
-      evaluations:
-        result.evaluations
-        ||
-        [],
-
-      blazons:
-        result.blazons
-        ||
-        result.progress
-        ||
-        []
-
-    };
-
-
-    renderProfileSummary(
-
-      profile,
-
-      false
-
-    );
-
-
-    renderProfileHistory(
-      state.profileHistory
-    );
-
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      'PUBLIC PROFILE:',
-      error
-    );
-
-
-    renderProfileError(
-
-      error.message
-      ||
-      'Profil public inaccessible.'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   PROFIL PRIVE NFC
-============================================================ */
-
-async function loadPrivateProfileByCard(
-  eahId,
-  token
-) {
-
-  setProfileLoading();
-
-
-  try {
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'eah_open_profile_fast',
-
-          {
-
-            p_club_slug:
-              CLUB_SLUG,
-
-            p_eah_id:
-              eahId,
-
-            p_token:
-              token
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (
-      !data ||
-      data.ok ===
-      false
-    ) {
-
-      throw new Error(
-        data?.error ||
-        'Profil introuvable.'
-      );
-
-    }
-
-
-    if (
-      data.assigned ===
-      false
-    ) {
-
-      state.profile =
-        data;
-
-
-      document
-        .getElementById(
-          'profileLoading'
-        )
-        ?.classList
-        .add(
-          'hidden'
-        );
-
-
-      document
-        .getElementById(
-          'profileView'
-        )
-        ?.classList
-        .add(
-          'hidden'
-        );
-
-
-      document
-        .getElementById(
-          'profileSetup'
-        )
-        ?.classList
-        .remove(
-          'hidden'
-        );
-
-
-      return;
-
-    }
-
-
-    state.profile =
-      normalizeRpcProfile(
-
-        data.profile ||
-        {},
-
-        data.club ||
-        {}
-
-      );
-
-
-    state.profileHistory = {
-
-      evaluations:
-        data.evaluations ||
-        [],
-
-      blazons:
-        data.blazons ||
-        []
-
-    };
-
-
-    renderProfileSummary(
-
-      state.profile,
-
-      true
-
-    );
-
-
-    renderProfileHistory(
-      state.profileHistory
-    );
-
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      'PRIVATE PROFILE:',
-      error
-    );
-
-
-    renderProfileError(
-
-      error.message ||
-      'Impossible d’ouvrir le profil.'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   RESTORE PROFILE
-============================================================ */
-
-async function restoreOrLoadProfile() {
-
-  if (
-    CARD_EAH_ID &&
-    CARD_TOKEN
-  ) {
-
-    await loadPrivateProfileByCard(
-
-      CARD_EAH_ID,
-
-      CARD_TOKEN
-
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    CARD_EAH_ID
-  ) {
-
-    await loadPublicProfile(
-      CARD_EAH_ID
-    );
-
-
-    return;
-
-  }
-
-
-  document
-    .getElementById(
-      'profileLoading'
-    )
-    ?.classList
-    .add(
-      'hidden'
-    );
-
-
-  document
-    .getElementById(
-      'profileNoAuth'
-    )
-    ?.classList
-    .remove(
-      'hidden'
-    );
-
-}
-
-
-
-/* ============================================================
-   ACTIVATION PROFIL
-============================================================ */
-
-async function setupProfile() {
-
-  const firstName =
-    val(
-      'setupFirstName'
-    )
-    .trim();
-
-
-  const lastName =
-    val(
-      'setupLastName'
-    )
-    .trim();
-
-
-  const pin =
-    val(
-      'setupAccessPin'
-    )
-    .trim();
-
-
-  const visibility =
-    val(
-      'setupProfileVisibility'
-    ) ===
-      'PUBLIC'
-      ?
-      'PUBLIC'
-      :
-      'PRIVÉ';
-
-
-  if (
-    !firstName ||
-    !lastName
-  ) {
-
-    setMessage(
-
-      'setupProfileMsg',
-
-      `
-        <div class="notice error">
-          Prénom et nom obligatoires.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    !/^\d{4,8}$/.test(
-      pin
-    )
-  ) {
-
-    setMessage(
-
-      'setupProfileMsg',
-
-      `
-        <div class="notice error">
-          Le code personnel doit contenir 4 à 8 chiffres.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    !CARD_EAH_ID ||
-    !CARD_TOKEN
-  ) {
-
-    setMessage(
-
-      'setupProfileMsg',
-
-      `
-        <div class="notice error">
-          Carte NFC invalide.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  const button =
-    document.getElementById(
-      'setupProfileButton'
-    );
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Activation…',
-
-    'Activer mon profil'
-
-  );
-
-
-  try {
-
-    const sb =
-      requireSupabase();
-
-
-    const activation =
-      await sb.rpc(
-
-        'activate_diver_profile',
-
-        {
-
-          p_eah_id:
-            CARD_EAH_ID,
-
-          p_token:
-            CARD_TOKEN,
-
-          p_first_name:
-            firstName,
-
-          p_last_name:
-            lastName,
-
-          p_photo_url:
-            val(
-              'setupPhotoUrl'
-            )
-            .trim()
-            ||
-            null,
-
-          p_birth_date:
-            val(
-              'setupBirthDate'
-            )
-            ||
-            null,
-
-          p_sex:
-            val(
-              'setupSex'
-            )
-            ||
-            null,
-
-          p_group_name:
-            val(
-              'setupGroup'
-            )
-            .trim()
-            ||
-            null,
-
-          p_pin:
-            pin
-
-        }
-
-      );
-
-
-    if (
-      activation.error
-    ) {
-
-      throw activation.error;
-
-    }
-
-
-    const visibilityResult =
-      await sb.rpc(
-
-        'eah_set_diver_visibility',
-
-        {
-
-          p_eah_id:
-            CARD_EAH_ID,
-
-          p_token:
-            CARD_TOKEN,
-
-          p_visibility:
-            visibility
-
-        }
-
-      );
-
-
-    if (
-      visibilityResult.error
-    ) {
-
-      throw visibilityResult.error;
-
-    }
-
-
-    setMessage(
-
-      'setupProfileMsg',
-
-      `
-        <div class="notice success">
-
-          Profil activé.
-
-          <br>
-
-          Visibilité :
-          <strong>
-            ${esc(visibility)}
-          </strong>
-
-        </div>
-      `
-
-    );
-
-
-    await loadPrivateProfileByCard(
-
-      CARD_EAH_ID,
-
-      CARD_TOKEN
-
-    );
-
-
-  } catch (
-    error
-  ) {
-
-    setMessage(
-
-      'setupProfileMsg',
-
-      `
-        <div class="notice error">
-          ${esc(
-            error.message ||
-            'Activation impossible.'
-          )}
-        </div>
-      `
-
-    );
-
-
-  } finally {
-
-    setLoadingButton(
-
-      button,
-
-      false,
-
-      '',
-
-      'Activer mon profil'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   LOGIN PLONGEUR
-============================================================ */
-
-async function diverLogin(
-  event
-) {
-
-  event
-    ?.preventDefault();
-
-
-  const eahId =
-    normalizeCode(
-      val(
-        'diverEahId'
-      )
-    );
-
-
-  const pin =
-    val(
-      'diverPin'
-    )
-    .trim();
-
-
-  const button =
-    document.getElementById(
-      'diverLoginButton'
-    );
-
-
-  if (
-    !eahId ||
-    !pin
-  ) {
-
-    setMessage(
-
-      'diverLoginMsg',
-
-      `
-        <div class="notice error">
-          Numéro EAH et code personnel obligatoires.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  if (!CLUB_SLUG) {
-
-    setMessage(
-
-      'diverLoginMsg',
-
-      `
-        <div class="notice error">
-          Aucun club sélectionné.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Ouverture…',
-
-    'Ouvrir mon profil'
-
-  );
-
-
-  try {
-
-    const pinHash =
-      await eahFastSha256(
-        pin
-      );
-
-
-    state.diverPinHash =
-      pinHash;
-
-
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
-
-          'eah_diver_login_fast',
-
-          {
-
-            p_club_slug:
-              CLUB_SLUG,
-
-            p_eah_id:
-              eahId,
-
-            p_pin_hash:
-              pinHash
-
-          }
-
-        );
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-    if (
-      !data ||
-      data.ok ===
-      false
-    ) {
-
-      throw new Error(
-        data?.error ||
-        'Connexion impossible.'
-      );
-
-    }
-
-
-    state.profile =
-      normalizeRpcProfile(
-
-        data.profile ||
-        {},
-
-        data.club ||
-        {}
-
-      );
-
-
-    state.profileHistory = {
-
-      evaluations:
-        data.evaluations ||
-        [],
-
-      blazons:
-        data.blazons ||
-        []
-
-    };
-
-
-    CARD_EAH_ID =
-      eahId;
-
-
-    CARD_TOKEN =
-      '';
-
-
-    showPage(
-      'profil'
-    );
-
-
-    renderProfileSummary(
-
-      state.profile,
-
-      true
-
-    );
-
-
-    renderProfileHistory(
-      state.profileHistory
-    );
-
-
-  } catch (
-    error
-  ) {
-
-    setMessage(
-
-      'diverLoginMsg',
-
-      `
-        <div class="notice error">
-
-          ${esc(
-            error.message ||
-            'Connexion impossible.'
-          )}
-
-        </div>
-      `
-
-    );
-
-
-  } finally {
-
-    setLoadingButton(
-
-      button,
-
-      false,
-
-      '',
-
-      'Ouvrir mon profil'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   SUBMIT EVALUATION
-============================================================ */
-
-async function submitEvaluation(
-  event
-) {
-
-  event
-    .preventDefault();
-
-
-  if (
-    state.evaluationBusy
-  ) {
-
-    return;
-
-  }
-
-
-  if (
-    !state.user ||
-    !state.membership ||
-    !state.club?.id
-  ) {
-
-    showPage(
-      'club'
-    );
-
-
-    return;
-
-  }
-
-
-  const eahId =
-    normalizeCode(
-      val(
-        'eahId'
-      )
-    );
-
-
-  const diver =
-    state.divers.find(
-      item =>
-        String(
-          item.eah_id
-        ) ===
-        eahId
-    );
-
-
-  const diveCode =
-    normalizeCode(
-      val(
-        'diveCode'
-      )
-    );
-
-
-  const height =
-    asNumber(
-      val(
-        'height'
-      )
-    );
-
-
-  if (!diver) {
-
-    setMessage(
-
-      'evaluationMsg',
-
-      `
-        <div class="notice error">
-          Sélectionne un plongeur.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    !diveCode ||
-    height ===
-      null
-  ) {
-
-    setMessage(
-
-      'evaluationMsg',
-
-      `
-        <div class="notice error">
-          Code et hauteur obligatoires.
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  const scoreType =
-    String(
-      val(
-        'scoreType'
-      )
-      ||
-      'EAH'
-    )
-    .toUpperCase();
-
-
-  const waScore =
-    asNumber(
-      val(
-        'waScore'
-      )
-    );
-
-
-  if (
-    scoreType ===
-      'WA'
-    &&
-    waScore ===
-      null
-  ) {
-
-    setMessage(
-
-      'evaluationMsg',
-
-      `
-        <div class="notice error">
-
-          La note principale sélectionnée est World Aquatics.
-
-          <br><br>
-
-          Renseigne d'abord la note WA.
-
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  const takeoff =
-    criterionScore(
-      'D'
-    );
-
-
-  const trick =
-    criterionScore(
-      'T'
-    );
-
-
-  const entry =
-    criterionScore(
-      'E'
-    );
-
-
-  const eahScore =
-    finalEahScore(
-
-      takeoff,
-
-      trick,
-
-      entry
-
-    );
-
-
-  const criteria =
-    collectCriteria();
-
-
-  const button =
-    document.getElementById(
-      'submitEvalBtn'
-    );
-
-
-  state.evaluationBusy =
-    true;
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Enregistrement…',
-
-    'Générer le Grade Report'
-
-  );
-
-
-  try {
 
     const payload = {
 
-  clubSlug:
-    state.club.slug,
 
-  eahId:
-    diver.eah_id,
+      clubSlug:
+        state.club.slug,
 
-  primaryScoreType:
-    scoreType,
 
-  scoreType:
-    scoreType,
+      club_id:
+        state.club.id,
 
-  scoringMode:
-    scoreType,
+
+      clubId:
+        state.club.id,
+
+
+      eahId:
+        diver.eah_id,
+
+
+      eah_id:
+        diver.eah_id,
+
+
+      diverId:
+        diver.id,
+
+
+      diver_id:
+        diver.id,
+
+
+      coachName:
+
+        state.membership.display_name
+
+        ||
+
+        state.membership.email
+
+        ||
+
+        'Coach',
+
+
+      coach_name:
+
+        state.membership.display_name
+
+        ||
+
+        state.membership.email
+
+        ||
+
+        'Coach',
+
+
+      primaryScoreType:
+        scoreType,
+
+
+      primary_score_type:
+        scoreType,
+
+
+      scoreType:
+        scoreType,
+
+
+      score_type:
+        scoreType,
+
+
+      scoringMode:
+        scoreType,
+
+
+      scoring_mode:
+        scoreType,
+
 
       discipline:
         val(
@@ -10421,23 +9350,30 @@ async function submitEvaluation(
         ||
         'Plongeon',
 
+
       diveCode:
-        diveCode,
+        code,
+
+
+      dive_code:
+        code,
+
 
       diveName:
-        val(
-          'diveName'
-        )
-        .trim()
-        ||
-        DIVE_NAMES[
-          diveCode
-        ]
-        ||
-        diveCode,
+        diveName,
+
+
+      dive_name:
+        diveName,
+
 
       height:
-        height,
+        numberOrNull(
+          val(
+            'height'
+          )
+        ),
+
 
       heightType:
         val(
@@ -10446,383 +9382,661 @@ async function submitEvaluation(
         ||
         'KNOWN',
 
+
+      height_type:
+        val(
+          'heightType'
+        )
+        ||
+        'KNOWN',
+
+
       spotId:
         val(
           'spotId'
         )
         ||
-        '',
+        null,
+
+
+      spot_id:
+        val(
+          'spotId'
+        )
+        ||
+        null,
+
 
       spotName:
-        val(
-          'spotName'
+        String(
+          val(
+            'spotName'
+          )
+          ||
+          ''
         )
-        .trim(),
+        .trim()
+        ||
+        null,
+
+
+      spot_name:
+        String(
+          val(
+            'spotName'
+          )
+          ||
+          ''
+        )
+        .trim()
+        ||
+        null,
+
 
       dd:
-        val(
-          'dd'
+        numberOrNull(
+          val(
+            'dd'
+          )
         ),
 
+
       eahDifficulty:
-        val(
-          'eahDifficulty'
+        numberOrNull(
+          val(
+            'eahDifficulty'
+          )
         ),
+
+
+      eah_difficulty:
+        numberOrNull(
+          val(
+            'eahDifficulty'
+          )
+        ),
+
 
       waScore:
         waScore,
 
+
+      wa_score:
+        waScore,
+
+
       takeoff:
         takeoff,
+
 
       trick:
         trick,
 
+
       entry:
         entry,
+
+
+      entry_score:
+        entry,
+
 
       eahScore:
         eahScore,
 
+
+      eah_score:
+        eahScore,
+
+
       criteria:
         criteria,
 
+
       positive:
-        val(
-          'positive'
+        String(
+          val(
+            'positive'
+          )
+          ||
+          ''
         )
         .trim(),
+
 
       improve:
-        val(
-          'improve'
+        String(
+          val(
+            'improve'
+          )
+          ||
+          ''
         )
         .trim(),
+
 
       comment:
-        val(
-          'comment'
+        String(
+          val(
+            'comment'
+          )
+          ||
+          ''
         )
         .trim(),
 
+
       videoUrl:
-        val(
-          'videoUrl'
+        videoUrl,
+
+
+      video_url:
+        videoUrl,
+
+
+      videoQrAccessible:
+        Boolean(
+          byId(
+            'videoQrAccessible'
+          )
+          ?.checked
+        ),
+
+
+      video_qr_accessible:
+        Boolean(
+          byId(
+            'videoQrAccessible'
+          )
+          ?.checked
         )
-        .trim()
+
 
     };
 
 
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
+    return payload;
 
-          'eah_submit_evaluation_fast',
-
-          {
-
-            p_payload:
-              payload
-
-          }
-
-        );
+  }
 
 
-    if (error) {
+  /* ============================================================
+     ENVOYER EVALUATION
+  ============================================================ */
 
-      throw error;
 
-    }
+  async function submitEvaluation(
+    event
+  ) {
+
+
+    event
+      ?.preventDefault();
 
 
     if (
-      !data ||
-      data.ok ===
-      false
+      state.evaluationBusy
     ) {
 
-      throw new Error(
-        data?.error ||
-        'Évaluation impossible.'
-      );
+      return;
 
     }
 
 
-    setMessage(
-
-      'evaluationMsg',
-
-      `
-        <div class="notice success">
-
-          <strong>
-            Évaluation enregistrée.
-          </strong>
-
-          <br><br>
-
-          Takeoff :
-          ${esc(takeoff)}/10
-
-          •
-
-          Trick :
-          ${esc(trick)}/10
-
-          •
-
-          Entry :
-          ${esc(entry)}/10
-
-          <br>
-
-          <strong>
-
-            EAH :
-            ${esc(
-              fmtNumber(
-                eahScore
-              )
-            )}/10
-
-          </strong>
-
-          ${
-            scoreType ===
-              'WA'
-            ?
-            `
-              <br>
-
-              Note principale :
-              <strong>
-                WA
-                ${esc(
-                  fmtNumber(
-                    waScore
-                  )
-                )}/10
-              </strong>
-            `
-            :
-            ''
-          }
-
-          <br><br>
-
-          <small>
-            Le Grade Report est généré en arrière-plan.
-          </small>
-
-        </div>
-      `
-
-    );
-
-
-    showToast(
-      'Évaluation enregistrée.',
-      'success'
-    );
-
-
-    loadCoachData()
-      .catch(
-        console.warn
+    const button =
+      byId(
+        'submitEvalBtn'
       );
 
 
-  } catch (
-    error
-  ) {
+    state.evaluationBusy =
+      true;
 
-    setMessage(
+
+    if (
+      button
+    ) {
+
+      button.disabled =
+        true;
+
+    }
+
+
+    showMessage(
 
       'evaluationMsg',
 
-      `
-        <div class="notice error">
-
-          ${esc(
-            handleSupabaseError(
-              error,
-              "Erreur lors de l'enregistrement."
-            )
-          )}
-
-        </div>
-      `
+      'Enregistrement de l’évaluation…'
 
     );
 
 
-  } finally {
-
-    state.evaluationBusy =
-      false;
+    try {
 
 
-    setLoadingButton(
+      const payload =
+        evaluationPayload();
 
-      button,
 
-      false,
+      let result =
+        null;
 
-      '',
 
-      'Générer le Grade Report'
+      let rpcError =
+        null;
 
-    );
+
+      /*
+        RPC principale.
+      */
+
+
+      try {
+
+
+        result =
+          await rpcAttempt(
+
+            'eah_submit_evaluation_fast',
+
+            [
+
+              {
+
+                p_payload:
+                  payload
+
+              },
+
+              {
+
+                payload:
+                  payload
+
+              },
+
+              {
+
+                p_club_slug:
+                  state.club.slug,
+
+                p_payload:
+                  payload
+
+              }
+
+            ]
+
+          );
+
+
+      } catch (
+        error
+      ) {
+
+        rpcError =
+          error;
+
+      }
+
+
+      /*
+        Fallback direct si la RPC
+        n'est pas disponible.
+      */
+
+
+      if (
+        !result
+      ) {
+
+
+        const record = {
+
+
+          club_id:
+            state.club.id,
+
+
+          club_slug:
+            state.club.slug,
+
+
+          diver_id:
+            payload.diver_id,
+
+
+          eah_id:
+            payload.eah_id,
+
+
+          coach_name:
+            payload.coach_name,
+
+
+          discipline:
+            payload.discipline,
+
+
+          dive_code:
+            payload.dive_code,
+
+
+          dive_name:
+            payload.dive_name,
+
+
+          height:
+            payload.height,
+
+
+          height_type:
+            payload.height_type,
+
+
+          wa_score:
+            payload.wa_score,
+
+
+          takeoff:
+            payload.takeoff,
+
+
+          trick:
+            payload.trick,
+
+
+          entry_score:
+            payload.entry_score,
+
+
+          eah_score:
+            payload.eah_score,
+
+
+          criteria:
+            payload.criteria,
+
+
+          positive:
+            payload.positive,
+
+
+          improve:
+            payload.improve,
+
+
+          comment:
+            payload.comment,
+
+
+          video_url:
+            payload.video_url,
+
+
+          video_public:
+            Boolean(
+              payload.video_url
+            ),
+
+
+          eah_verified:
+            false,
+
+
+          evaluated_at:
+            new Date()
+            .toISOString()
+
+
+        };
+
+
+        const {
+
+          data,
+
+          error
+
+        } =
+          await requireSupabase()
+
+          .from(
+            'evaluations'
+          )
+
+          .insert(
+            record
+          )
+
+          .select(
+            '*'
+          )
+
+          .single();
+
+
+        if (
+          error
+        ) {
+
+          console.warn(
+            'RPC originale:',
+            rpcError
+          );
+
+
+          throw error;
+
+        }
+
+
+        result =
+          data;
+
+      }
+
+
+      const normalizedResult =
+        firstObject(
+          result
+        )
+        ||
+        result
+        ||
+        {};
+
+
+      const reportUrl =
+
+        normalizedResult.report_url
+
+        ||
+
+        normalizedResult.grade_report_url
+
+        ||
+
+        '';
+
+
+      showMessage(
+
+        'evaluationMsg',
+
+        reportUrl
+
+        ?
+
+        'Évaluation enregistrée. Le Grade Report est disponible.'
+
+        :
+
+        'Évaluation enregistrée. Le Grade Report sera ajouté dès sa génération.',
+
+        'success'
+
+      );
+
+
+      await loadCoachData();
+
+
+      toast(
+
+        'Évaluation enregistrée.',
+
+        'success'
+
+      );
+
+
+    } catch (
+      error
+    ) {
+
+
+      console.error(
+        'Submit evaluation:',
+        error
+      );
+
+
+      showMessage(
+
+        'evaluationMsg',
+
+        error?.message
+
+        ||
+
+        'Impossible d’enregistrer l’évaluation.',
+
+        'error'
+
+      );
+
+
+    } finally {
+
+
+      state.evaluationBusy =
+        false;
+
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+      }
+
+    }
 
   }
 
-}
+
+  /* ============================================================
+     DEMANDE PUBLIQUE DE GRADING
+  ============================================================ */
 
 
-
-/* ============================================================
-   DEMANDE PUBLIQUE
-============================================================ */
-
-async function submitPublicGrading(
-  event
-) {
-
-  event
-    ?.preventDefault();
-
-
-  const button =
-    document.getElementById(
-      'publicSubmitButton'
-    );
-
-
-  const firstName =
-    val(
-      'publicFirstName'
-    )
-    .trim();
-
-
-  const lastName =
-    val(
-      'publicLastName'
-    )
-    .trim();
-
-
-  const email =
-    val(
-      'publicEmail'
-    )
-    .trim()
-    .toLowerCase();
-
-
-  const videoUrl =
-    val(
-      'publicVideo'
-    )
-    .trim();
-
-
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !videoUrl
+  async function submitPublicGrading(
+    event
   ) {
 
-    setMessage(
+
+    event
+      ?.preventDefault();
+
+
+    const button =
+      byId(
+        'publicSubmitButton'
+      );
+
+
+    if (
+      button
+    ) {
+
+      button.disabled =
+        true;
+
+    }
+
+
+    showMessage(
 
       'publicFormMessage',
 
-      `
-        <div class="notice error">
-          Prénom, nom, e-mail et vidéo sont obligatoires.
-        </div>
-      `
+      'Envoi…'
 
     );
 
 
-    return;
-
-  }
-
-
-  setLoadingButton(
-
-    button,
-
-    true,
-
-    'Envoi…',
-
-    'Envoyer la demande'
-
-  );
-
-
-  try {
-
     const payload = {
 
-      club_slug:
-        CLUB_SLUG ||
-        null,
-
-      clubSlug:
-        CLUB_SLUG ||
-        null,
 
       first_name:
-        firstName,
+        String(
+          val(
+            'publicFirstName'
+          )
+          ||
+          ''
+        )
+        .trim(),
 
-      firstName:
-        firstName,
 
       last_name:
-        lastName,
+        String(
+          val(
+            'publicLastName'
+          )
+          ||
+          ''
+        )
+        .trim(),
 
-      lastName:
-        lastName,
 
       email:
-        email,
+        String(
+          val(
+            'publicEmail'
+          )
+          ||
+          ''
+        )
+        .trim(),
+
 
       discipline:
         val(
           'publicDiscipline'
-        ),
+        )
+        ||
+        'Plongeon',
+
 
       dive_code:
-        normalizeCode(
+        normalizeDiveCode(
           val(
             'publicDive'
           )
         ),
 
-      diveCode:
-        normalizeCode(
-          val(
-            'publicDive'
-          )
-        ),
 
       height:
-        asNumber(
+        numberOrNull(
           val(
             'publicHeight'
           )
         ),
+
 
       height_type:
         val(
@@ -10831,608 +10045,796 @@ async function submitPublicGrading(
         ||
         'KNOWN',
 
-      heightType:
-        val(
-          'publicHeightType'
-        )
-        ||
-        'KNOWN',
 
       video_url:
-        videoUrl,
-
-      videoUrl:
-        videoUrl,
-
-      message:
-        val(
-          'publicMessage'
+        String(
+          val(
+            'publicVideo'
+          )
+          ||
+          ''
         )
         .trim(),
 
-      source:
-        'PUBLIC',
 
-      status:
-        'PENDING'
+      message:
+        String(
+          val(
+            'publicMessage'
+          )
+          ||
+          ''
+        )
+        .trim(),
+
+
+      club_slug:
+        CLUB_SLUG
+        ||
+        null
+
 
     };
 
 
-    const {
-      data,
-      error
-    } =
-      await requireSupabase()
-        .rpc(
+    try {
+
+
+      let sent =
+        false;
+
+
+      /*
+        RPC existante.
+      */
+
+
+      try {
+
+
+        await rpcAttempt(
 
           'submit_public_grading_request',
 
-          {
+          [
 
-            p_payload:
-              payload
+            {
 
-          }
+              p_payload:
+                payload
+
+            },
+
+            {
+
+              payload:
+                payload
+
+            },
+
+            payload
+
+          ]
 
         );
 
 
-    if (error) {
-
-      throw error;
-
-    }
+        sent =
+          true;
 
 
-    setMessage(
+      } catch (
+        rpcError
+      ) {
 
-      'publicFormMessage',
+        console.warn(
+          'Public grading RPC:',
+          rpcError
+        );
 
-      `
-        <div class="notice success">
-
-          <strong>
-            Demande enregistrée.
-          </strong>
-
-          ${
-            data?.request_code
-            ?
-            `
-              <br><br>
-              Référence :
-              <strong>
-                ${esc(
-                  data.request_code
-                )}
-              </strong>
-            `
-            :
-            ''
-          }
-
-        </div>
-      `
-
-    );
+      }
 
 
-    document
-      .getElementById(
+      /*
+        Fallback table.
+      */
+
+
+      if (
+        !sent
+      ) {
+
+
+        const {
+
+          error
+
+        } =
+          await requireSupabase()
+
+          .from(
+            'public_grading_requests'
+          )
+
+          .insert(
+            payload
+          );
+
+
+        if (
+          error
+        ) {
+
+          throw error;
+
+        }
+
+      }
+
+
+      byId(
         'publicGradingForm'
       )
       ?.reset();
 
 
-  } catch (
-    error
-  ) {
+      showMessage(
 
-    setMessage(
+        'publicFormMessage',
 
-      'publicFormMessage',
+        'Demande envoyée à EAH Diving.',
 
-      `
-        <div class="notice error">
-
-          ${esc(
-            error.message ||
-            'Envoi impossible.'
-          )}
-
-        </div>
-      `
-
-    );
-
-
-  } finally {
-
-    setLoadingButton(
-
-      button,
-
-      false,
-
-      '',
-
-      'Envoyer la demande'
-
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   EVENTS
-============================================================ */
-
-document
-  .getElementById(
-    'spotId'
-  )
-  ?.addEventListener(
-
-    'change',
-
-    event => {
-
-      const option =
-        event.target
-          .options[
-            event.target.selectedIndex
-          ];
-
-
-      if (
-        option?.dataset?.name
-      ) {
-
-        document
-          .getElementById(
-            'spotName'
-          )
-          .value =
-            option.dataset.name;
-
-      }
-
-    }
-
-  );
-
-
-document
-  .getElementById(
-    'diveCode'
-  )
-  ?.addEventListener(
-
-    'input',
-
-    event => {
-
-      const code =
-        normalizeCode(
-          event.target.value
-        );
-
-
-      event.target.value =
-        code;
-
-
-      if (
-        DIVE_NAMES[
-          code
-        ]
-      ) {
-
-        const field =
-          document.getElementById(
-            'diveName'
-          );
-
-
-        if (field) {
-
-          field.value =
-            DIVE_NAMES[
-              code
-            ];
-
-        }
-
-      }
-
-    }
-
-  );
-
-
-document
-  .getElementById(
-    'coachLoginForm'
-  )
-  ?.addEventListener(
-    'submit',
-    coachLogin
-  );
-
-
-document
-  .getElementById(
-    'diverLoginForm'
-  )
-  ?.addEventListener(
-    'submit',
-    diverLogin
-  );
-
-
-document
-  .getElementById(
-    'setupProfileButton'
-  )
-  ?.addEventListener(
-    'click',
-    setupProfile
-  );
-
-
-document
-  .getElementById(
-    'logoutCoachButton'
-  )
-  ?.addEventListener(
-    'click',
-    logoutCoach
-  );
-
-
-document
-  .getElementById(
-    'openEvaluationButton'
-  )
-  ?.addEventListener(
-
-    'click',
-
-    () => {
-
-      showPage(
-        'evaluation'
-      );
-
-    }
-
-  );
-
-
-document
-  .getElementById(
-    'evaluationForm'
-  )
-  ?.addEventListener(
-    'submit',
-    submitEvaluation
-  );
-
-
-document
-  .getElementById(
-    'publicGradingForm'
-  )
-  ?.addEventListener(
-    'submit',
-    submitPublicGrading
-  );
-
-
-document
-  .getElementById(
-    'populationSearchButton'
-  )
-  ?.addEventListener(
-    'click',
-    loadPopulation
-  );
-
-
-[
-  'populationCode',
-  'populationName'
-]
-.forEach(
-  id => {
-
-    document
-      .getElementById(
-        id
-      )
-      ?.addEventListener(
-
-        'keydown',
-
-        event => {
-
-          if (
-            event.key ===
-              'Enter'
-          ) {
-
-            event.preventDefault();
-
-            loadPopulation();
-
-          }
-
-        }
+        'success'
 
       );
 
-  }
-);
 
+      toast(
 
+        'Demande envoyée.',
 
-/* ============================================================
-   AUTH STATE
-============================================================ */
+        'success'
 
-if (
-  supabaseClient
-) {
-
-  supabaseClient.auth
-    .onAuthStateChange(
-
-      (
-        event,
-        session
-      ) => {
-
-        if (
-          event ===
-          'SIGNED_OUT'
-        ) {
-
-          state.user =
-            null;
-
-
-          state.membership =
-            null;
-
-
-          state.coach =
-            null;
-
-
-          showCoachLoggedOut();
-
-
-          return;
-
-        }
-
-
-        if (
-          session?.user
-        ) {
-
-          state.user =
-            session.user;
-
-        }
-
-      }
-
-    );
-
-}
-
-
-
-/* ============================================================
-   ROUTE
-============================================================ */
-
-function initialRoute() {
-
-  if (
-    CARD_EAH_ID &&
-    CARD_TOKEN
-  ) {
-
-    showPage(
-      'profil',
-      false
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    LEGACY_COACH_TOKEN
-  ) {
-
-    showPage(
-      'club',
-      false
-    );
-
-
-    return;
-
-  }
-
-
-  const hash =
-    window.location.hash
-      .replace(
-        '#',
-        ''
       );
 
 
-  if (
-    hash &&
-    document.getElementById(
-      hash
-    )
-  ) {
+    } catch (
+      error
+    ) {
 
-    showPage(
-      hash,
-      false
-    );
-
-  } else {
-
-    showPage(
-      'accueil',
-      false
-    );
-
-  }
-
-}
-
-
-
-/* ============================================================
-   INIT
-============================================================ */
-
-async function init() {
-
-  renderCriteria();
-
-  renderDiveCodes();
-
-  renderBlazons();
-
-  renderPricing();
-
-
-  initialRoute();
-
-
-  /*
-    Carte coach externe :
-    coach-card.js prend la main.
-  */
-
-  if (
-    LEGACY_COACH_TOKEN
-  ) {
-
-    return;
-
-  }
-
-
-  if (
-    CARD_EAH_ID &&
-    CARD_TOKEN
-  ) {
-
-    await loadPrivateProfileByCard(
-
-      CARD_EAH_ID,
-
-      CARD_TOKEN
-
-    );
-
-
-    return;
-
-  }
-
-
-  await Promise.allSettled([
-
-    loadPublicData(),
-
-    CLUB_SLUG
-      ?
-      loadClubBranding()
-      :
-      Promise.resolve()
-
-  ]);
-
-
-  /*
-    Profil public direct :
-    ?club=...&id=EAH-...#profil
-  */
-
-  if (
-    CARD_EAH_ID &&
-    !CARD_TOKEN
-    &&
-    window.location.hash ===
-      '#profil'
-  ) {
-
-    await loadPublicProfile(
-      CARD_EAH_ID
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    window.location.hash ===
-      '#club'
-    ||
-    window.location.hash ===
-      '#evaluation'
-  ) {
-
-    restoreCoachSession()
-      .catch(
-        console.warn
-      );
-
-  }
-
-}
-
-
-
-init()
-  .catch(
-    error => {
 
       console.error(
-        'EAH Diving init:',
+        'Public grading:',
         error
       );
 
 
-      showToast(
+      showMessage(
 
-        'Une partie du site n’a pas pu être chargée.',
+        'publicFormMessage',
 
-        'error',
+        error?.message
 
-        6000
+        ||
+
+        'Impossible d’envoyer la demande.',
+
+        'error'
+
+      );
+
+
+    } finally {
+
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+      }
+
+    }
+
+  }
+
+
+  /* ============================================================
+     URL NFC / QR
+  ============================================================ */
+
+
+  async function handleDeepLink() {
+
+
+    /*
+      CARTE COACH
+    */
+
+
+    const coachToken =
+      String(
+        URL_PARAMS.get(
+          'coachToken'
+        )
+        ||
+        ''
+      )
+      .trim();
+
+
+    if (
+      coachToken
+    ) {
+
+
+      showPage(
+
+        'club',
+
+        {
+
+          updateHash:
+            false
+
+        }
+
+      );
+
+
+      await openCoachCard(
+        coachToken
+      );
+
+
+      return true;
+
+    }
+
+
+    /*
+      CARTE PLONGEUR
+    */
+
+
+    const eahId =
+
+      URL_PARAMS.get(
+        'eahId'
+      )
+
+      ||
+
+      URL_PARAMS.get(
+        'eah_id'
+      )
+
+      ||
+
+      URL_PARAMS.get(
+        'eah'
+      )
+
+      ||
+
+      URL_PARAMS.get(
+        'id'
+      )
+
+      ||
+
+      '';
+
+
+    const token =
+
+      URL_PARAMS.get(
+        'token'
+      )
+
+      ||
+
+      URL_PARAMS.get(
+        'accessToken'
+      )
+
+      ||
+
+      URL_PARAMS.get(
+        'access_token'
+      )
+
+      ||
+
+      '';
+
+
+    if (
+      eahId
+      &&
+      token
+    ) {
+
+
+      showPage(
+
+        'profil',
+
+        {
+
+          updateHash:
+            false
+
+        }
+
+      );
+
+
+      await loadPrivateProfileByCard(
+
+        CLUB_SLUG,
+
+        eahId,
+
+        token
+
+      );
+
+
+      return true;
+
+    }
+
+
+    return false;
+
+  }
+
+
+  /* ============================================================
+     EVENEMENTS FORMULAIRES
+  ============================================================ */
+
+
+  function bindForms() {
+
+
+    byId(
+      'coachLoginForm'
+    )
+    ?.addEventListener(
+
+      'submit',
+
+      coachLogin
+
+    );
+
+
+    byId(
+      'diverLoginForm'
+    )
+    ?.addEventListener(
+
+      'submit',
+
+      diverLogin
+
+    );
+
+
+    byId(
+      'publicGradingForm'
+    )
+    ?.addEventListener(
+
+      'submit',
+
+      submitPublicGrading
+
+    );
+
+
+    byId(
+      'evaluationForm'
+    )
+    ?.addEventListener(
+
+      'submit',
+
+      submitEvaluation
+
+    );
+
+
+    byId(
+      'setupProfileButton'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      setupProfile
+
+    );
+
+
+    byId(
+      'logoutCoachButton'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      logoutCoach
+
+    );
+
+
+    byId(
+      'openEvaluationButton'
+    )
+    ?.addEventListener(
+
+      'click',
+
+      function() {
+
+        showPage(
+          'evaluation'
+        );
+
+      }
+
+    );
+
+
+    byId(
+      'diveCode'
+    )
+    ?.addEventListener(
+
+      'input',
+
+      updateDiveName
+
+    );
+
+
+    /*
+      SPOT -> NOM DU LIEU
+    */
+
+
+    byId(
+      'spotId'
+    )
+    ?.addEventListener(
+
+      'change',
+
+      function() {
+
+
+        const id =
+          val(
+            'spotId'
+          );
+
+
+        const spot =
+          state.spots
+          .find(
+            function(item) {
+
+              return (
+                String(
+                  item.id
+                )
+                ===
+                String(
+                  id
+                )
+              );
+
+            }
+          );
+
+
+        if (
+          spot
+          &&
+          byId(
+            'spotName'
+          )
+        ) {
+
+          byId(
+            'spotName'
+          ).value =
+            spot.name
+            ||
+            '';
+
+        }
+
+      }
+
+    );
+
+
+    /*
+      PROFIL PLONGEUR COACH
+    */
+
+
+    document.addEventListener(
+
+      'click',
+
+      function(event) {
+
+
+        const detail =
+          event.target.closest(
+            '[data-coach-diver-detail]'
+          );
+
+
+        if (
+          detail
+        ) {
+
+
+          event.preventDefault();
+
+
+          openCoachDiverDetail(
+
+            detail
+              .dataset
+              .coachDiverDetail
+
+          );
+
+        }
+
+      }
+
+    );
+
+  }
+
+
+  /* ============================================================
+     FIN DU CHARGEMENT DES IMAGES
+  ============================================================ */
+
+
+  function removeImageLoadingGuard() {
+
+
+    const done =
+      function() {
+
+        document
+          .documentElement
+          .classList
+          .remove(
+            'eah-images-loading'
+          );
+
+      };
+
+
+    if (
+      document.readyState ===
+      'complete'
+    ) {
+
+      done();
+
+    } else {
+
+
+      window.addEventListener(
+
+        'load',
+
+        done,
+
+        {
+
+          once:
+            true
+
+        }
+
+      );
+
+
+      /*
+        Sécurité :
+        le site n'attend jamais indéfiniment
+        une image absente.
+      */
+
+
+      window.setTimeout(
+
+        done,
+
+        2500
 
       );
 
     }
-  );
+
+  }
+
+
+  /* ============================================================
+     CHARGEMENT ASYNCHRONE
+  ============================================================ */
+
+
+  async function initAsync() {
+
+
+    /*
+      Données publiques.
+
+      Une erreur ici
+      NE bloque pas la navigation.
+    */
+
+
+    try {
+
+      await loadPublicData();
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+        'Public data init:',
+        error
+      );
+
+    }
+
+
+    /*
+      NFC ou session coach.
+    */
+
+
+    try {
+
+
+      const deepLinkHandled =
+        await handleDeepLink();
+
+
+      if (
+        !deepLinkHandled
+      ) {
+
+        await restoreCoachSession();
+
+      }
+
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+        'Session/deeplink init:',
+        error
+      );
+
+    }
+
+  }
+
+
+  /* ============================================================
+     INITIALISATION PRINCIPALE
+  ============================================================ */
+
+
+  function init() {
+
+
+    /*
+      LE ROUTEUR EST LANCE EN PREMIER.
+
+      C'est ce qui évite désormais
+      le site bloqué sur l'accueil.
+    */
+
+
+    initRouter();
+
+
+    initModal();
+
+
+    bindPublicCards();
+
+
+    bindPopulation();
+
+
+    renderCriteria();
+
+
+    fillDiveCodes();
+
+
+    bindForms();
+
+
+    updateEvaluationAccess();
+
+
+    removeImageLoadingGuard();
+
+
+    /*
+      Supabase est lancé ensuite.
+
+      Donc même si une RPC Supabase
+      rencontre une erreur,
+      Grading / Blazons / Population /
+      Spots / Actualités / Tarifs /
+      Disciplines continuent à s'ouvrir.
+    */
+
+
+    initAsync();
+
+  }
+
+
+  /* ============================================================
+     DEMARRAGE
+  ============================================================ */
+
+
+  if (
+    document.readyState ===
+    'loading'
+  ) {
+
+
+    document.addEventListener(
+
+      'DOMContentLoaded',
+
+      init,
+
+      {
+
+        once:
+          true
+
+      }
+
+    );
+
+
+  } else {
+
+
+    init();
+
+
+  }
+
+
+})();
