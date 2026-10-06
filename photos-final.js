@@ -1,18 +1,7 @@
 /* ============================================================
    EAH DIVING PRO
    PHOTOS-FINAL.JS
-   VERSION FINALE
-   03/10/2026
-
-   - Préchargement des images importantes
-   - Heroes
-   - Disciplines
-   - Actualités
-   - Spots
-   - Offres
-   - Faire grader
-   - Espace Club
-   - Aucun lazy loading
+   VERSION 06/10/2026
 ============================================================ */
 
 (() => {
@@ -24,23 +13,11 @@
     document.documentElement;
 
 
-  /* ============================================================
-     IMAGES A PRECHARGER
-  ============================================================ */
-
   const PRELOAD_IMAGES = [
-
-    /* FOND */
 
     "site-water-premium-bg.jpg",
 
-
-    /* ACCUEIL */
-
     "hero-divers-group.png",
-
-
-    /* PAGES PRINCIPALES */
 
     "grading-hero.jpg",
 
@@ -54,12 +31,11 @@
 
     "pricing-hero.jpg",
 
+    "tarifs-mobile.png",
+
     "grading-request-hero.jpg",
 
     "club-dashboard-hero.jpg",
-
-
-    /* OLYMPIQUE */
 
     "olympique-desktop.jpg",
 
@@ -67,22 +43,13 @@
 
     "portrait-water-diver.jpg",
 
-
-    /* FREESTYLE */
-
     "freestyle-desktop.jpg",
 
     "freestyle-mobile.jpg",
 
-
-    /* HIGH DIVING */
-
     "high-diving-desktop.png",
 
     "high-diving-mobile.jpg",
-
-
-    /* SAUT DE L'ANGE */
 
     "saut-ange-desktop.jpg",
 
@@ -92,15 +59,149 @@
 
 
 
-  /* ============================================================
-     URL ABSOLUE
-  ============================================================ */
+  function mediaUrl(
+    value,
+    size =
+      "w1800"
+  ) {
+
+    const raw =
+      String(
+        value ||
+        ""
+      )
+      .trim();
+
+
+    if (!raw) {
+
+      return "";
+
+    }
+
+
+    if (
+      typeof window.EAHMediaUrl ===
+        "function"
+    ) {
+
+      return window.EAHMediaUrl(
+        raw,
+        size
+      );
+
+    }
+
+
+    try {
+
+      const decoded =
+        decodeURIComponent(
+          raw
+        );
+
+
+      let match =
+        decoded.match(
+          /\/file\/d\/([^/?#]+)/
+        );
+
+
+      if (!match) {
+
+        match =
+          decoded.match(
+            /\/d\/([^/?#]+)/
+        );
+
+      }
+
+
+      if (
+        match &&
+        match[1]
+      ) {
+
+        return (
+          "https://drive.google.com/thumbnail?id="
+          +
+          encodeURIComponent(
+            match[1]
+          )
+          +
+          "&sz="
+          +
+          encodeURIComponent(
+            size
+          )
+        );
+
+      }
+
+
+      const parsed =
+        new URL(
+          raw,
+          document.baseURI
+        );
+
+
+      const id =
+        parsed.searchParams.get(
+          "id"
+        );
+
+
+      if (
+        id &&
+        (
+          parsed.hostname.includes(
+            "drive.google.com"
+          )
+          ||
+          parsed.hostname.includes(
+            "docs.google.com"
+          )
+        )
+      ) {
+
+        return (
+          "https://drive.google.com/thumbnail?id="
+          +
+          encodeURIComponent(
+            id
+          )
+          +
+          "&sz="
+          +
+          encodeURIComponent(
+            size
+          )
+        );
+
+      }
+
+
+    } catch (_) {}
+
+
+    return raw;
+
+  }
+
+
 
   function absoluteUrl(
     url
   ) {
 
-    if (!url) {
+    const converted =
+      mediaUrl(
+        url
+      );
+
+
+    if (!converted) {
 
       return "";
 
@@ -111,15 +212,16 @@
 
       return new URL(
 
-        url,
+        converted,
 
         document.baseURI
 
       ).href;
 
+
     } catch (_) {
 
-      return url;
+      return converted;
 
     }
 
@@ -127,9 +229,183 @@
 
 
 
-  /* ============================================================
-     PRELOAD URL
-  ============================================================ */
+  function normalizeImage(
+    img
+  ) {
+
+    if (
+      !img ||
+      img.tagName !==
+        "IMG"
+    ) {
+
+      return;
+
+    }
+
+
+    const original =
+      String(
+        img.getAttribute(
+          "src"
+        )
+        ||
+        ""
+      )
+      .trim();
+
+
+    if (!original) {
+
+      return;
+
+    }
+
+
+    const corrected =
+      mediaUrl(
+        original
+      );
+
+
+    if (
+      corrected &&
+      corrected !==
+        original &&
+      img.dataset.eahNormalizedSrc !==
+        corrected
+    ) {
+
+      img.dataset.eahNormalizedSrc =
+        corrected;
+
+
+      img.setAttribute(
+        "src",
+        corrected
+      );
+
+    }
+
+
+    img.loading =
+      "eager";
+
+
+    img.decoding =
+      "async";
+
+
+    try {
+
+      img.fetchPriority =
+        "high";
+
+    } catch (_) {}
+
+  }
+
+
+
+  function normalizeSource(
+    source
+  ) {
+
+    if (
+      !source ||
+      source.tagName !==
+        "SOURCE"
+    ) {
+
+      return;
+
+    }
+
+
+    const srcset =
+      String(
+        source.getAttribute(
+          "srcset"
+        )
+        ||
+        ""
+      );
+
+
+    if (!srcset) {
+
+      return;
+
+    }
+
+
+    const corrected =
+      srcset
+        .split(
+          ","
+        )
+        .map(
+          item => {
+
+            const parts =
+              item
+                .trim()
+                .split(
+                  /\s+/
+                );
+
+
+            const sourceUrl =
+              parts.shift();
+
+
+            const descriptor =
+              parts.join(
+                " "
+              );
+
+
+            const converted =
+              mediaUrl(
+                sourceUrl
+              );
+
+
+            return (
+              converted
+              +
+              (
+                descriptor
+                ?
+                " " +
+                descriptor
+                :
+                ""
+              )
+            );
+
+          }
+        )
+        .join(
+          ", "
+        );
+
+
+    if (
+      corrected !==
+        srcset
+    ) {
+
+      source.setAttribute(
+        "srcset",
+        corrected
+      );
+
+    }
+
+  }
+
+
 
   function preloadUrl(
     url
@@ -138,7 +414,13 @@
     return new Promise(
       resolve => {
 
-        if (!url) {
+        const src =
+          absoluteUrl(
+            url
+          );
+
+
+        if (!src) {
 
           resolve();
 
@@ -172,9 +454,7 @@
 
 
         image.src =
-          absoluteUrl(
-            url
-          );
+          src;
 
 
         if (
@@ -192,12 +472,9 @@
 
 
 
-  /* ============================================================
-     EAGER
-  ============================================================ */
-
-  function forceEager(
-    root = document
+  function normalizeDOM(
+    root =
+      document
   ) {
 
     root
@@ -205,36 +482,25 @@
         "img"
       )
       .forEach(
-        img => {
-
-          img.loading =
-            "eager";
+        normalizeImage
+      );
 
 
-          img.decoding =
-            "async";
-
-
-          try {
-
-            img.fetchPriority =
-              "high";
-
-          } catch (_) {}
-
-        }
+    root
+      .querySelectorAll(
+        "source[srcset]"
+      )
+      .forEach(
+        normalizeSource
       );
 
   }
 
 
 
-  /* ============================================================
-     RECUPERER LES URL
-  ============================================================ */
-
   function collectImages(
-    root = document
+    root =
+      document
   ) {
 
     const urls =
@@ -262,22 +528,19 @@
       .forEach(
         img => {
 
-          const url =
-
+          const src =
             img.currentSrc
-
             ||
-
             img.getAttribute(
               "src"
             );
 
 
-          if (url) {
+          if (src) {
 
             urls.add(
               absoluteUrl(
-                url
+                src
               )
             );
 
@@ -314,21 +577,19 @@
             .forEach(
               item => {
 
-                const url =
+                const src =
                   item
                     .trim()
                     .split(
                       /\s+/
-                    )[
-                      0
-                    ];
+                    )[0];
 
 
-                if (url) {
+                if (src) {
 
                   urls.add(
                     absoluteUrl(
-                      url
+                      src
                     )
                   );
 
@@ -341,23 +602,24 @@
       );
 
 
-    return Array.from(
-      urls
-    );
+    return Array
+      .from(
+        urls
+      )
+      .filter(
+        Boolean
+      );
 
   }
 
 
 
-  /* ============================================================
-     PREPARATION
-  ============================================================ */
-
   async function prepare(
-    root = document
+    root =
+      document
   ) {
 
-    forceEager(
+    normalizeDOM(
       root
     );
 
@@ -377,6 +639,7 @@
         )
 
       ),
+
 
       new Promise(
         resolve => {
@@ -415,19 +678,16 @@
 
 
 
-  /* ============================================================
-     NOUVELLE IMAGE
-  ============================================================ */
-
-  function prepareNewImage(
-    img
+  function prepareNode(
+    node
   ) {
 
     if (
-      !img
-      ||
-      img.tagName !==
-        "IMG"
+      !node ||
+      !(
+        node instanceof
+        HTMLElement
+      )
     ) {
 
       return;
@@ -435,167 +695,134 @@
     }
 
 
-    img.loading =
-      "eager";
+    if (
+      node.tagName ===
+        "IMG"
+    ) {
 
-
-    img.decoding =
-      "async";
-
-
-    try {
-
-      img.fetchPriority =
-        "high";
-
-    } catch (_) {}
-
-
-    const src =
-
-      img.currentSrc
-
-      ||
-
-      img.getAttribute(
-        "src"
+      normalizeImage(
+        node
       );
 
 
-    if (!src) {
-
-      return;
+      preloadUrl(
+        node.getAttribute(
+          "src"
+        )
+      );
 
     }
 
 
-    preloadUrl(
-      src
-    )
-    .then(
-      () => {
+    if (
+      node.tagName ===
+        "SOURCE"
+    ) {
 
-        img.classList.remove(
-          "eah-image-wait"
-        );
+      normalizeSource(
+        node
+      );
+
+    }
 
 
-        img.classList.add(
-          "eah-image-ready"
-        );
+    node
+      .querySelectorAll?.(
+        "img"
+      )
+      .forEach(
+        img => {
 
-      }
-    );
+          normalizeImage(
+            img
+          );
+
+
+          preloadUrl(
+            img.getAttribute(
+              "src"
+            )
+          );
+
+        }
+      );
+
+
+    node
+      .querySelectorAll?.(
+        "source[srcset]"
+      )
+      .forEach(
+        normalizeSource
+      );
 
   }
 
 
 
-  /* ============================================================
-     MUTATION OBSERVER
-  ============================================================ */
+  let observerBusy =
+    false;
+
 
   const observer =
     new MutationObserver(
       mutations => {
 
-        mutations.forEach(
-          mutation => {
+        if (
+          observerBusy
+        ) {
 
-            mutation
-              .addedNodes
-              .forEach(
-                node => {
+          return;
 
-                  if (
-                    !(
-                      node instanceof
-                      HTMLElement
-                    )
-                  ) {
-
-                    return;
-
-                  }
+        }
 
 
-                  if (
-                    node.tagName ===
-                    "IMG"
-                  ) {
-
-                    prepareNewImage(
-                      node
-                    );
-
-                  }
+        observerBusy =
+          true;
 
 
-                  node
-                    .querySelectorAll?.(
-                      "img"
-                    )
-                    .forEach(
-                      prepareNewImage
-                    );
+        try {
+
+          mutations
+            .forEach(
+              mutation => {
+
+                mutation
+                  .addedNodes
+                  .forEach(
+                    prepareNode
+                  );
+
+
+                if (
+                  mutation.type ===
+                    "attributes"
+                  &&
+                  mutation.target instanceof
+                    HTMLImageElement
+                ) {
+
+                  normalizeImage(
+                    mutation.target
+                  );
 
                 }
-              );
+
+              }
+            );
 
 
-            if (
-              mutation.type ===
-                "attributes"
-              &&
-              mutation.target instanceof
-                HTMLImageElement
-            ) {
+        } finally {
 
-              prepareNewImage(
-                mutation.target
-              );
+          observerBusy =
+            false;
 
-            }
-
-          }
-        );
+        }
 
       }
     );
 
 
-  observer.observe(
-
-    document.documentElement,
-
-    {
-
-      childList:
-        true,
-
-      subtree:
-        true,
-
-      attributes:
-        true,
-
-      attributeFilter: [
-
-        "src",
-
-        "srcset"
-
-      ]
-
-    }
-
-  );
-
-
-
-  /* ============================================================
-     DEMARRAGE
-  ============================================================ */
 
   async function bootPhotos() {
 
@@ -616,16 +843,53 @@
   }
 
 
+
+  function startObserver() {
+
+    observer.observe(
+
+      document.documentElement,
+
+      {
+
+        childList:
+          true,
+
+        subtree:
+          true,
+
+        attributes:
+          true,
+
+        attributeFilter: [
+          "src",
+          "srcset"
+        ]
+
+      }
+
+    );
+
+  }
+
+
+
   if (
     document.readyState ===
-    "loading"
+      "loading"
   ) {
 
     document.addEventListener(
 
       "DOMContentLoaded",
 
-      bootPhotos,
+      () => {
+
+        startObserver();
+
+        bootPhotos();
+
+      },
 
       {
         once:
@@ -634,7 +898,10 @@
 
     );
 
+
   } else {
+
+    startObserver();
 
     bootPhotos();
 
@@ -642,17 +909,13 @@
 
 
 
-  /* ============================================================
-     NAVIGATION
-  ============================================================ */
-
   window.addEventListener(
 
     "pageshow",
 
     () => {
 
-      forceEager(
+      normalizeDOM(
         document
       );
 
@@ -667,7 +930,7 @@
 
     () => {
 
-      forceEager(
+      normalizeDOM(
         document
       );
 
@@ -677,14 +940,11 @@
 
 
 
-  /* ============================================================
-     API
-  ============================================================ */
-
   window.EAHPhotos = {
 
     refresh(
-      root = document
+      root =
+        document
     ) {
 
       return prepare(
@@ -699,6 +959,17 @@
     ) {
 
       return preloadUrl(
+        url
+      );
+
+    },
+
+
+    normalize(
+      url
+    ) {
+
+      return mediaUrl(
         url
       );
 
