@@ -19079,7 +19079,802 @@ if (
 
   eahV3InstallEvaluationFields();
 
+}/* ============================================================
+   EAH DIVING PRO
+   PUBLIC PROFILE + POPULATION V6
+   06/10/2026
+
+   A COLLER JUSTE AVANT :
+   init().catch(...)
+============================================================ */
+
+
+/* ============================================================
+   AJOUT RECHERCHE NOM / PRENOM
+============================================================ */
+
+function EAH_V6_INSTALLER_RECHERCHE_POPULATION() {
+
+  if (
+    document.getElementById(
+      'populationName'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const codeField =
+    document.getElementById(
+      'populationCode'
+    );
+
+
+  if (!codeField) {
+
+    return;
+
+  }
+
+
+  const wrapper =
+    document.createElement(
+      'label'
+    );
+
+
+  wrapper.id =
+    'eahPopulationNameWrapper';
+
+
+  wrapper.innerHTML = `
+
+    Nom ou prénom
+
+    <input
+      id="populationName"
+      type="search"
+      autocomplete="off"
+      placeholder="Ex : Emeric, Goin..."
+    >
+
+  `;
+
+
+  const codeLabel =
+    codeField.closest(
+      'label'
+    );
+
+
+  if (codeLabel) {
+
+    codeLabel.insertAdjacentElement(
+      'afterend',
+      wrapper
+    );
+
+  } else {
+
+    codeField.insertAdjacentElement(
+      'afterend',
+      wrapper
+    );
+
+  }
+
+
+  document
+    .getElementById(
+      'populationName'
+    )
+    ?.addEventListener(
+
+      'keydown',
+
+      function(event) {
+
+        if (
+          event.key ===
+          'Enter'
+        ) {
+
+          event.preventDefault();
+
+          loadPopulation();
+
+        }
+
+      }
+
+    );
+
 }
+
+
+
+/* ============================================================
+   PROFIL PUBLIC SECURISE
+============================================================ */
+
+async function loadPublicProfile(
+  eahId
+) {
+
+  setProfileLoading();
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_public_profile_v2',
+
+        {
+
+          p_eah_id:
+            String(
+              eahId ||
+              ''
+            )
+            .trim()
+            .toUpperCase(),
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data
+      ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+
+        data?.error
+        ||
+        'Profil public introuvable ou privé.'
+
+      );
+
+    }
+
+
+    const profile =
+      data.profile ||
+      {};
+
+
+    if (
+      data.club?.slug
+    ) {
+
+      CLUB_SLUG =
+        data.club.slug;
+
+    }
+
+
+    state.club =
+      data.club ||
+      state.club;
+
+
+    state.profile = {
+
+      eahId:
+        profile.eahId ||
+        eahId,
+
+      firstName:
+        profile.firstName ||
+        '',
+
+      lastName:
+        profile.lastName ||
+        '',
+
+      photoUrl:
+        profile.photoUrl ||
+        '',
+
+      sex:
+        profile.sex ||
+        '',
+
+      group:
+        profile.group ||
+        '',
+
+      currentBlazon:
+        profile.currentBlazon ||
+        '',
+
+      profileVisibility:
+        profile.profileVisibility ||
+        'PUBLIC',
+
+      club:
+        data.club?.name ||
+        'EAH Diving',
+
+      cardStatus:
+        ''
+
+    };
+
+
+    state.profileHistory = {
+
+      evaluations:
+        data.evaluations ||
+        [],
+
+      blazons:
+        data.blazons ||
+        []
+
+    };
+
+
+    renderProfileSummary(
+
+      state.profile,
+
+      false
+
+    );
+
+
+    renderProfileHistory(
+      state.profileHistory
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH PUBLIC PROFILE:',
+      error
+    );
+
+
+    renderProfileError(
+
+      error.message ||
+      'Profil public introuvable ou privé.'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   IMAGE DU BLAZON ACTUEL
+============================================================ */
+
+function eahV6CurrentBlazonImage(
+  profile
+) {
+
+  const key =
+    normalizeBlazonName(
+      profile?.currentBlazon ||
+      ''
+    );
+
+
+  return (
+    BLAZON_IMAGES[
+      key
+    ]
+    ||
+    ''
+  );
+
+}
+
+
+
+/* ============================================================
+   AJOUT BLAZON + SEXE SUR LE PROFIL
+============================================================ */
+
+function eahV6EnhanceProfile(
+  profile
+) {
+
+  const view =
+    document.getElementById(
+      'profileView'
+    );
+
+
+  if (
+    !view ||
+    !profile
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+    SEXE
+  */
+
+  const tags =
+    view.querySelector(
+      '.eah-fast-profile-tags'
+    );
+
+
+  if (
+    tags &&
+    profile.sex &&
+    !tags.querySelector(
+      '[data-eah-sex]'
+    )
+  ) {
+
+    const sex =
+      document.createElement(
+        'span'
+      );
+
+
+    sex.dataset.eahSex =
+      '1';
+
+
+    sex.textContent =
+      profile.sex;
+
+
+    tags.appendChild(
+      sex
+    );
+
+  }
+
+
+  /*
+    BLAZON
+  */
+
+  const image =
+    eahV6CurrentBlazonImage(
+      profile
+    );
+
+
+  const textBox =
+    view.querySelector(
+      '.eah-fast-profile-text'
+    );
+
+
+  if (
+    !textBox ||
+    document.getElementById(
+      'eahCurrentBlazonVisual'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const card =
+    document.createElement(
+      'div'
+    );
+
+
+  card.id =
+    'eahCurrentBlazonVisual';
+
+
+  card.innerHTML = `
+
+    <div class="eah-v6-blazon-current">
+
+      ${
+        image
+        ?
+        `
+
+          <img
+            src="${esc(image)}"
+            alt="${esc(
+              profile.currentBlazon ||
+              'Blazon EAH'
+            )}"
+          >
+
+        `
+        :
+        ''
+      }
+
+      <div>
+
+        <small>
+          BLAZON ACTUEL
+        </small>
+
+        <strong>
+
+          ${esc(
+            profile.currentBlazon ||
+            'En progression'
+          )}
+
+        </strong>
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  textBox.appendChild(
+    card
+  );
+
+}
+
+
+
+/* ============================================================
+   ON CONSERVE TON RENDU PREMIUM ACTUEL
+   ET ON AJOUTE LE BLAZON APRES
+============================================================ */
+
+const EAH_V6_RENDER_PROFILE_ORIGINAL =
+  renderProfileSummary;
+
+
+renderProfileSummary =
+  function(
+    profile,
+    privateAccess = false
+  ) {
+
+    EAH_V6_RENDER_PROFILE_ORIGINAL(
+
+      profile,
+
+      privateAccess
+
+    );
+
+
+    window.requestAnimationFrame(
+
+      function() {
+
+        eahV6EnhanceProfile(
+          profile
+        );
+
+      }
+
+    );
+
+  };
+
+
+
+/* ============================================================
+   POPULATION
+   CODE + NOM + PRENOM
+============================================================ */
+
+async function loadPopulation() {
+
+  const code =
+    normalizeCode(
+      val(
+        'populationCode'
+      )
+    );
+
+
+  const name =
+    String(
+      val(
+        'populationName'
+      )
+      ||
+      ''
+    )
+    .trim();
+
+
+  const box =
+    document.getElementById(
+      'populationResults'
+    );
+
+
+  const button =
+    document.getElementById(
+      'populationSearchButton'
+    );
+
+
+  if (!box) {
+
+    return;
+
+  }
+
+
+  box.innerHTML = `
+
+    <div class="loading-panel">
+      Recherche…
+    </div>
+
+  `;
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Recherche…',
+
+    'Rechercher'
+
+  );
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_population_search_v3',
+
+        {
+
+          p_code:
+            code ||
+            null,
+
+          p_name:
+            name ||
+            null,
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    if (
+      data?.ok === false
+    ) {
+
+      throw new Error(
+
+        data.error ||
+        'Recherche impossible.'
+
+      );
+
+    }
+
+
+    const result =
+      eahPopulationNormalize(
+        data
+      );
+
+
+    renderPopulationStats(
+
+      box,
+
+      result
+
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH POPULATION V6:',
+      error
+    );
+
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        ${esc(
+          error?.message ||
+          'Impossible de charger Population.'
+        )}
+
+      </div>
+
+    `;
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Rechercher'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   STYLE PROFIL
+============================================================ */
+
+(function EAH_V6_STYLE() {
+
+  if (
+    document.getElementById(
+      'eah-v6-style'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+
+  style.id =
+    'eah-v6-style';
+
+
+  style.textContent = `
+
+    #eahPopulationNameWrapper {
+      display: block;
+      margin-top: 14px;
+    }
+
+
+    .eah-v6-blazon-current {
+      margin-top: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 15px;
+      padding: 13px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(48,207,255,.25);
+      background: rgba(48,207,255,.06);
+    }
+
+
+    .eah-v6-blazon-current img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+
+    .eah-v6-blazon-current div {
+      display: grid;
+      gap: 3px;
+    }
+
+
+    .eah-v6-blazon-current small {
+      color: #30cfff;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+
+    .eah-v6-blazon-current strong {
+      font-size: 1.1rem;
+      color: white;
+    }
+
+
+    @media (max-width:700px) {
+
+      .eah-v6-blazon-current {
+        display: flex;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+})();
+
+
+
+/* ============================================================
+   INSTALLATION
+============================================================ */
+
+EAH_V6_INSTALLER_RECHERCHE_POPULATION();
 init()
   .catch(
     error => {
