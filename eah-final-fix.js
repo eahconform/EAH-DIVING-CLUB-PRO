@@ -1356,5 +1356,639 @@ window.addEventListener(
 
 );
 
+/* ============================================================
+   STYLE POPULATION PUBLIC / PRIVE
+============================================================ */
 
+(function EAH_INSTALL_POPULATION_PRIVACY_STYLE() {
+
+  if (
+    document.getElementById(
+      'eah-population-privacy-style'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+
+  style.id =
+    'eah-population-privacy-style';
+
+
+  style.textContent = `
+
+    .eah-population-person-card {
+
+      display:
+        flex;
+
+      justify-content:
+        space-between;
+
+      align-items:
+        center;
+
+      gap:
+        24px;
+
+      margin-top:
+        15px;
+
+      padding:
+        20px;
+
+      border:
+        1px solid
+        rgba(
+          143,
+          205,
+          255,
+          .20
+        );
+
+      border-radius:
+        22px;
+
+      background:
+        rgba(
+          4,
+          27,
+          48,
+          .76
+        );
+
+    }
+
+
+    .eah-population-person-card.is-private {
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(
+            4,
+            27,
+            48,
+            .76
+          ),
+          rgba(
+            20,
+            29,
+            43,
+            .72
+          )
+        );
+
+    }
+
+
+    .eah-population-person-main {
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        17px;
+
+      min-width:
+        0;
+
+    }
+
+
+    .eah-population-person-photo {
+
+      flex:
+        0 0
+        78px;
+
+    }
+
+
+    .eah-population-person-photo img,
+    .eah-population-person-placeholder {
+
+      width:
+        78px;
+
+      height:
+        78px;
+
+      border-radius:
+        20px;
+
+    }
+
+
+    .eah-population-person-photo img {
+
+      display:
+        block;
+
+      object-fit:
+        cover;
+
+      border:
+        2px solid
+        rgba(
+          48,
+          207,
+          255,
+          .40
+        );
+
+    }
+
+
+    .eah-population-person-placeholder {
+
+      display:
+        grid;
+
+      place-items:
+        center;
+
+      box-sizing:
+        border-box;
+
+      border:
+        1px solid
+        rgba(
+          143,
+          205,
+          255,
+          .18
+        );
+
+      background:
+        rgba(
+          6,
+          30,
+          51,
+          .88
+        );
+
+      color:
+        #30cfff;
+
+      font-weight:
+        900;
+
+      font-size:
+        1.2rem;
+
+    }
+
+
+    .eah-population-person-info {
+
+      min-width:
+        0;
+
+    }
+
+
+    .eah-population-person-info h3 {
+
+      margin:
+        7px
+        0
+        5px;
+
+      color:
+        white;
+
+      font-size:
+        1.2rem;
+
+    }
+
+
+    .eah-population-public-badge,
+    .eah-population-private-badge {
+
+      display:
+        inline-flex;
+
+      align-items:
+        center;
+
+      min-height:
+        27px;
+
+      padding:
+        0
+        10px;
+
+      border-radius:
+        999px;
+
+      font-size:
+        .70rem;
+
+      font-weight:
+        900;
+
+      letter-spacing:
+        .05em;
+
+    }
+
+
+    .eah-population-public-badge {
+
+      border:
+        1px solid
+        rgba(
+          24,
+          185,
+          120,
+          .32
+        );
+
+      background:
+        rgba(
+          24,
+          185,
+          120,
+          .15
+        );
+
+      color:
+        #63e8ad;
+
+    }
+
+
+    .eah-population-private-badge {
+
+      border:
+        1px solid
+        rgba(
+          143,
+          205,
+          255,
+          .20
+        );
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .05
+        );
+
+      color:
+        #a9bdce;
+
+    }
+
+
+    .eah-population-meta {
+
+      display:
+        flex;
+
+      flex-wrap:
+        wrap;
+
+      gap:
+        7px;
+
+      margin-top:
+        9px;
+
+    }
+
+
+    .eah-population-meta span {
+
+      padding:
+        5px
+        9px;
+
+      border:
+        1px solid
+        rgba(
+          48,
+          207,
+          255,
+          .14
+        );
+
+      border-radius:
+        999px;
+
+      background:
+        rgba(
+          48,
+          207,
+          255,
+          .06
+        );
+
+      color:
+        #c3d8e8;
+
+      font-size:
+        .78rem;
+
+    }
+
+
+    .eah-population-last-dive {
+
+      display:
+        grid;
+
+      gap:
+        3px;
+
+      margin-top:
+        12px;
+
+    }
+
+
+    .eah-population-last-dive small {
+
+      color:
+        #8fa8bc;
+
+      font-size:
+        .68rem;
+
+      font-weight:
+        800;
+
+      letter-spacing:
+        .08em;
+
+    }
+
+
+    .eah-population-last-dive strong {
+
+      color:
+        #dceaf4;
+
+      font-size:
+        .90rem;
+
+    }
+
+
+    .eah-population-person-score {
+
+      display:
+        grid;
+
+      justify-items:
+        end;
+
+      gap:
+        8px;
+
+      flex:
+        0 0
+        auto;
+
+    }
+
+
+    .eah-population-score-main {
+
+      min-width:
+        105px;
+
+      padding:
+        10px
+        15px;
+
+      border:
+        1px solid
+        rgba(
+          48,
+          207,
+          255,
+          .22
+        );
+
+      border-radius:
+        16px;
+
+      background:
+        rgba(
+          11,
+          107,
+          255,
+          .10
+        );
+
+      text-align:
+        center;
+
+    }
+
+
+    .eah-population-score-main small {
+
+      display:
+        block;
+
+      color:
+        #30cfff;
+
+      font-size:
+        .68rem;
+
+      font-weight:
+        900;
+
+      letter-spacing:
+        .10em;
+
+    }
+
+
+    .eah-population-score-main strong {
+
+      display:
+        block;
+
+      margin-top:
+        2px;
+
+      color:
+        white;
+
+      font-size:
+        1.65rem;
+
+      line-height:
+        1;
+
+    }
+
+
+    .eah-population-score-main strong span {
+
+      font-size:
+        .75rem;
+
+      color:
+        #8fa8bc;
+
+    }
+
+
+    .eah-population-wa-score {
+
+      color:
+        #8fa8bc;
+
+      font-size:
+        .78rem;
+
+    }
+
+
+    .eah-population-wa-score strong {
+
+      color:
+        #c3d8e8;
+
+    }
+
+
+    .eah-population-private-info {
+
+      padding:
+        8px
+        12px;
+
+      border:
+        1px solid
+        rgba(
+          143,
+          205,
+          255,
+          .16
+        );
+
+      border-radius:
+        11px;
+
+      background:
+        rgba(
+          255,
+          255,
+          255,
+          .04
+        );
+
+      color:
+        #8fa8bc;
+
+      font-size:
+        .75rem;
+
+      font-weight:
+        700;
+
+    }
+
+
+    @media (
+      max-width:
+      700px
+    ) {
+
+      .eah-population-person-card {
+
+        display:
+          grid;
+
+      }
+
+
+      .eah-population-person-main {
+
+        align-items:
+          flex-start;
+
+      }
+
+
+      .eah-population-person-photo {
+
+        flex-basis:
+          58px;
+
+      }
+
+
+      .eah-population-person-photo img,
+      .eah-population-person-placeholder {
+
+        width:
+          58px;
+
+        height:
+          58px;
+
+        border-radius:
+          15px;
+
+      }
+
+
+      .eah-population-person-score {
+
+        justify-items:
+          stretch;
+
+      }
+
+
+      .eah-population-score-main {
+
+        width:
+          auto;
+
+      }
+
+
+      .eah-population-person-score .button {
+
+        width:
+          100%;
+
+        text-align:
+          center;
+
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+})();
 })();
