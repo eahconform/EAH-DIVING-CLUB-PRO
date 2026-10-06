@@ -5335,9 +5335,7 @@ async function loadCoachData() {
         .from(
           'evaluations'
         )
-        .select(
-          'id,evaluation_code,eah_id,coach_name,dive_code,dive_name,height,wa_score,eah_score,eah_verified,report_url,evaluated_at'
-        )
+        .select('*')
         .eq(
           'club_id',
           clubId
@@ -5464,7 +5462,9 @@ async function loadCoachData() {
       state.groups
 
   });
-
+  renderCoachDivers(
+    state.divers
+  );
 }
 
 
@@ -5726,7 +5726,453 @@ function renderDashboard({
 
 }
 
+/* ============================================================
+   COACH — LISTE DES PLONGEURS
+============================================================ */
 
+function renderCoachDivers(
+  divers = []
+) {
+
+  const box =
+    document.getElementById(
+      'coachDiversList'
+    );
+
+
+  if (!box) {
+
+    return;
+
+  }
+
+
+  if (
+    !divers.length
+  ) {
+
+    box.innerHTML =
+      'Aucun plongeur.';
+
+
+    return;
+
+  }
+
+
+  box.innerHTML =
+    divers
+      .map(
+        diver => {
+
+          const name =
+            (
+              (
+                diver.first_name ||
+                ''
+              )
+              +
+              ' '
+              +
+              (
+                diver.last_name ||
+                ''
+              )
+            )
+            .trim()
+            ||
+            diver.eah_id;
+
+
+          return `
+
+            <div
+              class="history-item"
+              style="
+                margin-top:12px;
+                align-items:center;
+              "
+            >
+
+              <span>
+
+                <strong>
+                  ${esc(name)}
+                </strong>
+
+                <br>
+
+                <small class="muted">
+
+                  ${esc(
+                    diver.eah_id ||
+                    ''
+                  )}
+
+                  ${
+                    diver.group_name
+                    ?
+                    ' • '
+                    +
+                    esc(
+                      diver.group_name
+                    )
+                    :
+                    ''
+                  }
+
+                  ${
+                    diver.current_blazon
+                    ?
+                    ' • '
+                    +
+                    esc(
+                      diver.current_blazon
+                    )
+                    :
+                    ''
+                  }
+
+                </small>
+
+              </span>
+
+
+              <button
+                type="button"
+                class="button small"
+                data-coach-diver-detail="${esc(
+                  diver.eah_id
+                )}"
+              >
+                Voir le détail
+              </button>
+
+            </div>
+
+          `;
+
+        }
+      )
+      .join('');
+
+
+  box
+    .querySelectorAll(
+      '[data-coach-diver-detail]'
+    )
+    .forEach(
+      button => {
+
+        button.addEventListener(
+
+          'click',
+
+          () => {
+
+            openCoachDiverDetail(
+              button.dataset.coachDiverDetail
+            );
+
+          }
+
+        );
+
+      }
+    );
+
+}
+
+
+
+/* ============================================================
+   COACH — DETAIL D'UN PLONGEUR
+============================================================ */
+
+async function openCoachDiverDetail(
+  eahId
+) {
+
+  const diver =
+    state.divers.find(
+      item =>
+        String(
+          item.eah_id
+        ) ===
+        String(
+          eahId
+        )
+    );
+
+
+  if (!diver) {
+
+    return;
+
+  }
+
+
+  const name =
+    (
+      (
+        diver.first_name ||
+        ''
+      )
+      +
+      ' '
+      +
+      (
+        diver.last_name ||
+        ''
+      )
+    )
+    .trim()
+    ||
+    diver.eah_id;
+
+
+  openModal(`
+
+    <div class="modal-inner">
+
+      <span class="overline">
+        PROFIL PLONGEUR
+      </span>
+
+      <h2>
+        ${esc(name)}
+      </h2>
+
+      <div class="loading-panel">
+        Chargement de l'historique…
+      </div>
+
+    </div>
+
+  `);
+
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await requireSupabase()
+
+        .from(
+          'evaluations'
+        )
+
+        .select('*')
+
+        .eq(
+          'club_id',
+          state.club.id
+        )
+
+        .eq(
+          'eah_id',
+          eahId
+        )
+
+        .order(
+          'evaluated_at',
+          {
+            ascending:
+              false
+          }
+        );
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+    const photo =
+      eahFastPhotoUrl(
+        diver.photo_url ||
+        ''
+      );
+
+
+    openModal(`
+
+      <div class="modal-inner">
+
+        <span class="overline">
+          PROFIL PLONGEUR
+        </span>
+
+
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:18px;
+            margin-bottom:25px;
+          "
+        >
+
+          ${
+            photo
+            ?
+            `
+
+              <img
+                src="${esc(photo)}"
+                alt="${esc(name)}"
+                style="
+                  width:90px;
+                  height:90px;
+                  object-fit:cover;
+                  border-radius:22px;
+                "
+              >
+
+            `
+            :
+            ''
+          }
+
+
+          <div>
+
+            <h2
+              style="
+                margin-bottom:5px;
+              "
+            >
+              ${esc(name)}
+            </h2>
+
+
+            <small class="muted">
+
+              ${esc(
+                diver.eah_id ||
+                ''
+              )}
+
+              ${
+                diver.sex
+                ?
+                ' • '
+                +
+                esc(
+                  diver.sex
+                )
+                :
+                ''
+              }
+
+              ${
+                diver.group_name
+                ?
+                ' • '
+                +
+                esc(
+                  diver.group_name
+                )
+                :
+                ''
+              }
+
+            </small>
+
+
+            ${
+              diver.current_blazon
+              ?
+              `
+
+                <div
+                  style="
+                    margin-top:8px;
+                  "
+                >
+
+                  <strong>
+                    ${esc(
+                      diver.current_blazon
+                    )}
+                  </strong>
+
+                </div>
+
+              `
+              :
+              ''
+            }
+
+          </div>
+
+        </div>
+
+
+        <h3>
+          Historique des plongeons
+        </h3>
+
+
+        ${
+          data?.length
+          ?
+          data
+            .map(
+              evaluation =>
+                evaluationCardHtml(
+                  evaluation,
+                  true
+                )
+            )
+            .join('')
+          :
+          `
+
+            <div class="notice">
+              Aucun plongeon gradé.
+            </div>
+
+          `
+        }
+
+      </div>
+
+    `);
+
+
+  } catch (
+    error
+  ) {
+
+    openModal(`
+
+      <div class="modal-inner">
+
+        <h2>
+          ${esc(name)}
+        </h2>
+
+        <div class="notice error">
+
+          ${esc(
+            error.message ||
+            'Historique impossible à charger.'
+          )}
+
+        </div>
+
+      </div>
+
+    `);
+
+  }
+
+}
 
 function renderDiversSelect() {
 
@@ -7817,7 +8263,687 @@ function renderProfileSummary(
 
 }
 
+/* ============================================================
+   EVALUATIONS — OUTILS COMMUNS
+============================================================ */
 
+function evaluationCriteriaData(
+  evaluation = {}
+) {
+
+  let criteria =
+    evaluation.criteria
+    ??
+    evaluation.criteria_json
+    ??
+    evaluation.CRITERIA_JSON
+    ??
+    {};
+
+
+  if (
+    typeof criteria ===
+    'string'
+  ) {
+
+    try {
+
+      criteria =
+        JSON.parse(
+          criteria
+        );
+
+    } catch (_) {
+
+      criteria =
+        {};
+
+    }
+
+  }
+
+
+  return (
+    criteria &&
+    typeof criteria ===
+      'object'
+  )
+    ?
+    criteria
+    :
+    {};
+
+}
+
+
+
+function evaluationScoreData(
+  evaluation = {}
+) {
+
+  const criteria =
+    evaluationCriteriaData(
+      evaluation
+    );
+
+
+  const eahScore =
+
+    evaluation.eah_score
+    ??
+    evaluation.eahScore
+    ??
+    evaluation.score_eah
+    ??
+    evaluation.final_eah_score
+    ??
+    null;
+
+
+  const waScore =
+
+    evaluation.wa_score
+    ??
+    evaluation.waScore
+    ??
+    evaluation.score_wa
+    ??
+    null;
+
+
+  let scoreType =
+    String(
+
+      evaluation.primary_score_type
+
+      ??
+
+      evaluation.primaryScoreType
+
+      ??
+
+      evaluation.scoring_mode
+
+      ??
+
+      evaluation.score_type
+
+      ??
+
+      criteria._primaryScoreType
+
+      ??
+
+      criteria._scoreType
+
+      ??
+
+      'EAH'
+
+    )
+    .trim()
+    .toUpperCase();
+
+
+  scoreType =
+    scoreType ===
+      'WA'
+    ?
+    'WA'
+    :
+    'EAH';
+
+
+  let mainScore =
+    scoreType ===
+      'WA'
+    ?
+    waScore
+    :
+    eahScore;
+
+
+  /*
+    Sécurité pour les anciennes évaluations.
+  */
+
+  if (
+    mainScore === null
+    ||
+    typeof mainScore ===
+      'undefined'
+    ||
+    mainScore === ''
+  ) {
+
+    if (
+      eahScore !== null
+      &&
+      typeof eahScore !==
+        'undefined'
+      &&
+      eahScore !== ''
+    ) {
+
+      scoreType =
+        'EAH';
+
+
+      mainScore =
+        eahScore;
+
+    } else if (
+      waScore !== null
+      &&
+      typeof waScore !==
+        'undefined'
+      &&
+      waScore !== ''
+    ) {
+
+      scoreType =
+        'WA';
+
+
+      mainScore =
+        waScore;
+
+    }
+
+  }
+
+
+  return {
+
+    type:
+      scoreType,
+
+    main:
+      mainScore,
+
+    eah:
+      eahScore,
+
+    wa:
+      waScore
+
+  };
+
+}
+
+
+
+function evaluationReportUrl(
+  evaluation = {}
+) {
+
+  return String(
+
+    evaluation.report_url
+
+    ??
+
+    evaluation.reportUrl
+
+    ??
+
+    evaluation.REPORT_URL
+
+    ??
+
+    ''
+
+  ).trim();
+
+}
+
+
+
+function evaluationVideoUrl(
+  evaluation = {}
+) {
+
+  return String(
+
+    evaluation.video_url
+
+    ??
+
+    evaluation.videoUrl
+
+    ??
+
+    evaluation.VIDEO_URL
+
+    ??
+
+    ''
+
+  ).trim();
+
+}
+
+
+
+function evaluationPhaseScore(
+  evaluation,
+  name
+) {
+
+  const lower =
+    String(
+      name ||
+      ''
+    )
+    .toLowerCase();
+
+
+  const upper =
+    lower.toUpperCase();
+
+
+  return (
+
+    evaluation[
+      lower
+    ]
+
+    ??
+
+    evaluation[
+      upper
+    ]
+
+    ??
+
+    null
+
+  );
+
+}
+
+
+
+function evaluationCardHtml(
+  evaluation,
+  detailed = true
+) {
+
+  const score =
+    evaluationScoreData(
+      evaluation
+    );
+
+
+  const diveCode =
+    normalizeCode(
+
+      evaluation.dive_code
+
+      ??
+
+      evaluation.diveCode
+
+      ??
+
+      evaluation.code
+
+      ??
+
+      ''
+
+    );
+
+
+  const diveName =
+
+    evaluation.dive_name
+
+    ??
+
+    evaluation.diveName
+
+    ??
+
+    DIVE_NAMES[
+      diveCode
+    ]
+
+    ??
+
+    '';
+
+
+  const takeoff =
+    evaluationPhaseScore(
+      evaluation,
+      'takeoff'
+    );
+
+
+  const trick =
+    evaluationPhaseScore(
+      evaluation,
+      'trick'
+    );
+
+
+  const entry =
+    evaluationPhaseScore(
+      evaluation,
+      'entry'
+    );
+
+
+  const reportUrl =
+    evaluationReportUrl(
+      evaluation
+    );
+
+
+  const videoUrl =
+    evaluationVideoUrl(
+      evaluation
+    );
+
+
+  return `
+
+    <div
+      class="history-item profile-history-item"
+      style="
+        align-items:flex-start;
+        gap:18px;
+      "
+    >
+
+      <span>
+
+        <strong
+          style="
+            font-size:1.08rem;
+          "
+        >
+
+          ${esc(
+            diveCode ||
+            '—'
+          )}
+
+        </strong>
+
+
+        ${
+          diveName
+          ?
+          `
+
+            <br>
+
+            <small>
+              ${esc(diveName)}
+            </small>
+
+          `
+          :
+          ''
+        }
+
+
+        <br>
+
+
+        <small class="muted">
+
+          ${esc(
+            fmtDate(
+
+              evaluation.evaluated_at
+
+              ??
+
+              evaluation.date
+
+              ??
+
+              evaluation.created_at
+
+            )
+          )}
+
+          ${
+            evaluation.height !==
+              null
+            &&
+            typeof evaluation.height !==
+              'undefined'
+            ?
+            ' • '
+            +
+            esc(
+              fmtNumber(
+                evaluation.height
+              )
+            )
+            +
+            ' m'
+            :
+            ''
+          }
+
+        </small>
+
+
+        ${
+          detailed
+          &&
+          (
+            takeoff !== null
+            ||
+            trick !== null
+            ||
+            entry !== null
+          )
+          ?
+          `
+
+            <div
+              style="
+                margin-top:10px;
+                font-size:.82rem;
+                line-height:1.7;
+              "
+            >
+
+              ${
+                takeoff !== null
+                ?
+                `
+                  Takeoff :
+                  <strong>
+                    ${esc(
+                      fmtNumber(
+                        takeoff
+                      )
+                    )}/10
+                  </strong>
+                `
+                :
+                ''
+              }
+
+              ${
+                trick !== null
+                ?
+                `
+                  &nbsp;•&nbsp;
+                  Trick :
+                  <strong>
+                    ${esc(
+                      fmtNumber(
+                        trick
+                      )
+                    )}/10
+                  </strong>
+                `
+                :
+                ''
+              }
+
+              ${
+                entry !== null
+                ?
+                `
+                  &nbsp;•&nbsp;
+                  Entry :
+                  <strong>
+                    ${esc(
+                      fmtNumber(
+                        entry
+                      )
+                    )}/10
+                  </strong>
+                `
+                :
+                ''
+              }
+
+            </div>
+
+          `
+          :
+          ''
+        }
+
+      </span>
+
+
+      <span
+        class="history-score"
+        style="
+          min-width:130px;
+        "
+      >
+
+        <strong>
+
+          ${esc(score.type)}
+
+          ${esc(
+            fmtNumber(
+              score.main
+            )
+          )}/10
+
+        </strong>
+
+
+        ${
+          score.type ===
+            'EAH'
+          &&
+          score.wa !==
+            null
+          &&
+          typeof score.wa !==
+            'undefined'
+          ?
+          `
+
+            <small>
+              WA
+              ${esc(
+                fmtNumber(
+                  score.wa
+                )
+              )}/10
+            </small>
+
+          `
+          :
+          ''
+        }
+
+
+        ${
+          score.type ===
+            'WA'
+          &&
+          score.eah !==
+            null
+          &&
+          typeof score.eah !==
+            'undefined'
+          ?
+          `
+
+            <small>
+              EAH
+              ${esc(
+                fmtNumber(
+                  score.eah
+                )
+              )}/10
+            </small>
+
+          `
+          :
+          ''
+        }
+
+
+        ${
+          reportUrl
+          ?
+          `
+
+            <a
+              class="button small"
+              href="${esc(reportUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="
+                margin-top:8px;
+              "
+            >
+              Grade Report
+            </a>
+
+          `
+          :
+          ''
+        }
+
+
+        ${
+          videoUrl
+          ?
+          `
+
+            <a
+              class="button secondary small"
+              href="${esc(videoUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="
+                margin-top:6px;
+              "
+            >
+              Vidéo
+            </a>
+
+          `
+          :
+          ''
+        }
+
+      </span>
+
+    </div>
+
+  `;
+
+}
 
 function renderProfileHistory(
   data
@@ -7923,22 +9049,20 @@ function renderProfileHistory(
 
   if (history) {
 
-    history.innerHTML =
+        history.innerHTML =
       evaluations.length
       ?
       evaluations
         .map(
-          evaluation => {
-
-            const scoreType =
-              String(
-                evaluation.primary_score_type
-                ||
-                evaluation.primaryScoreType
-                ||
-                'EAH'
-              )
-              .toUpperCase();
+          evaluation =>
+            evaluationCardHtml(
+              evaluation,
+              true
+            )
+        )
+        .join('')
+      :
+      'Aucune évaluation.';
 
 
             const eahScore =
