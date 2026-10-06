@@ -2052,7 +2052,16 @@ function requireSupabase() {
   return supabaseClient;
 
 }
+/* ============================================================
+   EXPOSITION SUPABASE AUX MODULES EAH
+============================================================ */
 
+window.requireSupabase =
+  requireSupabase;
+
+
+window.EAH_SUPABASE_CLIENT =
+  supabaseClient;
 
 
 async function eahFastSha256(
