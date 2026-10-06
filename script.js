@@ -2098,10 +2098,11 @@ async function eahFastSha256(
 
 
 function eahFastPhotoUrl(
-  url
+  url,
+  size = 'w1800'
 ) {
 
-  url =
+  const raw =
     String(
       url ||
       ''
@@ -2109,75 +2110,209 @@ function eahFastPhotoUrl(
     .trim();
 
 
-  if (!url) {
+  if (!raw) {
 
     return '';
 
   }
 
 
+  /*
+    FICHIER LOCAL GITHUB
+  */
+
   if (
-    url.includes(
+    !/^https?:\/\//i.test(
+      raw
+    )
+    &&
+    !raw.startsWith(
+      '//'
+    )
+  ) {
+
+    return raw;
+
+  }
+
+
+  /*
+    SUPABASE STORAGE PUBLIC
+  */
+
+  if (
+    raw.includes(
       '/storage/v1/object/public/'
     )
   ) {
 
-    return url;
+    return raw;
 
   }
 
 
-  let match =
-    url.match(
-      /[?&]id=([^&]+)/
-    );
-
+  /*
+    GOOGLE USER CONTENT
+  */
 
   if (
-    match &&
-    match[1]
+    raw.includes(
+      'googleusercontent.com'
+    )
   ) {
 
-    return (
-      'https://drive.google.com/thumbnail?id='
-      +
-      encodeURIComponent(
-        match[1]
-      )
-      +
-      '&sz=w1000'
-    );
+    return raw;
 
   }
 
 
-  match =
-    url.match(
-      /\/d\/([^/]+)/
-    );
+  try {
+
+    const decoded =
+      decodeURIComponent(
+        raw
+      );
 
 
-  if (
-    match &&
-    match[1]
-  ) {
+    /*
+      DRIVE :
+      /file/d/FILE_ID/view
+    */
 
-    return (
-      'https://drive.google.com/thumbnail?id='
-      +
-      encodeURIComponent(
-        match[1]
+    let match =
+      decoded.match(
+        /\/file\/d\/([^/?#]+)/
+      );
+
+
+    if (
+      match &&
+      match[1]
+    ) {
+
+      return (
+        'https://drive.google.com/thumbnail?id='
+        +
+        encodeURIComponent(
+          match[1]
+        )
+        +
+        '&sz='
+        +
+        encodeURIComponent(
+          size
+        )
+      );
+
+    }
+
+
+    /*
+      DRIVE :
+      /d/FILE_ID/
+    */
+
+    match =
+      decoded.match(
+        /\/d\/([^/?#]+)/
+      );
+
+
+    if (
+      match &&
+      match[1]
+    ) {
+
+      return (
+        'https://drive.google.com/thumbnail?id='
+        +
+        encodeURIComponent(
+          match[1]
+        )
+        +
+        '&sz='
+        +
+        encodeURIComponent(
+          size
+        )
+      );
+
+    }
+
+
+    /*
+      DRIVE :
+      ?id=FILE_ID
+    */
+
+    const parsed =
+      new URL(
+        raw,
+        window.location.href
+      );
+
+
+    const id =
+      parsed.searchParams.get(
+        'id'
+      );
+
+
+    if (
+      id &&
+      (
+        parsed.hostname.includes(
+          'drive.google.com'
+        )
+        ||
+        parsed.hostname.includes(
+          'docs.google.com'
+        )
       )
-      +
-      '&sz=w1000'
-    );
+    ) {
 
-  }
+      return (
+        'https://drive.google.com/thumbnail?id='
+        +
+        encodeURIComponent(
+          id
+        )
+        +
+        '&sz='
+        +
+        encodeURIComponent(
+          size
+        )
+      );
+
+    }
 
 
-  return url;
+  } catch (_) {}
+
+
+  return raw;
 
 }
+
+
+/*
+  FONCTION GLOBALE UTILISEE
+  PAR SITE-FINAL ET PHOTOS-FINAL
+*/
+
+window.EAHMediaUrl =
+  function(
+    url,
+    size = 'w1800'
+  ) {
+
+    return eahFastPhotoUrl(
+      url,
+      size
+    );
+
+  };
 
 
 
@@ -3423,10 +3558,26 @@ function renderSpots() {
               /[,;]+/
             )
             .map(
-              x => x.trim()
+              value =>
+                value.trim()
             )
             .filter(
               Boolean
+            );
+
+
+          const originalImage =
+            String(
+              spot.photo_url ||
+              ''
+            )
+            .trim();
+
+
+          const image =
+            eahFastPhotoUrl(
+              originalImage,
+              'w1800'
             );
 
 
@@ -3441,17 +3592,33 @@ function renderSpots() {
               <div class="spot-picture">
 
                 ${
-                  spot.photo_url
+                  image
                   ?
                   `
+
                     <img
-                      src="${esc(spot.photo_url)}"
-                      alt="${esc(spot.name)}"
+                      class="eah-cms-image"
+                      src="${esc(image)}"
+                      data-eah-original-image="${esc(originalImage)}"
+                      alt="${esc(
+                        spot.name ||
+                        'Spot EAH'
+                      )}"
                       loading="eager"
+                      decoding="async"
                     >
+
                   `
                   :
-                  ''
+                  `
+
+                    <div
+                      class="eah-cms-image-fallback"
+                    >
+                      EAH DIVING
+                    </div>
+
+                  `
                 }
 
               </div>
@@ -3460,17 +3627,22 @@ function renderSpots() {
               <div class="spot-content">
 
                 <span class="overline">
+
                   ${esc(
                     spot.city ||
                     'SPOT EAH'
                   )}
+
                 </span>
+
 
                 <h2>
                   ${esc(
-                    spot.name
+                    spot.name ||
+                    ''
                   )}
                 </h2>
+
 
                 <div class="tags">
 
@@ -3478,9 +3650,11 @@ function renderSpots() {
                     heights
                       .map(
                         height => `
+
                           <span>
                             ${esc(height)}
                           </span>
+
                         `
                       )
                       .join('')
@@ -3498,6 +3672,7 @@ function renderSpots() {
                     spot.address
                     ?
                     `
+
                       <div class="spot-detail-block">
 
                         <strong>
@@ -3509,6 +3684,7 @@ function renderSpots() {
                         </p>
 
                       </div>
+
                     `
                     :
                     ''
@@ -3519,6 +3695,7 @@ function renderSpots() {
                     spot.description
                     ?
                     `
+
                       <div class="spot-detail-block">
 
                         <strong>
@@ -3530,6 +3707,7 @@ function renderSpots() {
                         </p>
 
                       </div>
+
                     `
                     :
                     ''
@@ -3551,6 +3729,78 @@ function renderSpots() {
         }
       )
       .join('');
+
+
+  grid
+    .querySelectorAll(
+      '.eah-cms-image'
+    )
+    .forEach(
+      img => {
+
+        img.addEventListener(
+
+          'error',
+
+          function() {
+
+            console.warn(
+
+              'Image spot inaccessible :',
+
+              this.dataset.eahOriginalImage
+              ||
+              this.src
+
+            );
+
+
+            this.style.display =
+              'none';
+
+
+            const parent =
+              this.parentElement;
+
+
+            if (
+              parent &&
+              !parent.querySelector(
+                '.eah-cms-image-fallback'
+              )
+            ) {
+
+              const fallback =
+                document.createElement(
+                  'div'
+                );
+
+
+              fallback.className =
+                'eah-cms-image-fallback';
+
+
+              fallback.textContent =
+                'EAH DIVING';
+
+
+              parent.appendChild(
+                fallback
+              );
+
+            }
+
+          },
+
+          {
+            once:
+              true
+          }
+
+        );
+
+      }
+    );
 
 
   grid
@@ -3580,12 +3830,15 @@ function renderSpots() {
 
 
             card.setAttribute(
+
               'aria-expanded',
+
               expanded
                 ?
                 'false'
                 :
                 'true'
+
             );
 
 
@@ -3593,6 +3846,24 @@ function renderSpots() {
 
               details.hidden =
                 expanded;
+
+            }
+
+
+            const label =
+              card.querySelector(
+                '.spot-open-label'
+              );
+
+
+            if (label) {
+
+              label.textContent =
+                expanded
+                  ?
+                  'Voir les informations'
+                  :
+                  'Masquer les informations';
 
             }
 
@@ -3705,85 +3976,204 @@ function renderNews() {
   grid.innerHTML =
     state.news
       .map(
-        news => `
+        news => {
 
-          <article class="news-card">
-
-            ${
-              news.image_url
-              ?
-              `
-                <img
-                  class="news-image"
-                  src="${esc(news.image_url)}"
-                  alt="${esc(news.title)}"
-                  loading="eager"
-                >
-              `
-              :
+          const originalImage =
+            String(
+              news.image_url ||
               ''
-            }
+            )
+            .trim();
 
-            <div class="news-body">
 
-              <span class="overline">
-                ${esc(
-                  news.category ||
-                  'EAH DIVING'
-                )}
-              </span>
+          const image =
+            eahFastPhotoUrl(
+              originalImage,
+              'w1800'
+            );
 
-              <h3>
-                ${esc(news.title)}
-              </h3>
 
-              ${
-                news.published_at
-                ?
-                `
-                  <small class="muted">
-                    ${esc(
-                      fmtDate(
-                        news.published_at
-                      )
-                    )}
-                  </small>
-                `
-                :
+          return `
+
+            <article
+              class="news-card"
+              data-eah-news-id="${esc(
+                news.id ||
                 ''
-              }
-
-              <p>
-                ${esc(
-                  news.summary ||
-                  ''
-                )}
-              </p>
+              )}"
+            >
 
               ${
-                news.link_url
+                image
                 ?
                 `
-                  <a
-                    class="button small secondary"
-                    href="${esc(news.link_url)}"
-                    target="_blank"
-                    rel="noopener noreferrer"
+
+                  <img
+                    class="news-image eah-cms-image"
+                    src="${esc(image)}"
+                    data-eah-original-image="${esc(originalImage)}"
+                    alt="${esc(
+                      news.title ||
+                      'Actualité EAH Diving'
+                    )}"
+                    loading="eager"
+                    decoding="async"
                   >
-                    En savoir plus
-                  </a>
+
                 `
                 :
-                ''
+                `
+
+                  <div
+                    class="news-image eah-cms-image-fallback"
+                  >
+                    EAH DIVING
+                  </div>
+
+                `
               }
 
-            </div>
 
-          </article>
+              <div class="news-body">
 
-        `
+                <span class="overline">
+
+                  ${esc(
+                    news.category ||
+                    'EAH DIVING'
+                  )}
+
+                </span>
+
+
+                <h3>
+                  ${esc(
+                    news.title ||
+                    ''
+                  )}
+                </h3>
+
+
+                ${
+                  news.published_at
+                  ?
+                  `
+
+                    <small class="muted">
+
+                      ${esc(
+                        fmtDate(
+                          news.published_at
+                        )
+                      )}
+
+                    </small>
+
+                  `
+                  :
+                  ''
+                }
+
+
+                ${
+                  news.summary
+                  ?
+                  `
+
+                    <p>
+                      ${esc(news.summary)}
+                    </p>
+
+                  `
+                  :
+                  ''
+                }
+
+              </div>
+
+            </article>
+
+          `;
+
+        }
       )
       .join('');
+
+
+  grid
+    .querySelectorAll(
+      '.eah-cms-image'
+    )
+    .forEach(
+      img => {
+
+        img.addEventListener(
+
+          'error',
+
+          function() {
+
+            console.warn(
+
+              'Image actualité inaccessible :',
+
+              this.dataset.eahOriginalImage
+              ||
+              this.src
+
+            );
+
+
+            this.style.display =
+              'none';
+
+
+            const parent =
+              this.parentElement;
+
+
+            if (
+              parent &&
+              !parent.querySelector(
+                '.eah-cms-image-fallback'
+              )
+            ) {
+
+              const fallback =
+                document.createElement(
+                  'div'
+                );
+
+
+              fallback.className =
+                'news-image eah-cms-image-fallback';
+
+
+              fallback.textContent =
+                'EAH DIVING';
+
+
+              parent.insertBefore(
+
+                fallback,
+
+                parent.firstChild
+
+              );
+
+            }
+
+          },
+
+          {
+            once:
+              true
+          }
+
+        );
+
+      }
+    );
 
 }
 
@@ -6149,7 +6539,72 @@ function setProfileLoading() {
 
 }
 
+function renderProfileError(
+  message
+) {
 
+  document
+    .getElementById(
+      'profileLoading'
+    )
+    ?.classList
+    .add(
+      'hidden'
+    );
+
+
+  document
+    .getElementById(
+      'profileSetup'
+    )
+    ?.classList
+    .add(
+      'hidden'
+    );
+
+
+  document
+    .getElementById(
+      'profileNoAuth'
+    )
+    ?.classList
+    .add(
+      'hidden'
+    );
+
+
+  const view =
+    document.getElementById(
+      'profileView'
+    );
+
+
+  if (!view) {
+
+    return;
+
+  }
+
+
+  view.classList.remove(
+    'hidden'
+  );
+
+
+  view.innerHTML = `
+
+    <div class="notice error">
+
+      ${esc(
+        message ||
+        'Profil inaccessible.'
+      )}
+
+    </div>
+
+  `;
+
+}
 
 function renderPopulationResults(
   box,
