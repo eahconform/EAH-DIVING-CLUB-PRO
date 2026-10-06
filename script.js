@@ -9266,11 +9266,20 @@ async function submitEvaluation(
 
     const payload = {
 
-      clubSlug:
-        state.club.slug,
+  clubSlug:
+    state.club.slug,
 
-      eahId:
-        diver.eah_id,
+  eahId:
+    diver.eah_id,
+
+  primaryScoreType:
+    scoreType,
+
+  scoreType:
+    scoreType,
+
+  scoringMode:
+    scoreType,
 
       discipline:
         val(
