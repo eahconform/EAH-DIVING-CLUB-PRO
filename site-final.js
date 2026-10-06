@@ -1,32 +1,13 @@
 /* ============================================================
    EAH DIVING PRO
    SITE-FINAL.JS
-   VERSION FINALE
-   05/10/2026
-
-   - Heroes plein écran / pleine largeur
-   - Luminosité harmonisée
-   - Accueil moins sombre
-   - Uniquement le nom des catégories sur les heroes
-   - Photos catégories principales
-   - Disciplines desktop / mobile
-   - Tarifs desktop / mobile
-   - Tarifs mobile non coupé
-   - Blazons protégés
-   - Actualités cliquables avec page détail
-   - Spots dépliables
-   - Espace Club uniquement sur #club
-   - Chargement immédiat des images
+   VERSION 06/10/2026
 ============================================================ */
 
 (() => {
 
   "use strict";
 
-
-  /* ============================================================
-     FICHIERS HERO
-  ============================================================ */
 
   const FILES = {
 
@@ -48,12 +29,6 @@
     actualites:
       "actualites-hero.jpg",
 
-
-    /* ========================================================
-       TARIFS
-       Desktop / tablette + mobile
-    ======================================================== */
-
     tarifs: {
 
       desktop:
@@ -63,7 +38,6 @@
         "tarifs-mobile.png"
 
     },
-
 
     faireGrader:
       "grading-request-hero.jpg",
@@ -114,10 +88,6 @@
   };
 
 
-  /* ============================================================
-     TITRES HERO
-  ============================================================ */
-
   const HERO_TITLES = {
 
     grading:
@@ -161,10 +131,6 @@
 
   };
 
-
-  /* ============================================================
-     BLAZONS
-  ============================================================ */
 
   const BLAZONS = {
 
@@ -213,23 +179,14 @@
   };
 
 
-  /* ============================================================
-     CSS FINAL
-  ============================================================ */
 
   function installerCSS() {
 
-    const old =
-      document.getElementById(
+    document
+      .getElementById(
         "eah-site-final-css"
-      );
-
-
-    if (old) {
-
-      old.remove();
-
-    }
+      )
+      ?.remove();
 
 
     const style =
@@ -244,93 +201,51 @@
 
     style.textContent = `
 
-/* ============================================================
-   HERO PAGES PRINCIPALES
-============================================================ */
-
 .page .page-hero {
 
-  position:
-    relative !important;
-
-  width:
-    100% !important;
-
-  max-width:
-    none !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: none !important;
 
   min-height:
     clamp(
       390px,
       36vw,
       540px
-    ) !important;
+    )
+    !important;
 
-  margin:
-    0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 
-  padding:
-    0 !important;
+  overflow: hidden !important;
 
-  overflow:
-    hidden !important;
+  display: flex !important;
+  align-items: flex-end !important;
 
-  display:
-    flex !important;
-
-  align-items:
-    flex-end !important;
-
-  background:
-    #03131f !important;
+  background: #03131f !important;
 
 }
 
-
-/* ============================================================
-   IMAGE HERO PLEINE LARGEUR
-============================================================ */
 
 .page .page-hero > img.page-hero-image {
 
-  position:
-    absolute !important;
+  position: absolute !important;
+  inset: 0 !important;
 
-  inset:
-    0 !important;
+  width: 100% !important;
+  max-width: none !important;
 
-  left:
-    0 !important;
+  height: 100% !important;
+  min-height: 100% !important;
 
-  top:
-    0 !important;
+  display: block !important;
 
-  width:
-    100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
 
-  max-width:
-    none !important;
-
-  height:
-    100% !important;
-
-  min-height:
-    100% !important;
-
-  display:
-    block !important;
-
-  object-fit:
-    cover !important;
-
-  object-position:
-    center center !important;
-
-  opacity:
-    1 !important;
-
-  visibility:
-    visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 
   filter:
     brightness(1.06)
@@ -338,71 +253,35 @@
     saturate(1.05)
     !important;
 
-  transform:
-    none !important;
-
 }
 
-
-/* ============================================================
-   PICTURE HERO
-============================================================ */
 
 .page .page-hero > picture {
 
-  position:
-    absolute !important;
+  position: absolute !important;
+  inset: 0 !important;
 
-  inset:
-    0 !important;
+  width: 100% !important;
+  height: 100% !important;
 
-  width:
-    100% !important;
-
-  height:
-    100% !important;
-
-  display:
-    block !important;
+  display: block !important;
 
 }
 
 
-.page .page-hero > picture > img.page-hero-image,
 .page .page-hero > picture > img {
 
-  position:
-    absolute !important;
+  position: absolute !important;
+  inset: 0 !important;
 
-  inset:
-    0 !important;
+  width: 100% !important;
+  height: 100% !important;
 
-  width:
-    100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
 
-  max-width:
-    none !important;
-
-  height:
-    100% !important;
-
-  min-height:
-    100% !important;
-
-  display:
-    block !important;
-
-  object-fit:
-    cover !important;
-
-  object-position:
-    center center !important;
-
-  opacity:
-    1 !important;
-
-  visibility:
-    visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 
   filter:
     brightness(1.06)
@@ -413,26 +292,14 @@
 }
 
 
-/* ============================================================
-   VOILE TRES LEGER
-============================================================ */
-
 .page .page-hero .page-hero-overlay {
 
-  position:
-    absolute !important;
+  position: absolute !important;
+  inset: 0 !important;
 
-  inset:
-    0 !important;
+  display: block !important;
 
-  display:
-    block !important;
-
-  opacity:
-    1 !important;
-
-  z-index:
-    1 !important;
+  z-index: 1 !important;
 
   background:
     linear-gradient(
@@ -447,124 +314,86 @@
 }
 
 
-/* ============================================================
-   SUPPRESSION ANCIENS PSEUDO ELEMENTS
-============================================================ */
-
 .page .page-hero::before,
 .page .page-hero::after {
 
-  content:
-    none !important;
-
-  display:
-    none !important;
-
-  background:
-    none !important;
-
-  opacity:
-    0 !important;
+  content: none !important;
+  display: none !important;
 
 }
 
 
-/* ============================================================
-   CONTENU HERO
-============================================================ */
-
 .page .page-hero > .container {
 
-  position:
-    relative !important;
+  position: relative !important;
 
-  z-index:
-    4 !important;
+  z-index: 4 !important;
 
   width:
     min(
       calc(100% - 48px),
       1240px
-    ) !important;
+    )
+    !important;
 
-  max-width:
-    1240px !important;
+  max-width: 1240px !important;
 
-  margin:
-    0 auto !important;
+  margin: 0 auto !important;
 
   padding:
-    0 0 46px 0 !important;
+    0 0 46px 0
+    !important;
 
 }
 
 
-/* UNIQUEMENT LE NOM DE LA CATEGORIE */
-
 .page .page-hero .overline {
 
-  display:
-    none !important;
+  display: none !important;
 
 }
 
 
 .page .page-hero .container > p {
 
-  display:
-    none !important;
+  display: none !important;
 
 }
 
 
 .page .page-hero h1 {
 
-  position:
-    relative !important;
+  position: relative !important;
 
-  z-index:
-    5 !important;
+  z-index: 5 !important;
 
-  max-width:
-    1050px !important;
+  max-width: 1050px !important;
 
-  margin:
-    0 !important;
+  margin: 0 !important;
 
-  color:
-    #ffffff !important;
+  color: #ffffff !important;
 
   font-size:
     clamp(
       3rem,
       6vw,
       6rem
-    ) !important;
+    )
+    !important;
 
-  font-weight:
-    900 !important;
+  font-weight: 900 !important;
 
-  line-height:
-    .96 !important;
+  line-height: .96 !important;
 
-  letter-spacing:
-    -.055em !important;
+  letter-spacing: -.055em !important;
 
   text-shadow:
     0 5px 24px
-    rgba(
-      0,
-      0,
-      0,
-      .42
-    ) !important;
+    rgba(0,0,0,.42)
+    !important;
 
 }
 
-
-/* ============================================================
-   HERO ACCUEIL
-============================================================ */
 
 #accueil .hero-background-image {
 
@@ -574,11 +403,8 @@
     saturate(1.05)
     !important;
 
-  opacity:
-    1 !important;
-
-  visibility:
-    visible !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 
 }
 
@@ -606,97 +432,105 @@
 }
 
 
-/* ============================================================
-   DISCIPLINES
-============================================================ */
-
 .eah-discipline-photo {
 
-  display:
-    block !important;
+  display: block !important;
 
-  width:
-    100% !important;
+  width: 100% !important;
+  height: 100% !important;
 
-  max-width:
-    none !important;
+  object-fit: cover !important;
 
-  height:
-    100% !important;
-
-  object-fit:
-    cover !important;
-
-  object-position:
-    center center !important;
-
-  opacity:
-    1 !important;
-
-  visibility:
-    visible !important;
-
-  filter:
-    brightness(1.06)
-    contrast(1.02)
-    saturate(1.05)
-    !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 
 }
 
-
-/* ============================================================
-   BLAZONS
-============================================================ */
 
 .eah-blazon-image {
 
-  display:
-    block !important;
+  display: block !important;
 
-  visibility:
-    visible !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 
-  opacity:
-    1 !important;
+  object-fit: contain !important;
 
-  object-fit:
-    contain !important;
-
-  filter:
-    none !important;
+  filter: none !important;
 
 }
 
 
 /* ============================================================
-   ACTUALITES ET SPOTS
+   IMAGES CMS : ACTUALITES + SPOTS
 ============================================================ */
 
 .eah-cms-image {
 
-  display:
-    block !important;
+  display: block !important;
 
-  width:
-    100% !important;
+  width: 100% !important;
 
-  opacity:
-    1 !important;
+  opacity: 1 !important;
 
-  visibility:
-    visible !important;
+  visibility: visible !important;
 
-  object-fit:
-    cover !important;
+  object-fit: cover !important;
+
+}
+
+
+.eah-cms-image-fallback {
+
+  width: 100%;
+
+  min-height: 260px;
+
+  display: grid;
+
+  place-items: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(6,30,51,.96),
+      rgba(4,18,31,.96)
+    );
+
+  color:
+    rgba(255,255,255,.45);
+
+  font-weight: 900;
+
+  letter-spacing: .12em;
+
+}
+
+
+.spot-picture {
+
+  overflow: hidden;
+
+}
+
+
+.spot-picture .eah-cms-image,
+.spot-picture .eah-cms-image-fallback {
+
+  width: 100%;
+
+  height: 350px;
+
+  object-fit: cover;
 
 }
 
 
 #newsGrid .news-card {
 
-  cursor:
-    pointer !important;
+  overflow: hidden;
+
+  cursor: pointer !important;
 
   transition:
     transform .22s ease,
@@ -708,8 +542,7 @@
 
 #newsGrid .news-card:hover {
 
-  transform:
-    translateY(-5px);
+  transform: translateY(-5px);
 
   border-color:
     rgba(48,207,255,.40)
@@ -718,6 +551,18 @@
   box-shadow:
     0 26px 65px
     rgba(0,0,0,.30);
+
+}
+
+
+#newsGrid .news-image,
+#newsGrid .eah-cms-image-fallback {
+
+  width: 100%;
+
+  height: 330px;
+
+  object-fit: cover;
 
 }
 
@@ -739,7 +584,8 @@
 .actualite-detail-section {
 
   padding:
-    55px 0 95px !important;
+    55px 0 95px
+    !important;
 
 }
 
@@ -752,28 +598,21 @@
       1050px
     );
 
-  margin:
-    0 auto;
+  margin: 0 auto;
 
 }
 
 
 .actualite-back {
 
-  display:
-    inline-flex;
+  display: inline-flex;
 
-  align-items:
-    center;
+  align-items: center;
+  justify-content: center;
 
-  justify-content:
-    center;
+  min-height: 46px;
 
-  min-height:
-    46px;
-
-  margin-bottom:
-    26px;
+  margin-bottom: 26px;
 
   padding:
     0 18px;
@@ -782,46 +621,29 @@
     1px solid
     rgba(143,205,255,.22);
 
-  border-radius:
-    13px;
+  border-radius: 13px;
 
   background:
     rgba(5,23,42,.78);
 
-  color:
-    #ffffff;
+  color: #ffffff;
 
-  font-weight:
-    800;
+  font-weight: 800;
 
-  cursor:
-    pointer;
-
-  backdrop-filter:
-    blur(16px);
-
-}
-
-
-.actualite-back:hover {
-
-  background:
-    rgba(11,107,255,.18);
+  cursor: pointer;
 
 }
 
 
 .actualite-detail-card {
 
-  overflow:
-    hidden;
+  overflow: hidden;
 
   border:
     1px solid
     rgba(143,205,255,.20);
 
-  border-radius:
-    30px;
+  border-radius: 30px;
 
   background:
     linear-gradient(
@@ -839,20 +661,13 @@
 
 .actualite-detail-image {
 
-  display:
-    block;
+  display: block;
 
-  width:
-    100%;
+  width: 100%;
 
-  max-height:
-    600px;
+  max-height: 600px;
 
-  object-fit:
-    cover;
-
-  object-position:
-    center;
+  object-fit: cover;
 
 }
 
@@ -871,40 +686,28 @@
 
 .actualite-detail-category {
 
-  display:
-    inline-block;
+  display: inline-block;
 
-  margin-bottom:
-    13px;
+  margin-bottom: 13px;
 
-  color:
-    #30cfff;
+  color: #30cfff;
 
-  font-size:
-    .78rem;
+  font-size: .78rem;
 
-  font-weight:
-    900;
+  font-weight: 900;
 
-  letter-spacing:
-    .14em;
+  letter-spacing: .14em;
 
-  text-transform:
-    uppercase;
+  text-transform: uppercase;
 
 }
 
 
 .actualite-detail-title {
 
-  max-width:
-    900px;
+  margin: 0 0 14px;
 
-  margin:
-    0 0 14px;
-
-  color:
-    #ffffff;
+  color: #ffffff;
 
   font-size:
     clamp(
@@ -913,95 +716,67 @@
       5.2rem
     );
 
-  line-height:
-    1.02;
-
-  letter-spacing:
-    -.045em;
+  line-height: 1.02;
 
 }
 
 
 .actualite-detail-date {
 
-  margin-bottom:
-    28px;
+  margin-bottom: 28px;
 
-  color:
-    #8fa8bc;
-
-  font-size:
-    .9rem;
+  color: #8fa8bc;
 
 }
 
 
 .actualite-detail-summary {
 
-  max-width:
-    880px;
+  margin-bottom: 30px;
 
-  margin-bottom:
-    30px;
+  color: #dceafa;
 
-  color:
-    #dceafa;
+  font-size: 1.15rem;
 
-  font-size:
-    1.15rem;
+  font-weight: 600;
 
-  font-weight:
-    600;
-
-  line-height:
-    1.65;
+  line-height: 1.65;
 
 }
 
 
 .actualite-detail-text {
 
-  margin-top:
-    25px;
+  margin-top: 25px;
 
-  padding-top:
-    25px;
+  padding-top: 25px;
 
   border-top:
     1px solid
     rgba(143,205,255,.14);
 
-  color:
-    #c3d8e8;
+  color: #c3d8e8;
 
-  font-size:
-    1.03rem;
+  font-size: 1.03rem;
 
-  line-height:
-    1.85;
+  line-height: 1.85;
 
 }
 
 
 .actualite-video {
 
-  width:
-    100%;
+  width: 100%;
 
-  margin-top:
-    35px;
+  margin-top: 35px;
 
-  overflow:
-    hidden;
+  overflow: hidden;
 
-  aspect-ratio:
-    16 / 9;
+  aspect-ratio: 16 / 9;
 
-  border-radius:
-    22px;
+  border-radius: 22px;
 
-  background:
-    #000000;
+  background: #000;
 
 }
 
@@ -1009,43 +784,30 @@
 .actualite-video iframe,
 .actualite-video video {
 
-  width:
-    100%;
+  width: 100%;
 
-  height:
-    100%;
+  height: 100%;
 
-  border:
-    0;
-
-  object-fit:
-    contain;
+  border: 0;
 
 }
 
 
 .actualite-detail-link {
 
-  display:
-    inline-flex;
+  display: inline-flex;
 
-  align-items:
-    center;
+  align-items: center;
+  justify-content: center;
 
-  justify-content:
-    center;
+  min-height: 48px;
 
-  min-height:
-    48px;
-
-  margin-top:
-    30px;
+  margin-top: 30px;
 
   padding:
     0 20px;
 
-  border-radius:
-    13px;
+  border-radius: 13px;
 
   background:
     linear-gradient(
@@ -1054,11 +816,9 @@
       #1687ff
     );
 
-  color:
-    #ffffff;
+  color: #ffffff;
 
-  font-weight:
-    800;
+  font-weight: 800;
 
 }
 
@@ -1067,31 +827,25 @@
    SPOTS
 ============================================================ */
 
-#spots .spot,
-#spots .spot-card,
-#spots .eah-public-card {
+#spots .spot {
 
-  cursor:
-    pointer;
+  cursor: pointer;
 
 }
 
 
 #spots .spot-details[hidden] {
 
-  display:
-    none !important;
+  display: none !important;
 
 }
 
 
 #spots .spot-details {
 
-  margin-top:
-    18px;
+  margin-top: 18px;
 
-  padding-top:
-    18px;
+  padding-top: 18px;
 
   border-top:
     1px solid
@@ -1102,17 +856,13 @@
 
 #spots .spot-open-label {
 
-  margin-top:
-    15px;
+  margin-top: 15px;
 
-  color:
-    #30cfff;
+  color: #30cfff;
 
-  font-size:
-    .92rem;
+  font-size: .92rem;
 
-  font-weight:
-    800;
+  font-weight: 800;
 
 }
 
@@ -1131,15 +881,10 @@ html:not(.eah-page-club) #eah-spots,
 html:not(.eah-page-club) #eah-blazons,
 html:not(.eah-page-club) #eah-tarifs {
 
-  display:
-    none !important;
+  display: none !important;
 
 }
 
-
-/* ============================================================
-   MOBILE GENERAL
-============================================================ */
 
 @media (max-width:700px) {
 
@@ -1156,7 +901,8 @@ html:not(.eah-page-club) #eah-tarifs {
     width:
       calc(
         100% - 28px
-      ) !important;
+      )
+      !important;
 
     padding-bottom:
       32px !important;
@@ -1171,181 +917,83 @@ html:not(.eah-page-club) #eah-tarifs {
         2.5rem,
         12vw,
         4rem
-      ) !important;
+      )
+      !important;
 
   }
 
 
-  .actualite-detail-section {
+  .spot-picture .eah-cms-image,
+  .spot-picture .eah-cms-image-fallback,
+  #newsGrid .news-image,
+  #newsGrid .eah-cms-image-fallback {
 
-    padding:
-      28px 0 65px !important;
-
-  }
-
-
-  .actualite-detail-wrap {
-
-    width:
-      calc(
-        100% - 24px
-      );
-
-  }
-
-
-  .actualite-detail-card {
-
-    border-radius:
-      23px;
-
-  }
-
-
-  .actualite-detail-image {
-
-    max-height:
-      420px;
-
-  }
-
-
-  .actualite-detail-body {
-
-    padding:
-      22px;
+    height: 260px;
 
   }
 
 }
 
 
-/* ============================================================
-   TARIFS TELEPHONE UNIQUEMENT
-   <= 600 PX
-
-   La photo mobile est verticale.
-   On lui donne donc un hero 9:16.
-   L'image reste entière sans être coupée.
-============================================================ */
-
 @media (max-width:600px) {
-
 
   #tarifs .page-hero {
 
-    width:
-      100% !important;
+    width: 100% !important;
 
-    height:
-      auto !important;
+    height: auto !important;
 
-    min-height:
-      0 !important;
-
-    max-height:
-      none !important;
+    min-height: 0 !important;
 
     aspect-ratio:
-      9 / 16 !important;
-
-    align-items:
-      stretch !important;
-
-    background:
-      #03131f !important;
+      9 / 16
+      !important;
 
   }
 
 
   #tarifs .page-hero > picture.tarifs-hero-picture {
 
-    position:
-      absolute !important;
+    position: absolute !important;
 
-    inset:
-      0 !important;
+    inset: 0 !important;
 
-    width:
-      100% !important;
+    width: 100% !important;
 
-    height:
-      100% !important;
-
-    display:
-      block !important;
+    height: 100% !important;
 
   }
 
 
-  #tarifs .page-hero > picture.tarifs-hero-picture > img.page-hero-image {
+  #tarifs .page-hero > picture.tarifs-hero-picture > img {
 
-    position:
-      absolute !important;
+    position: absolute !important;
 
-    inset:
-      0 !important;
+    inset: 0 !important;
 
-    width:
-      100% !important;
+    width: 100% !important;
 
-    height:
-      100% !important;
+    height: 100% !important;
 
-    min-height:
-      0 !important;
+    object-fit: contain !important;
 
-    max-width:
-      none !important;
+    filter: none !important;
 
-    object-fit:
-      contain !important;
-
-    object-position:
-      center center !important;
-
-    filter:
-      none !important;
-
-    opacity:
-      1 !important;
-
-    visibility:
-      visible !important;
-
-    background:
-      #03131f !important;
+    background: #03131f !important;
 
   }
 
-
-  /*
-     La nouvelle image mobile contient déjà :
-     - le logo EAH
-     - Amateur ou professionnel
-     - rejoignez l'équipe EAH Diving
-
-     On masque donc le titre "Les offres"
-     qui pourrait recouvrir le visuel.
-  */
 
   #tarifs .page-hero > .container {
 
-    display:
-      none !important;
+    display: none !important;
 
   }
 
 
-  /*
-     Pas de voile sombre sur cette image,
-     afin de garder le texte net et lisible.
-  */
-
   #tarifs .page-hero .page-hero-overlay {
 
-    display:
-      none !important;
+    display: none !important;
 
   }
 
@@ -1363,10 +1011,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     OUTILS
-  ============================================================ */
-
   function normaliser(
     value
   ) {
@@ -1374,47 +1018,40 @@ html:not(.eah-page-club) #eah-tarifs {
     return String(
       value || ""
     )
-      .toLowerCase()
-      .normalize(
-        "NFD"
-      )
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      )
-      .replace(
-        /ø/g,
-        "o"
-      )
-      .trim();
+    .toLowerCase()
+    .normalize(
+      "NFD"
+    )
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .replace(
+      /ø/g,
+      "o"
+    )
+    .trim();
 
   }
 
 
 
-  /* ============================================================
-     MOBILE DISCIPLINES
-  ============================================================ */
-
   function mobile() {
 
     return (
-      window.innerWidth <= 700
+      window.innerWidth <=
+      700
     );
 
   }
 
 
 
-  /* ============================================================
-     TARIFS MOBILE
-     UNIQUEMENT TELEPHONE <= 600px
-  ============================================================ */
-
   function fichierTarifs() {
 
     return (
-      window.innerWidth <= 600
+      window.innerWidth <=
+      600
     )
       ?
       FILES.tarifs.mobile
@@ -1424,10 +1061,6 @@ html:not(.eah-page-club) #eah-tarifs {
   }
 
 
-
-  /* ============================================================
-     FICHIER DISCIPLINE
-  ============================================================ */
 
   function fichierDiscipline(
     key
@@ -1497,6 +1130,141 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
+  /* ============================================================
+     CONVERSION IMAGE CMS
+  ============================================================ */
+
+  function mediaUrl(
+    value,
+    size = "w1800"
+  ) {
+
+    const raw =
+      String(
+        value ||
+        ""
+      )
+      .trim();
+
+
+    if (!raw) {
+
+      return "";
+
+    }
+
+
+    if (
+      typeof window.EAHMediaUrl ===
+        "function"
+    ) {
+
+      return window.EAHMediaUrl(
+        raw,
+        size
+      );
+
+    }
+
+
+    try {
+
+      const decoded =
+        decodeURIComponent(
+          raw
+        );
+
+
+      let match =
+        decoded.match(
+          /\/file\/d\/([^/?#]+)/
+        );
+
+
+      if (!match) {
+
+        match =
+          decoded.match(
+            /\/d\/([^/?#]+)/
+        );
+
+      }
+
+
+      if (
+        match &&
+        match[1]
+      ) {
+
+        return (
+          "https://drive.google.com/thumbnail?id="
+          +
+          encodeURIComponent(
+            match[1]
+          )
+          +
+          "&sz="
+          +
+          encodeURIComponent(
+            size
+          )
+        );
+
+      }
+
+
+      const parsed =
+        new URL(
+          raw,
+          window.location.href
+        );
+
+
+      const id =
+        parsed.searchParams.get(
+          "id"
+        );
+
+
+      if (
+        id &&
+        (
+          parsed.hostname.includes(
+            "drive.google.com"
+          )
+          ||
+          parsed.hostname.includes(
+            "docs.google.com"
+          )
+        )
+      ) {
+
+        return (
+          "https://drive.google.com/thumbnail?id="
+          +
+          encodeURIComponent(
+            id
+          )
+          +
+          "&sz="
+          +
+          encodeURIComponent(
+            size
+          )
+        );
+
+      }
+
+
+    } catch (_) {}
+
+
+    return raw;
+
+  }
+
+
+
   function formatDate(
     value
   ) {
@@ -1527,33 +1295,28 @@ html:not(.eah-page-club) #eah-tarifs {
     }
 
 
-    return date
-      .toLocaleDateString(
+    return date.toLocaleDateString(
 
-        "fr-FR",
+      "fr-FR",
 
-        {
+      {
 
-          day:
-            "2-digit",
+        day:
+          "2-digit",
 
-          month:
-            "long",
+        month:
+          "long",
 
-          year:
-            "numeric"
+        year:
+          "numeric"
 
-        }
+      }
 
-      );
+    );
 
   }
 
 
-
-  /* ============================================================
-     IMAGE HERO PAGE
-  ============================================================ */
 
   function corrigerHeroPage(
     pageId,
@@ -1634,18 +1397,15 @@ html:not(.eah-page-club) #eah-tarifs {
     }
 
 
-    const actuel =
-      String(
+    if (
+      !String(
         img.getAttribute(
           "src"
         )
         ||
         ""
-      );
-
-
-    if (
-      !actuel.endsWith(
+      )
+      .endsWith(
         fichier
       )
     ) {
@@ -1676,185 +1436,99 @@ html:not(.eah-page-club) #eah-tarifs {
       "page-hero-image"
     );
 
-
-    img.style.removeProperty(
-      "display"
-    );
-
-
-    img.style.removeProperty(
-      "visibility"
-    );
-
-
-    img.style.removeProperty(
-      "opacity"
-    );
-
   }
 
 
-
-  /* ============================================================
-     HEROES PRINCIPAUX
-  ============================================================ */
 
   function corrigerHeroesPrincipaux() {
 
     corrigerHeroPage(
-
       "grading",
-
       FILES.grading,
-
       HERO_TITLES.grading
-
     );
 
 
     corrigerHeroPage(
-
       "blazons",
-
       FILES.blazons,
-
       HERO_TITLES.blazons
-
     );
 
 
     corrigerHeroPage(
-
       "population",
-
       FILES.population,
-
       HERO_TITLES.population
-
     );
 
 
     corrigerHeroPage(
-
       "spots",
-
       FILES.spots,
-
       HERO_TITLES.spots
-
     );
 
 
     corrigerHeroPage(
-
       "actualites",
-
       FILES.actualites,
-
       HERO_TITLES.actualites
-
     );
 
 
-    /* ========================================================
-       TARIFS
-       Desktop/tablette = pricing-hero.jpg
-       Téléphone = tarifs-mobile.png
-    ======================================================== */
-
     corrigerHeroPage(
-
       "tarifs",
-
       fichierTarifs(),
-
       HERO_TITLES.tarifs
-
     );
 
 
     corrigerHeroPage(
-
       "faire-grader",
-
       FILES.faireGrader,
-
       HERO_TITLES[
         "faire-grader"
       ]
-
     );
 
 
     corrigerHeroPage(
-
       "club",
-
       FILES.club,
-
       HERO_TITLES.club
-
     );
 
   }
 
 
 
-  /* ============================================================
-     DISCIPLINES
-  ============================================================ */
-
   function corrigerDisciplines() {
 
-    corrigerHeroPage(
-
+    [
       "olympique",
-
-      fichierDiscipline(
-        "olympique"
-      ),
-
-      HERO_TITLES.olympique
-
-    );
-
-
-    corrigerHeroPage(
-
       "freestyle",
-
-      fichierDiscipline(
-        "freestyle"
-      ),
-
-      HERO_TITLES.freestyle
-
-    );
-
-
-    corrigerHeroPage(
-
       "highdiving",
+      "ange"
+    ]
+    .forEach(
+      key => {
 
-      fichierDiscipline(
-        "highdiving"
-      ),
+        corrigerHeroPage(
 
-      HERO_TITLES.highdiving
+          key,
 
-    );
+          fichierDiscipline(
+            key
+          ),
 
+          HERO_TITLES[
+            key
+          ]
 
-    corrigerHeroPage(
+        );
 
-      "ange",
-
-      fichierDiscipline(
-        "ange"
-      ),
-
-      HERO_TITLES.ange
-
+      }
     );
 
 
@@ -1876,10 +1550,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     ACCUEIL
-  ============================================================ */
-
   function corrigerAccueil() {
 
     const img =
@@ -1895,47 +1565,16 @@ html:not(.eah-page-club) #eah-tarifs {
     }
 
 
-    if (
-      !String(
-        img.getAttribute(
-          "src"
-        )
-        ||
-        ""
-      )
-      .endsWith(
-        FILES.accueil
-      )
-    ) {
-
-      img.src =
-        FILES.accueil;
-
-    }
+    img.src =
+      FILES.accueil;
 
 
     img.loading =
       "eager";
 
-
-    img.decoding =
-      "async";
-
-
-    try {
-
-      img.fetchPriority =
-        "high";
-
-    } catch (_) {}
-
   }
 
 
-
-  /* ============================================================
-     BLAZONS INDIVIDUELS
-  ============================================================ */
 
   function corrigerBlazons() {
 
@@ -1957,23 +1596,14 @@ html:not(.eah-page-club) #eah-tarifs {
                 )
               )
               .find(
-                element => {
-
-                  return (
-
-                    normaliser(
-                      element.textContent
-                    )
-
-                    ===
-
-                    normaliser(
-                      nom
-                    )
-
-                  );
-
-                }
+                element =>
+                  normaliser(
+                    element.textContent
+                  )
+                  ===
+                  normaliser(
+                    nom
+                  )
               );
 
 
@@ -1985,21 +1615,13 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
           const card =
-
             titre.closest(
               "article"
             )
-
             ||
-
             titre.closest(
               "[class*='blazon']"
-            )
-
-            ||
-
-            titre.parentElement
-              ?.parentElement;
+            );
 
 
           if (!card) {
@@ -2022,31 +1644,8 @@ html:not(.eah-page-club) #eah-tarifs {
           }
 
 
-          if (
-            !String(
-              img.getAttribute(
-                "src"
-              )
-              ||
-              ""
-            )
-            .endsWith(
-              fichier
-            )
-          ) {
-
-            img.src =
-              fichier;
-
-          }
-
-
-          img.loading =
-            "eager";
-
-
-          img.decoding =
-            "async";
+          img.src =
+            fichier;
 
 
           img.classList.add(
@@ -2060,10 +1659,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     PHOTOS ACTUALITES
-  ============================================================ */
-
   function corrigerActualites() {
 
     document
@@ -2072,6 +1667,36 @@ html:not(.eah-page-club) #eah-tarifs {
       )
       .forEach(
         img => {
+
+          const current =
+            String(
+              img.getAttribute(
+                "src"
+              )
+              ||
+              ""
+            )
+            .trim();
+
+
+          const corrected =
+            mediaUrl(
+              current,
+              "w1800"
+            );
+
+
+          if (
+            corrected &&
+            corrected !==
+              current
+          ) {
+
+            img.src =
+              corrected;
+
+          }
+
 
           img.classList.add(
             "eah-cms-image"
@@ -2084,14 +1709,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
           img.decoding =
             "async";
-
-
-          try {
-
-            img.fetchPriority =
-              "high";
-
-          } catch (_) {}
 
         }
       );
@@ -2122,10 +1739,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     PHOTOS SPOTS
-  ============================================================ */
-
   function corrigerSpots() {
 
     document
@@ -2134,6 +1747,36 @@ html:not(.eah-page-club) #eah-tarifs {
       )
       .forEach(
         img => {
+
+          const current =
+            String(
+              img.getAttribute(
+                "src"
+              )
+              ||
+              ""
+            )
+            .trim();
+
+
+          const corrected =
+            mediaUrl(
+              current,
+              "w1800"
+            );
+
+
+          if (
+            corrected &&
+            corrected !==
+              current
+          ) {
+
+            img.src =
+              corrected;
+
+          }
+
 
           img.classList.add(
             "eah-cms-image"
@@ -2147,24 +1790,12 @@ html:not(.eah-page-club) #eah-tarifs {
           img.decoding =
             "async";
 
-
-          try {
-
-            img.fetchPriority =
-              "high";
-
-          } catch (_) {}
-
         }
       );
 
   }
 
 
-
-  /* ============================================================
-     PAGE DETAIL ACTUALITE
-  ============================================================ */
 
   function assurerPageActualiteDetail() {
 
@@ -2222,11 +1853,9 @@ html:not(.eah-page-club) #eah-tarifs {
             ← Retour aux actualités
           </button>
 
-
           <div
             id="actualite-detail-content"
-          >
-          </div>
+          ></div>
 
         </div>
 
@@ -2245,10 +1874,6 @@ html:not(.eah-page-club) #eah-tarifs {
   }
 
 
-
-  /* ============================================================
-     YOUTUBE
-  ============================================================ */
 
   function youtubeEmbed(
     url
@@ -2288,14 +1913,12 @@ html:not(.eah-page-club) #eah-tarifs {
             )
             .split(
               "/"
-            )[
-              0
-            ];
+            )[0];
 
       }
 
 
-      else if (
+      if (
         u.hostname.includes(
           "youtube.com"
         )
@@ -2316,7 +1939,7 @@ html:not(.eah-page-club) #eah-tarifs {
         }
 
 
-        else if (
+        if (
           u.pathname.includes(
             "/shorts/"
           )
@@ -2326,38 +1949,10 @@ html:not(.eah-page-club) #eah-tarifs {
             u.pathname
               .split(
                 "/shorts/"
-              )[
-                1
-              ]
+              )[1]
               ?.split(
                 "/"
-              )[
-                0
-              ]
-            ||
-            "";
-
-        }
-
-
-        else if (
-          u.pathname.includes(
-            "/embed/"
-          )
-        ) {
-
-          id =
-            u.pathname
-              .split(
-                "/embed/"
-              )[
-                1
-              ]
-              ?.split(
-                "/"
-              )[
-                0
-              ]
+              )[0]
             ||
             "";
 
@@ -2366,14 +1961,8 @@ html:not(.eah-page-club) #eah-tarifs {
       }
 
 
-      if (!id) {
-
-        return "";
-
-      }
-
-
-      return (
+      return id
+        ?
         "https://www.youtube.com/embed/"
         +
         encodeURIComponent(
@@ -2381,7 +1970,8 @@ html:not(.eah-page-club) #eah-tarifs {
         )
         +
         "?rel=0"
-      );
+        :
+        "";
 
 
     } catch (_) {
@@ -2393,10 +1983,6 @@ html:not(.eah-page-club) #eah-tarifs {
   }
 
 
-
-  /* ============================================================
-     VIDEO ACTUALITE
-  ============================================================ */
 
   function creerVideoActualite(
     url
@@ -2423,11 +2009,7 @@ html:not(.eah-page-club) #eah-tarifs {
 
           <iframe
             src="${escapeHtml(youtube)}"
-            title="Vidéo de l'actualité"
-            allow="
-              encrypted-media;
-              picture-in-picture
-            "
+            title="Vidéo"
             allowfullscreen
           ></iframe>
 
@@ -2440,9 +2022,9 @@ html:not(.eah-page-club) #eah-tarifs {
 
     if (
       /\.(mp4|webm|ogg)(\?.*)?$/i
-        .test(
-          url
-        )
+      .test(
+        url
+      )
     ) {
 
       return `
@@ -2479,20 +2061,9 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     RECUPERER ACTUALITE DEPUIS CARTE
-  ============================================================ */
-
   function actualiteDepuisCarte(
     card
   ) {
-
-    if (!card) {
-
-      return null;
-
-    }
-
 
     const cards =
       Array.from(
@@ -2519,37 +2090,23 @@ html:not(.eah-page-club) #eah-tarifs {
 
     try {
 
-      if (
-        typeof state !==
-          "undefined"
-        &&
-        Array.isArray(
-          state.news
-        )
-      ) {
+      return (
+        state.news[
+          index
+        ]
+        ||
+        null
+      );
 
-        return (
-          state.news[
-            index
-          ]
-          ||
-          null
-        );
+    } catch (_) {
 
-      }
+      return null;
 
-    } catch (_) {}
-
-
-    return null;
+    }
 
   }
 
 
-
-  /* ============================================================
-     OUVRIR ACTUALITE
-  ============================================================ */
 
   function ouvrirActualite(
     news
@@ -2587,130 +2144,84 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
     const image =
+      mediaUrl(
 
-      news.image_url
+        news.image_url
+        ||
+        news.imageUrl
+        ||
+        news.IMAGE_URL
+        ||
+        "",
 
-      ||
+        "w2000"
 
-      news.imageUrl
-
-      ||
-
-      news.IMAGE_URL
-
-      ||
-
-      "";
+      );
 
 
     const title =
-
       news.title
-
       ||
-
       news.TITLE
-
       ||
-
       "Actualité";
 
 
     const category =
-
       news.category
-
       ||
-
       news.CATEGORY
-
       ||
-
       "EAH DIVING";
 
 
     const date =
-
       news.published_at
-
       ||
-
       news.date
-
       ||
-
       news.DATE
-
       ||
-
       "";
 
 
     const summary =
-
       news.summary
-
       ||
-
       news.SUMMARY
-
       ||
-
       "";
 
 
     const texte =
-
       news.content
-
       ||
-
       news.CONTENT
-
       ||
-
       news.description
-
       ||
-
       news.DESCRIPTION
-
       ||
-
       "";
 
 
     const video =
-
       news.video_url
-
       ||
-
       news.videoUrl
-
       ||
-
       news.VIDEO_URL
-
       ||
-
       "";
 
 
     const link =
-
       news.link_url
-
       ||
-
       news.linkUrl
-
       ||
-
       news.LINK_URL
-
       ||
-
       "";
 
 
@@ -2734,7 +2245,7 @@ html:not(.eah-page-club) #eah-tarifs {
           `
 
             <img
-              class="actualite-detail-image"
+              class="actualite-detail-image eah-cms-image"
               src="${escapeHtml(image)}"
               alt="${escapeHtml(title)}"
               loading="eager"
@@ -2749,19 +2260,9 @@ html:not(.eah-page-club) #eah-tarifs {
 
         <div class="actualite-detail-body">
 
-          ${
-            category
-            ?
-            `
-
-              <span class="actualite-detail-category">
-                ${escapeHtml(category)}
-              </span>
-
-            `
-            :
-            ""
-          }
+          <span class="actualite-detail-category">
+            ${escapeHtml(category)}
+          </span>
 
 
           <h1 class="actualite-detail-title">
@@ -2775,11 +2276,13 @@ html:not(.eah-page-club) #eah-tarifs {
             `
 
               <div class="actualite-detail-date">
+
                 ${escapeHtml(
                   formatDate(
                     date
                   )
                 )}
+
               </div>
 
             `
@@ -2883,19 +2386,12 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     RETOUR ACTUALITES
-  ============================================================ */
-
   function retourActualites() {
 
-    const detail =
-      document.getElementById(
+    document
+      .getElementById(
         "actualite-detail"
-      );
-
-
-    detail
+      )
       ?.classList
       .remove(
         "active"
@@ -2933,34 +2429,17 @@ html:not(.eah-page-club) #eah-tarifs {
 
       "",
 
-      (
-        window.location.pathname
-        +
-        window.location.search
-        +
-        "#actualites"
-      )
+      window.location.pathname
+      +
+      window.location.search
+      +
+      "#actualites"
 
     );
-
-
-    window.scrollTo({
-
-      top:
-        0,
-
-      behavior:
-        "auto"
-
-    });
 
   }
 
 
-
-  /* ============================================================
-     ESPACE CLUB
-  ============================================================ */
 
   function gererAffichageEspaceClub() {
 
@@ -2974,45 +2453,30 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
     const estPageClub =
-
       hash ===
         "#club"
-
       ||
-
       hash ===
         "#espace-club"
-
       ||
-
       hash ===
         "#espaceclub"
-
       ||
-
       hash.startsWith(
         "#club-"
       );
 
 
-    document
-      .documentElement
+    document.documentElement
       .classList
       .toggle(
-
         "eah-page-club",
-
         estPageClub
-
       );
 
   }
 
 
-
-  /* ============================================================
-     APPLICATION
-  ============================================================ */
 
   function appliquer() {
 
@@ -3038,59 +2502,30 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
 
-  /* ============================================================
-     ROUTE
-  ============================================================ */
-
   function routeChange() {
 
     appliquer();
 
 
     requestAnimationFrame(
-      () => {
-
-        appliquer();
-
-
-        requestAnimationFrame(
-          appliquer
-        );
-
-      }
+      appliquer
     );
 
 
     setTimeout(
       appliquer,
-      60
+      100
     );
 
 
     setTimeout(
       appliquer,
-      180
-    );
-
-
-    setTimeout(
-      appliquer,
-      450
-    );
-
-
-    setTimeout(
-      appliquer,
-      1000
+      500
     );
 
   }
 
 
-
-  /* ============================================================
-     CLIC GLOBAL
-  ============================================================ */
 
   document.addEventListener(
 
@@ -3153,83 +2588,6 @@ html:not(.eah-page-club) #eah-tarifs {
       }
 
 
-      const spotCard =
-        event.target.closest(
-          "#spots .spot, #spots .spot-card, #spots .eah-public-card, #spots article"
-        );
-
-
-      if (spotCard) {
-
-        if (
-          event.target.closest(
-            "a"
-          )
-        ) {
-
-          return;
-
-        }
-
-
-        const details =
-          spotCard.querySelector(
-            ".spot-details"
-          );
-
-
-        if (details) {
-
-          const label =
-            spotCard.querySelector(
-              ".spot-open-label"
-            );
-
-
-          const ouvert =
-            !details.hidden;
-
-
-          details.hidden =
-            ouvert;
-
-
-          spotCard.classList.toggle(
-
-            "spot-is-open",
-
-            !ouvert
-
-          );
-
-
-          spotCard.setAttribute(
-
-            "aria-expanded",
-
-            String(
-              !ouvert
-            )
-
-          );
-
-
-          if (label) {
-
-            label.textContent =
-              ouvert
-              ?
-              "Voir les informations"
-              :
-              "Masquer les informations";
-
-          }
-
-        }
-
-      }
-
-
       const navigation =
         event.target.closest(
           "[data-page], [data-page-button], [data-open]"
@@ -3253,12 +2611,6 @@ html:not(.eah-page-club) #eah-tarifs {
           0
         );
 
-
-        setTimeout(
-          routeChange,
-          120
-        );
-
       }
 
     }
@@ -3266,69 +2618,6 @@ html:not(.eah-page-club) #eah-tarifs {
   );
 
 
-
-  /* ============================================================
-     CLAVIER ACTUALITES
-  ============================================================ */
-
-  document.addEventListener(
-
-    "keydown",
-
-    event => {
-
-      if (
-        event.key !==
-          "Enter"
-        &&
-        event.key !==
-          " "
-      ) {
-
-        return;
-
-      }
-
-
-      const card =
-        event.target.closest(
-          "#newsGrid .news-card"
-        );
-
-
-      if (!card) {
-
-        return;
-
-      }
-
-
-      event.preventDefault();
-
-
-      const news =
-        actualiteDepuisCarte(
-          card
-        );
-
-
-      if (news) {
-
-        ouvrirActualite(
-          news
-        );
-
-      }
-
-    }
-
-  );
-
-
-
-  /* ============================================================
-     DEMARRAGE
-  ============================================================ */
 
   if (
     document.readyState ===
@@ -3356,18 +2645,10 @@ html:not(.eah-page-club) #eah-tarifs {
 
 
   window.addEventListener(
-
     "hashchange",
-
     routeChange
-
   );
 
-
-
-  /* ============================================================
-     OBSERVER DOM DYNAMIQUE
-  ============================================================ */
 
   let timer;
 
@@ -3384,7 +2665,7 @@ html:not(.eah-page-club) #eah-tarifs {
         timer =
           setTimeout(
             appliquer,
-            90
+            100
           );
 
       }
@@ -3413,11 +2694,6 @@ html:not(.eah-page-club) #eah-tarifs {
 
   }
 
-
-
-  /* ============================================================
-     REDIMENSIONNEMENT
-  ============================================================ */
 
   let resizeTimer;
 
