@@ -19874,7 +19874,975 @@ async function loadPopulation() {
    INSTALLATION
 ============================================================ */
 
-EAH_V6_INSTALLER_RECHERCHE_POPULATION();
+EAH_V6_INSTALLER_RECHERCHE_POPULATION();/* ============================================================
+   EAH DIVING PRO
+   POPULATION PUBLIC FIX V6.1
+   06/10/2026
+
+   A COLLER JUSTE AVANT :
+   init().catch(...)
+============================================================ */
+
+
+/* ============================================================
+   URL PROFIL PUBLIC
+============================================================ */
+
+function EAH_V61_PROFILE_URL(
+  diver
+) {
+
+  if (
+    !diver ||
+    !diver.eah_id
+  ) {
+
+    return '#';
+
+  }
+
+
+  const url =
+    new URL(
+      window.location.href
+    );
+
+
+  url.search =
+    '';
+
+
+  if (
+    diver.club_slug
+  ) {
+
+    url.searchParams.set(
+      'club',
+      diver.club_slug
+    );
+
+  }
+
+
+  url.searchParams.set(
+    'id',
+    diver.eah_id
+  );
+
+
+  url.hash =
+    'profil';
+
+
+  return url.toString();
+
+}
+
+
+
+/* ============================================================
+   SUPPRIMER ANCIENNE RECHERCHE
+   "RECHERCHER UN PLONGEUR EAH"
+
+   Cet ancien module utilisait encore l'ancienne logique
+   PUBLIC_NAME / privé.
+============================================================ */
+
+function EAH_V61_SUPPRIMER_ANCIENNE_RECHERCHE() {
+
+  const titles =
+    document.querySelectorAll(
+      'h1, h2, h3'
+    );
+
+
+  titles.forEach(
+    function(title) {
+
+      const text =
+        String(
+          title.textContent ||
+          ''
+        )
+        .trim()
+        .toLowerCase();
+
+
+      if (
+        text !==
+        'rechercher un plongeur eah'
+      ) {
+
+        return;
+
+      }
+
+
+      const card =
+        title.closest(
+          '.dashboard-card'
+        );
+
+
+      if (
+        card
+      ) {
+
+        card.style.display =
+          'none';
+
+
+        card.dataset.eahOldPopulation =
+          'hidden';
+
+        return;
+
+      }
+
+
+      /*
+        Fallback si le bloc n'utilise pas dashboard-card
+      */
+
+      let parent =
+        title.parentElement;
+
+
+      for (
+        let i = 0;
+        i < 3 && parent;
+        i++
+      ) {
+
+        if (
+          parent.querySelector(
+            'input'
+          )
+          &&
+          parent.querySelector(
+            'button'
+          )
+        ) {
+
+          parent.style.display =
+            'none';
+
+          break;
+
+        }
+
+
+        parent =
+          parent.parentElement;
+
+      }
+
+    }
+
+  );
+
+}
+
+
+
+/* ============================================================
+   RENDU DES RESULTATS NOM / PRENOM
+============================================================ */
+
+function EAH_V61_RENDER_PUBLIC_DIVERS(
+  box,
+  result,
+  searchedName
+) {
+
+  const divers =
+    Array.isArray(
+      result?.divers
+    )
+    ?
+    result.divers
+    :
+    [];
+
+
+  /*
+    Si aucun nom n'est recherché,
+    on garde simplement les statistiques.
+  */
+
+  if (
+    !searchedName
+  ) {
+
+    return;
+
+  }
+
+
+  const container =
+    document.createElement(
+      'div'
+    );
+
+
+  container.id =
+    'eahV61PublicResults';
+
+
+  container.className =
+    'eah-v61-public-results';
+
+
+  if (
+    !divers.length
+  ) {
+
+    container.innerHTML = `
+
+      <div class="notice">
+
+        Aucun profil PUBLIC trouvé
+        pour
+
+        <strong>
+          ${esc(searchedName)}
+        </strong>.
+
+      </div>
+
+    `;
+
+
+    box.appendChild(
+      container
+    );
+
+
+    return;
+
+  }
+
+
+  container.innerHTML = `
+
+    <div class="eah-v61-result-header">
+
+      <span class="overline">
+        PROFILS PUBLICS
+      </span>
+
+      <h2>
+        Résultat de la recherche
+      </h2>
+
+    </div>
+
+
+    ${
+
+      divers
+        .map(
+          function(diver) {
+
+            const firstName =
+              String(
+                diver.first_name ||
+                ''
+              )
+              .trim();
+
+
+            const lastName =
+              String(
+                diver.last_name ||
+                ''
+              )
+              .trim();
+
+
+            const displayName =
+              String(
+                diver.display_name ||
+                ''
+              )
+              .trim()
+
+              ||
+
+              (
+                firstName
+                +
+                ' '
+                +
+                lastName
+              )
+              .trim()
+
+              ||
+
+              diver.eah_id;
+
+
+            const profileUrl =
+              EAH_V61_PROFILE_URL(
+                diver
+              );
+
+
+            const photo =
+              typeof eahFastPhotoUrl ===
+              'function'
+              ?
+              eahFastPhotoUrl(
+                diver.photo_url
+              )
+              :
+              (
+                diver.photo_url ||
+                ''
+              );
+
+
+            const sex =
+              String(
+                diver.sex ||
+                ''
+              );
+
+
+            const group =
+              String(
+                diver.group_name ||
+                ''
+              );
+
+
+            const blazon =
+              String(
+                diver.current_blazon ||
+                'En progression'
+              );
+
+
+            const gradingCount =
+              Number(
+                diver.grading_count ||
+                0
+              );
+
+
+            return `
+
+              <article
+                class="eah-v61-diver-card"
+              >
+
+                <div
+                  class="eah-v61-diver-identity"
+                >
+
+                  ${
+                    photo
+                    ?
+                    `
+
+                      <img
+                        class="eah-v61-diver-photo"
+                        src="${esc(photo)}"
+                        alt="${esc(displayName)}"
+                      >
+
+                    `
+                    :
+                    `
+
+                      <div
+                        class="eah-v61-diver-photo eah-v61-empty-photo"
+                      >
+                        EAH
+                      </div>
+
+                    `
+                  }
+
+
+                  <div>
+
+                    <span
+                      class="eah-v61-public-badge"
+                    >
+                      PROFIL PUBLIC
+                    </span>
+
+
+                    <h3>
+                      ${esc(displayName)}
+                    </h3>
+
+
+                    <p class="muted">
+
+                      ${esc(
+                        diver.club_name ||
+                        'EAH Diving'
+                      )}
+
+                    </p>
+
+
+                    <div
+                      class="eah-v61-tags"
+                    >
+
+                      ${
+                        sex
+                        ?
+                        `
+                          <span>
+                            ${esc(sex)}
+                          </span>
+                        `
+                        :
+                        ''
+                      }
+
+
+                      ${
+                        group
+                        ?
+                        `
+                          <span>
+                            ${esc(group)}
+                          </span>
+                        `
+                        :
+                        ''
+                      }
+
+
+                      <span>
+                        ${esc(blazon)}
+                      </span>
+
+
+                      <span>
+
+                        ${esc(
+                          gradingCount
+                        )}
+
+                        grading(s)
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <div>
+
+                  <a
+                    class="button"
+                    href="${esc(profileUrl)}"
+                  >
+                    Voir le profil public
+                  </a>
+
+                </div>
+
+              </article>
+
+            `;
+
+          }
+        )
+        .join('')
+
+    }
+
+  `;
+
+
+  box.appendChild(
+    container
+  );
+
+}
+
+
+
+/* ============================================================
+   POPULATION OFFICIELLE
+   PROFILE_VISIBILITY = PUBLIC
+
+   Recherche :
+   - code
+   - prénom
+   - nom
+   - prénom + nom
+   - EAH_ID
+============================================================ */
+
+async function loadPopulation() {
+
+  const code =
+    normalizeCode(
+      val(
+        'populationCode'
+      )
+    );
+
+
+  const name =
+    String(
+      val(
+        'populationName'
+      )
+      ||
+      ''
+    )
+    .trim();
+
+
+  const box =
+    document.getElementById(
+      'populationResults'
+    );
+
+
+  const button =
+    document.getElementById(
+      'populationSearchButton'
+    );
+
+
+  if (
+    !box
+  ) {
+
+    return;
+
+  }
+
+
+  box.innerHTML = `
+
+    <div class="loading-panel">
+      Recherche…
+    </div>
+
+  `;
+
+
+  setLoadingButton(
+
+    button,
+
+    true,
+
+    'Recherche…',
+
+    'Rechercher'
+
+  );
+
+
+  try {
+
+    const sb =
+      requireSupabase();
+
+
+    const {
+      data,
+      error
+    } =
+      await sb.rpc(
+
+        'eah_population_search_v3',
+
+        {
+
+          p_code:
+            code ||
+            null,
+
+          p_name:
+            name ||
+            null,
+
+          p_club_slug:
+            CLUB_SLUG ||
+            null
+
+        }
+
+      );
+
+
+    if (
+      error
+    ) {
+
+      throw error;
+
+    }
+
+
+    if (
+      !data
+      ||
+      data.ok === false
+    ) {
+
+      throw new Error(
+
+        data?.error ||
+        'Recherche Population impossible.'
+
+      );
+
+    }
+
+
+    const result =
+      eahPopulationNormalize(
+        data
+      );
+
+
+    /*
+      Statistiques
+    */
+
+    renderPopulationStats(
+
+      box,
+
+      result
+
+    );
+
+
+    /*
+      Résultat nominatif direct
+    */
+
+    EAH_V61_RENDER_PUBLIC_DIVERS(
+
+      box,
+
+      result,
+
+      name
+
+    );
+
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'EAH POPULATION V6.1:',
+      error
+    );
+
+
+    box.innerHTML = `
+
+      <div class="notice error">
+
+        ${esc(
+          error?.message ||
+          'Impossible de charger Population.'
+        )}
+
+      </div>
+
+    `;
+
+  } finally {
+
+    setLoadingButton(
+
+      button,
+
+      false,
+
+      '',
+
+      'Rechercher'
+
+    );
+
+  }
+
+}
+
+
+
+/* ============================================================
+   STYLE
+============================================================ */
+
+(function EAH_V61_STYLE() {
+
+  if (
+    document.getElementById(
+      'eah-v61-style'
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+
+  style.id =
+    'eah-v61-style';
+
+
+  style.textContent = `
+
+    .eah-v61-public-results {
+      margin-top: 28px;
+    }
+
+
+    .eah-v61-result-header {
+      margin-bottom: 16px;
+    }
+
+
+    .eah-v61-result-header h2 {
+      margin-top: 5px;
+    }
+
+
+    .eah-v61-diver-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+
+      margin-top: 14px;
+      padding: 20px;
+
+      border:
+        1px solid
+        rgba(
+          143,
+          205,
+          255,
+          .22
+        );
+
+      border-radius:
+        22px;
+
+      background:
+        rgba(
+          4,
+          27,
+          48,
+          .78
+        );
+    }
+
+
+    .eah-v61-diver-identity {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+
+    .eah-v61-diver-photo {
+      width: 82px;
+      height: 82px;
+
+      flex:
+        0 0 82px;
+
+      object-fit: cover;
+
+      border-radius:
+        20px;
+
+      border:
+        2px solid
+        rgba(
+          48,
+          207,
+          255,
+          .55
+        );
+    }
+
+
+    .eah-v61-empty-photo {
+      display: grid;
+      place-items: center;
+
+      background:
+        #061e33;
+
+      color:
+        white;
+
+      font-weight:
+        900;
+    }
+
+
+    .eah-v61-diver-card h3 {
+      margin:
+        7px
+        0
+        4px;
+    }
+
+
+    .eah-v61-public-badge {
+      display: inline-block;
+
+      padding:
+        5px
+        9px;
+
+      border-radius:
+        999px;
+
+      background:
+        rgba(
+          24,
+          185,
+          120,
+          .15
+        );
+
+      color:
+        #58e5a8;
+
+      font-size:
+        .72rem;
+
+      font-weight:
+        900;
+
+      letter-spacing:
+        .06em;
+    }
+
+
+    .eah-v61-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+
+      margin-top: 10px;
+    }
+
+
+    .eah-v61-tags span {
+      padding:
+        6px
+        10px;
+
+      border-radius:
+        999px;
+
+      background:
+        rgba(
+          48,
+          207,
+          255,
+          .07
+        );
+
+      border:
+        1px solid
+        rgba(
+          48,
+          207,
+          255,
+          .15
+        );
+
+      font-size:
+        .82rem;
+    }
+
+
+    @media (
+      max-width:
+      700px
+    ) {
+
+      .eah-v61-diver-card {
+        display: grid;
+      }
+
+
+      .eah-v61-diver-identity {
+        align-items: flex-start;
+      }
+
+
+      .eah-v61-diver-photo {
+        width: 65px;
+        height: 65px;
+        flex-basis: 65px;
+      }
+
+
+      .eah-v61-diver-card .button {
+        width: 100%;
+        text-align: center;
+      }
+
+    }
+
+  `;
+
+
+  document.head
+    .appendChild(
+      style
+    );
+
+})();
+
+
+
+/* ============================================================
+   MASQUER L'ANCIEN MODULE
+============================================================ */
+
+EAH_V61_SUPPRIMER_ANCIENNE_RECHERCHE();
+
+
+window.addEventListener(
+
+  'load',
+
+  function() {
+
+    EAH_V61_SUPPRIMER_ANCIENNE_RECHERCHE();
+
+  }
+
+);
 init()
   .catch(
     error => {
