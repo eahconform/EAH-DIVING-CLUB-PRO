@@ -487,79 +487,125 @@
      PLONGEUR — ASSOCIER SON E-MAIL
   =================================================== */
 
-  function diverRegisterEmail() {
-    openDialog(
-      'Associer mon e-mail de récupération',
-      [
-        {
-          name: 'email',
-          label: 'Mon adresse e-mail',
-          type: 'email',
-          autocomplete: 'email'
-        },
-        {
-          name: 'pin',
-          label: 'Mon code personnel actuel',
-          type: 'password',
-          inputmode: 'numeric'
-        }
-      ],
-      async (values, { close }) => {
-        const id = diverId();
-        const slug = clubSlug();
+  
+/* ===================================================
+   PLONGEUR — ENREGISTRER SON E-MAIL
+   Compatible avec les profils existants
+=================================================== */
 
-        const email =
-          values.email.trim().toLowerCase();
+function diverRegisterEmail() {
 
-        const pin = values.pin;
-
-        if (!/^[0-9]{4,8}$/.test(pin)) {
-          throw new Error(
-            'Saisis ton code personnel actuel.'
-          );
-        }
-
-        await sendEmailCode(email, true);
-
-        close();
-
-        openDialog(
-          'Confirmer mon adresse e-mail',
-          [
-            {
-              name: 'otp',
-              label: 'Code reçu par e-mail',
-              inputmode: 'numeric',
-              autocomplete: 'one-time-code'
-            }
-          ],
-          async (step, { close: done }) => {
-            await verifyEmailCode(
-              email, step.otp
-            );
-
-            await diverRpc(
-              'eah_diver_bind_email_v1',
-              {
-                p_club_slug: slug,
-                p_eah_id: id,
-                p_pin: pin
-              }
-            );
-
-            done();
-
-            alert(
-              'Ton e-mail de récupération est ' +
-              'maintenant vérifié et associé.'
-            );
-          },
-          'Vérifier et associer mon e-mail'
-        );
+  openDialog(
+    'Enregistrer mon e-mail de récupération',
+    [
+      {
+        name: 'email',
+        label: 'Adresse e-mail du plongeur ou responsable légal',
+        type: 'email',
+        autocomplete: 'email'
       },
-      'Envoyer le code de vérification'
-    );
-  }
+      {
+        name: 'pin',
+        label: 'Code personnel actuel',
+        type: 'password',
+        inputmode: 'numeric'
+      }
+    ],
+
+    async (values, { close }) => {
+
+      const email = String(
+        values.email || ''
+      ).trim().toLowerCase();
+
+      const pin = String(
+        values.pin || ''
+      ).trim();
+
+      if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ) {
+        throw new Error(
+          'Adresse e-mail invalide.'
+        );
+      }
+
+      if (!/^[0-9]{4,8}$/.test(pin)) {
+        throw new Error(
+          'Saisis ton code personnel actuel.'
+        );
+      }
+
+      const sb = coachClient();
+
+      if (!sb) {
+        throw new Error(
+          'Connexion Supabase indisponible.'
+        );
+      }
+
+      const currentState =
+        typeof state !== 'undefined'
+          ? state
+          : {};
+
+      const slug = String(
+        (
+          typeof CLUB_SLUG !== 'undefined'
+            ? CLUB_SLUG
+            : ''
+        ) ||
+        currentState.profile?.club_slug ||
+        currentState.profile?.clubSlug ||
+        currentState.club?.slug ||
+        new URLSearchParams(
+          window.location.search
+        ).get('club') ||
+        ''
+      ).trim();
+
+      if (!slug) {
+        throw new Error(
+          'Sélectionne ton club avant de continuer.'
+        );
+      }
+
+      const { data, error } =
+        await sb.rpc(
+          'eah_diver_set_pending_email_v1',
+          {
+            p_club_slug: slug,
+            p_eah_id: diverId(),
+            p_pin: pin,
+            p_email: email
+          }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.ok) {
+        throw new Error(
+          data?.error ||
+          'Enregistrement impossible.'
+        );
+      }
+
+      close();
+
+      alert(
+        'Adresse e-mail enregistrée avec succès.\n\n' +
+        'Elle est en attente de vérification.\n' +
+        'Aucun mot de passe ni carte NFC ' +
+        'n’a été modifié.'
+      );
+    },
+
+    'Enregistrer mon e-mail'
+  );
+}
+
 
   /* ===================================================
      PLONGEUR — CODE OUBLIE
