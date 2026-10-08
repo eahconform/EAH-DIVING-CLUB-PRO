@@ -8517,6 +8517,24 @@ async function setupProfile() {
     )
     .trim();
 
+const recoveryEmail =
+  val('setupRecoveryEmail')
+    .trim()
+    .toLowerCase();
+
+if (
+  !recoveryEmail ||
+  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)
+) {
+  setMessage(
+    'setupProfileMsg',
+    '<div class="notice error">' +
+    'Adresse e-mail de récupération obligatoire.' +
+    '</div>'
+  );
+  return;
+}
+
 
   const pin =
     val(
@@ -8634,7 +8652,9 @@ async function setupProfile() {
     const activation =
       await sb.rpc(
 
-        'activate_diver_profile',
+        
+'eah_activate_diver_with_email_v1',
+
 
         {
 
@@ -8649,6 +8669,9 @@ async function setupProfile() {
 
           p_last_name:
             lastName,
+
+p_recovery_email:
+  recoveryEmail,
 
           p_photo_url:
             val(
