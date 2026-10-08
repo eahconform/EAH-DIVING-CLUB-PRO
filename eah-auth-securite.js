@@ -281,46 +281,63 @@
      COACH — MOT DE PASSE OUBLIE
   =================================================== */
 
-  function coachForgot() {
-    openDialog(
-      'Mot de passe Coach oublié',
-      [
-        {
-          name: 'email',
-          label: 'Adresse e-mail du Coach',
-          type: 'email',
-          value: $('#coachEmail')?.value || '',
-          autocomplete: 'email'
-        }
-      ],
-      async ({ email }, { close }) => {
-        const sb = coachClient();
+  
+function coachForgot() {
 
-        if (!sb) {
-          throw new Error('Supabase indisponible.');
-        }
+  openDialog(
+    'Demande de récupération Coach',
+    [
+      {
+        name: 'email',
+        label: 'Adresse e-mail de référence du Coach',
+        type: 'email',
+        value: $('#coachEmail')?.value || '',
+        autocomplete: 'email'
+      }
+    ],
 
-        const { error } =
-          await sb.auth.resetPasswordForEmail(
-            email.trim(),
-            {
-              redirectTo:
-                ROOT + '?eahCoachRecovery=1'
-            }
-          );
+    async ({ email }, { close }) => {
 
-        if (error) throw error;
+      const sb = coachClient();
 
-        close();
-
-        alert(
-          'Si ce compte existe, un e-mail de ' +
-          'réinitialisation sera envoyé.'
+      if (!sb) {
+        throw new Error(
+          'Connexion Supabase indisponible.'
         );
-      },
-      'Recevoir le lien sécurisé'
-    );
-  }
+      }
+
+      const { data, error } = await sb.rpc(
+        'eah_request_recovery_v1',
+        {
+          p_club_slug: clubSlug(),
+          p_account_type: 'COACH',
+          p_identifier: email.trim().toLowerCase()
+        }
+      );
+
+      if (error) throw error;
+
+      if (!data?.ok) {
+        throw new Error(
+          'Impossible de transmettre la demande.'
+        );
+      }
+
+      close();
+
+      alert(
+        'Demande transmise.\n\n' +
+        'Si cette adresse correspond à un profil, ' +
+        'la demande sera examinée par ' +
+        'l’administrateur EAH Diving.\n\n' +
+        'Ton mot de passe actuel reste inchangé.'
+      );
+    },
+
+    'Envoyer ma demande'
+  );
+}
+
 
   /* ===================================================
      COACH — MODIFIER / REINITIALISER
