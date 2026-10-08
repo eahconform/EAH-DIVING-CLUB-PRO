@@ -1,104 +1,78 @@
 (() => {
-
   'use strict';
-
 
   /* ============================================================
      EAH DIVING PRO CLUB
-     FRONTEND STABLE V8
-     06/10/2026
+     FRONTEND V8.1 — 08/10/2026
 
-     OBJECTIFS
-     ------------------------------------------------------------
      - navigation indépendante de Supabase
-     - un seul routeur
-     - profils public / privé / NFC
-     - connexion plongeur
-     - connexion coach
-     - carte coach
-     - dashboard coach
-     - évaluations
-     - actualités
-     - spots
-     - tarifs
-     - blazons
-     - population
+     - profils public / privé / NFC / QR
+     - connexion plongeur sans choix du club
+     - connexion coach + carte coach
+     - dashboard coach + Mes plongeurs
+     - historique notes / Grade Reports / vidéos
+     - grading EAH / World Aquatics
+     - Population : profils PUBLIC uniquement
+     - demandes de grading EAH ou coach du club
+     - blazons / spots / actualités / tarifs
   ============================================================ */
 
-
-  const CONFIG =
-    window.EAH_CONFIG
-    ||
-    {};
-
+  const CONFIG = window.EAH_CONFIG || {};
 
   const URL_PARAMS =
     new URLSearchParams(
       window.location.search
     );
 
-
   let CLUB_SLUG =
     String(
-      URL_PARAMS.get(
-        'club'
-      )
-      ||
-      ''
-    )
-    .trim();
+      URL_PARAMS.get('club') || ''
+    ).trim();
+
+  let supabaseClient = null;
 
 
-  let supabaseClient =
-    null;
-
+  /* ============================================================
+     ETAT GLOBAL
+  ============================================================ */
 
   const state = {
 
-    club:
-      null,
+    club: null,
 
-    membership:
-      null,
+    membership: null,
 
-    coach:
-      null,
+    coach: null,
 
-    divers:
-      [],
+    coachCardToken: '',
 
-    evaluations:
-      [],
+    divers: [],
 
-    groups:
-      [],
+    evaluations: [],
 
-    spots:
-      [],
+    groups: [],
 
-    pricing:
-      [],
+    spots: [],
 
-    news:
-      [],
+    pricing: [],
 
-    blazons:
-      [],
+    news: [],
 
-    profile:
-      null,
+    blazons: [],
 
-    profileHistory:
-      [],
+    profile: null,
 
-    profileBlazons:
-      [],
+    profileHistory: [],
 
-    cardContext:
-      null,
+    profileBlazons: [],
 
-    evaluationBusy:
-      false
+    cardContext: null,
+
+    evaluationBusy: false,
+
+    gradingDestination: 'EAH',
+
+    gradingProfile: null
 
   };
 
@@ -106,7 +80,6 @@
   /* ============================================================
      PAGES
   ============================================================ */
-
 
   const PAGE_IDS =
     new Set([
@@ -147,7 +120,6 @@
   /* ============================================================
      CRITERES EAH
   ============================================================ */
-
 
   const CRITERIA = {
 
@@ -246,7 +218,6 @@
   /* ============================================================
      NOMS DES PLONGEONS
   ============================================================ */
-
 
   const DIVE_NAMES = {
 
@@ -497,68 +468,45 @@
      OUTILS DOM
   ============================================================ */
 
-
-  function qs(
-    selector,
-    root = document
-  ) {
-
-    return root.querySelector(
-      selector
-    );
-
-  }
-
-
-  function qsa(
-    selector,
-    root = document
-  ) {
-
-    return Array.from(
-
-      root.querySelectorAll(
+  const qs =
+    (
+      selector,
+      root = document
+    ) =>
+      root.querySelector(
         selector
-      )
-
-    );
-
-  }
+      );
 
 
-  function byId(
-    id
-  ) {
+  const qsa =
+    (
+      selector,
+      root = document
+    ) =>
+      Array.from(
+        root.querySelectorAll(
+          selector
+        )
+      );
 
-    return document.getElementById(
-      id
-    );
 
-  }
-
-
-  function val(
-    id
-  ) {
-
-    const element =
-      byId(
+  const byId =
+    id =>
+      document.getElementById(
         id
       );
 
 
-    return element
-      ?
-      element.value
-      :
+  const val =
+    id =>
+      byId(id)?.value
+      ??
       '';
-
-  }
 
 
   function setText(
     id,
-    text
+    value
   ) {
 
     const element =
@@ -568,19 +516,17 @@
 
 
     if (!element) {
-
       return;
-
     }
 
 
     element.textContent =
-      text == null
+      value == null
       ?
       ''
       :
       String(
-        text
+        value
       );
 
   }
@@ -590,7 +536,6 @@
      SECURITE HTML
   ============================================================ */
 
-
   function escapeHtml(
     value
   ) {
@@ -599,49 +544,41 @@
       value ?? ''
     )
 
-    .replace(
-      /&/g,
-      '&amp;'
-    )
+      .replace(
+        /&/g,
+        '&amp;'
+      )
 
-    .replace(
-      /</g,
-      '&lt;'
-    )
+      .replace(
+        /</g,
+        '&lt;'
+      )
 
-    .replace(
-      />/g,
-      '&gt;'
-    )
+      .replace(
+        />/g,
+        '&gt;'
+      )
 
-    .replace(
-      /"/g,
-      '&quot;'
-    )
+      .replace(
+        /"/g,
+        '&quot;'
+      )
 
-    .replace(
-      /'/g,
-      '&#039;'
-    );
-
-  }
-
-
-  function escapeAttr(
-    value
-  ) {
-
-    return escapeHtml(
-      value
-    );
+      .replace(
+        /'/g,
+        '&#039;'
+      );
 
   }
+
+
+  const escapeAttr =
+    escapeHtml;
 
 
   /* ============================================================
-     OUTILS
+     OUTILS GENERAUX
   ============================================================ */
-
 
   function firstObject(
     value
@@ -653,9 +590,11 @@
       )
     ) {
 
-      return value[0]
-      ||
-      null;
+      return (
+        value[0]
+        ||
+        null
+      );
 
     }
 
@@ -718,11 +657,9 @@
   ) {
 
     if (
-      value ===
-        null
+      value === null
       ||
-      value ===
-        ''
+      value === ''
       ||
       typeof value ===
         'undefined'
@@ -779,10 +716,10 @@
       10
 
     )
-    .replace(
-      '.',
-      ','
-    );
+      .replace(
+        '.',
+        ','
+      );
 
   }
 
@@ -835,9 +772,9 @@
       }
 
     )
-    .format(
-      date
-    );
+      .format(
+        date
+      );
 
   }
 
@@ -851,18 +788,18 @@
         value || ''
       )
 
-      .normalize(
-        'NFD'
-      )
+        .normalize(
+          'NFD'
+        )
 
-      .replace(
-        /[\u0300-\u036f]/g,
-        ''
-      )
+        .replace(
+          /[\u0300-\u036f]/g,
+          ''
+        )
 
-      .trim()
+        .trim()
 
-      .toUpperCase();
+        .toUpperCase();
 
 
     return (
@@ -886,14 +823,14 @@
         value || ''
       )
 
-      .trim()
+        .trim()
 
-      .toUpperCase()
+        .toUpperCase()
 
-      .replace(
-        /\s+/g,
-        ''
-      );
+        .replace(
+          /\s+/g,
+          ''
+        );
 
 
     if (
@@ -925,14 +862,14 @@
       value || ''
     )
 
-    .trim()
+      .trim()
 
-    .toUpperCase()
+      .toUpperCase()
 
-    .replace(
-      /\s+/g,
-      ''
-    );
+      .replace(
+        /\s+/g,
+        ''
+      );
 
   }
 
@@ -940,7 +877,6 @@
   /* ============================================================
      MESSAGES
   ============================================================ */
-
 
   function showMessage(
     id,
@@ -992,13 +928,13 @@
     type = 'info'
   ) {
 
-    const container =
+    const root =
       byId(
         'toastContainer'
       );
 
 
-    if (!container) {
+    if (!root) {
 
       return;
 
@@ -1023,17 +959,14 @@
       );
 
 
-    container.appendChild(
+    root.appendChild(
       element
     );
 
 
-    window.setTimeout(
-      () => {
-
-        element.remove();
-
-      },
+    setTimeout(
+      () =>
+        element.remove(),
       4000
     );
 
@@ -1042,13 +975,7 @@
 
   /* ============================================================
      SUPABASE
-
-     IMPORTANT :
-     Cette fonction est aussi exposée dans window
-     pour supprimer définitivement l'erreur :
-     requireSupabase is not defined
   ============================================================ */
-
 
   function requireSupabase() {
 
@@ -1129,54 +1056,148 @@
 
 
   /* ============================================================
-     NAVIGATION
-
-     CE MODULE NE DEPEND PAS DE SUPABASE.
-
-     Même si Supabase plante,
-     les catégories du site continuent
-     de fonctionner.
+     RPC MULTIPLES SIGNATURES
   ============================================================ */
 
+  async function rpcAttempt(
+    name,
+    payloads
+  ) {
+
+    let lastError =
+      null;
+
+
+    for (
+      const payload
+      of payloads
+    ) {
+
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await requireSupabase()
+            .rpc(
+              name,
+              payload
+            );
+
+
+        if (!error) {
+
+          return data;
+
+        }
+
+
+        lastError =
+          error;
+
+      } catch (
+        error
+      ) {
+
+        lastError =
+          error;
+
+      }
+
+    }
+
+
+    throw (
+
+      lastError
+
+      ||
+
+      new Error(
+        'RPC '
+        +
+        name
+        +
+        ' indisponible.'
+      )
+
+    );
+
+  }
+
+
+  /* ============================================================
+     SHA 256
+  ============================================================ */
+
+  async function sha256Hex(
+    text
+  ) {
+
+    const bytes =
+      new TextEncoder()
+        .encode(
+          String(
+            text || ''
+          )
+        );
+
+
+    const digest =
+      await crypto.subtle.digest(
+
+        'SHA-256',
+
+        bytes
+
+      );
+
+
+    return Array
+      .from(
+        new Uint8Array(
+          digest
+        )
+      )
+      .map(
+        byte =>
+          byte
+            .toString(16)
+            .padStart(
+              2,
+              '0'
+            )
+      )
+      .join(
+        ''
+      );
+
+  }
+
+
+  /* ============================================================
+     NAVIGATION
+  ============================================================ */
 
   function closeMobileMenu() {
 
-    const navigation =
-      byId(
-        'navigation'
-      );
-
-
-    const button =
-      byId(
-        'mobileMenu'
-      );
-
-
-    navigation
+    byId(
+      'navigation'
+    )
       ?.classList
       .remove(
-        'open'
-      );
-
-
-    navigation
-      ?.classList
-      .remove(
+        'open',
         'active'
       );
 
 
-    button
+    byId(
+      'mobileMenu'
+    )
       ?.classList
       .remove(
-        'open'
-      );
-
-
-    button
-      ?.classList
-      .remove(
+        'open',
         'active'
       );
 
@@ -1201,20 +1222,20 @@
     qsa(
       '.page'
     )
-    .forEach(
-      function(section) {
+      .forEach(
+        section => {
 
-        section.classList.toggle(
+          section.classList.toggle(
 
-          'active',
+            'active',
 
-          section.id ===
-          page
+            section.id ===
+              page
 
-        );
+          );
 
-      }
-    );
+        }
+      );
 
 
     document
@@ -1236,20 +1257,20 @@
     qsa(
       '[data-page]'
     )
-    .forEach(
-      function(link) {
+      .forEach(
+        link => {
 
-        link.classList.toggle(
+          link.classList.toggle(
 
-          'active',
+            'active',
 
-          link.dataset.page ===
-          page
+            link.dataset.page ===
+              page
 
-        );
+          );
 
-      }
-    );
+        }
+      );
 
 
     closeMobileMenu();
@@ -1334,16 +1355,15 @@
 
     const raw =
       String(
-        window.location.hash ||
-        ''
+        window.location.hash || ''
       )
 
-      .replace(
-        /^#/,
-        ''
-      )
+        .replace(
+          /^#/,
+          ''
+        )
 
-      .trim();
+        .trim();
 
 
     return PAGE_IDS.has(
@@ -1359,18 +1379,11 @@
 
   function initRouter() {
 
-
-    /*
-      Navigation centrale.
-    */
-
-
     document.addEventListener(
 
       'click',
 
-      function(event) {
-
+      event => {
 
         const pageLink =
           event.target.closest(
@@ -1380,29 +1393,21 @@
 
         if (
           pageLink
+          &&
+          PAGE_IDS.has(
+            pageLink.dataset.page
+          )
         ) {
 
-          const page =
-            pageLink.dataset.page;
+          event.preventDefault();
 
 
-          if (
-            PAGE_IDS.has(
-              page
-            )
-          ) {
-
-            event.preventDefault();
+          showPage(
+            pageLink.dataset.page
+          );
 
 
-            showPage(
-              page
-            );
-
-
-            return;
-
-          }
+          return;
 
         }
 
@@ -1415,31 +1420,21 @@
 
         if (
           pageButton
+          &&
+          PAGE_IDS.has(
+            pageButton.dataset.pageButton
+          )
         ) {
 
-          const page =
-            pageButton
-              .dataset
-              .pageButton;
+          event.preventDefault();
 
 
-          if (
-            PAGE_IDS.has(
-              page
-            )
-          ) {
-
-            event.preventDefault();
+          showPage(
+            pageButton.dataset.pageButton
+          );
 
 
-            showPage(
-              page
-            );
-
-
-            return;
-
-          }
+          return;
 
         }
 
@@ -1452,28 +1447,18 @@
 
         if (
           openCard
+          &&
+          PAGE_IDS.has(
+            openCard.dataset.open
+          )
         ) {
 
-          const page =
-            openCard
-              .dataset
-              .open;
+          event.preventDefault();
 
 
-          if (
-            PAGE_IDS.has(
-              page
-            )
-          ) {
-
-            event.preventDefault();
-
-
-            showPage(
-              page
-            );
-
-          }
+          showPage(
+            openCard.dataset.open
+          );
 
         }
 
@@ -1482,17 +1467,11 @@
     );
 
 
-    /*
-      Navigation bouton précédent
-      / modification du hash.
-    */
-
-
     window.addEventListener(
 
       'hashchange',
 
-      function() {
+      () => {
 
         showPage(
 
@@ -1512,114 +1491,94 @@
     );
 
 
-    /*
-      Menu mobile.
-    */
-
-
     byId(
       'mobileMenu'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'click',
+        'click',
 
-      function() {
+        () => {
 
-        const navigation =
           byId(
             'navigation'
-          );
+          )
+            ?.classList
+            .toggle(
+              'open'
+            );
 
 
-        const button =
+          byId(
+            'navigation'
+          )
+            ?.classList
+            .toggle(
+              'active'
+            );
+
+
           byId(
             'mobileMenu'
-          );
+          )
+            ?.classList
+            .toggle(
+              'open'
+            );
 
 
-        navigation
-          ?.classList
-          .toggle(
-            'open'
-          );
+          byId(
+            'mobileMenu'
+          )
+            ?.classList
+            .toggle(
+              'active'
+            );
 
+        }
 
-        navigation
-          ?.classList
-          .toggle(
-            'active'
-          );
-
-
-        button
-          ?.classList
-          .toggle(
-            'open'
-          );
-
-
-        button
-          ?.classList
-          .toggle(
-            'active'
-          );
-
-      }
-
-    );
-
-
-    /*
-      Dropdown disciplines.
-    */
+      );
 
 
     qsa(
       '.nav-dropdown-button'
     )
-    .forEach(
-      function(button) {
+      .forEach(
+        button => {
 
-        button.addEventListener(
+          button.addEventListener(
 
-          'click',
+            'click',
 
-          function(event) {
+            event => {
 
-            event.preventDefault();
+              event.preventDefault();
 
-            event.stopPropagation();
-
-
-            button
-              .closest(
-                '.nav-dropdown'
-              )
-              ?.classList
-              .toggle(
-                'open'
-              );
-
-          }
-
-        );
-
-      }
-    );
+              event.stopPropagation();
 
 
-    /*
-      Fermer dropdown
-      en cliquant ailleurs.
-    */
+              button
+                .closest(
+                  '.nav-dropdown'
+                )
+                ?.classList
+                .toggle(
+                  'open'
+                );
+
+            }
+
+          );
+
+        }
+      );
 
 
     document.addEventListener(
 
       'click',
 
-      function(event) {
+      event => {
 
         if (
           !event.target.closest(
@@ -1630,26 +1589,18 @@
           qsa(
             '.nav-dropdown.open'
           )
-          .forEach(
-            function(element) {
-
-              element.classList.remove(
-                'open'
-              );
-
-            }
-          );
+            .forEach(
+              element =>
+                element.classList.remove(
+                  'open'
+                )
+            );
 
         }
 
       }
 
     );
-
-
-    /*
-      Première page.
-    */
 
 
     showPage(
@@ -1674,7 +1625,6 @@
   /* ============================================================
      MODAL
   ============================================================ */
-
 
   function openModal(
     html
@@ -1780,12 +1730,11 @@
 
   function initModal() {
 
-
     document.addEventListener(
 
       'click',
 
-      function(event) {
+      event => {
 
         if (
           event.target.closest(
@@ -1809,7 +1758,7 @@
 
       'keydown',
 
-      function(event) {
+      event => {
 
         if (
           event.key ===
@@ -1828,9 +1777,8 @@
 
 
   /* ============================================================
-     CHARGER UNE TABLE PUBLIQUE
+     DONNEES PUBLIQUES
   ============================================================ */
-
 
   async function loadTableSafe(
     table,
@@ -1838,7 +1786,6 @@
   ) {
 
     try {
-
 
       let query =
         requireSupabase()
@@ -1864,11 +1811,8 @@
 
 
       const {
-
         data,
-
         error
-
       } =
         await query;
 
@@ -1882,8 +1826,11 @@
       }
 
 
-      return data || [];
-
+      return (
+        data
+        ||
+        []
+      );
 
     } catch (
       error
@@ -1909,13 +1856,7 @@
   }
 
 
-  /* ============================================================
-     DONNEES PUBLIQUES
-  ============================================================ */
-
-
   async function loadPublicData() {
-
 
     const [
 
@@ -1955,114 +1896,104 @@
 
     state.blazons =
       blazons.sort(
-        function(a,b) {
+        (
+          a,
+          b
+        ) =>
 
-          return (
+          Number(
+            a.sort_order
+            ||
+            a.order
+            ||
+            0
+          )
 
-            Number(
-              a.sort_order
-              ||
-              a.order
-              ||
-              0
-            )
+          -
 
-            -
-
-            Number(
-              b.sort_order
-              ||
-              b.order
-              ||
-              0
-            )
-
-          );
-
-        }
+          Number(
+            b.sort_order
+            ||
+            b.order
+            ||
+            0
+          )
       );
 
 
     state.spots =
       spots.sort(
-        function(a,b) {
+        (
+          a,
+          b
+        ) =>
 
-          return String(
-            a.city ||
-            ''
+          String(
+            a.city || ''
           )
-          .localeCompare(
+            .localeCompare(
 
-            String(
-              b.city ||
-              ''
-            ),
+              String(
+                b.city || ''
+              ),
 
-            'fr'
+              'fr'
 
-          );
-
-        }
+            )
       );
 
 
     state.news =
       news.sort(
-        function(a,b) {
+        (
+          a,
+          b
+        ) =>
 
-          return (
+          new Date(
+            b.published_at
+            ||
+            b.date
+            ||
+            0
+          )
 
-            new Date(
-              b.published_at
-              ||
-              b.date
-              ||
-              0
-            )
+          -
 
-            -
-
-            new Date(
-              a.published_at
-              ||
-              a.date
-              ||
-              0
-            )
-
-          );
-
-        }
+          new Date(
+            a.published_at
+            ||
+            a.date
+            ||
+            0
+          )
       );
 
 
     state.pricing =
       pricing.sort(
-        function(a,b) {
+        (
+          a,
+          b
+        ) =>
 
-          return (
+          Number(
+            a.sort_order
+            ||
+            a.order
+            ||
+            0
+          )
 
-            Number(
-              a.sort_order
-              ||
-              a.order
-              ||
-              0
-            )
+          -
 
-            -
-
-            Number(
-              b.sort_order
-              ||
-              b.order
-              ||
-              0
-            )
-
-          );
-
-        }
+          Number(
+            b.sort_order
+            ||
+            b.order
+            ||
+            0
+          )
       );
 
 
@@ -2082,7 +2013,6 @@
   /* ============================================================
      BLAZONS
   ============================================================ */
-
 
   function renderBlazons() {
 
@@ -2119,123 +2049,104 @@
 
     root.innerHTML =
       state.blazons
-      .map(
-        function(
-          item,
-          index
-        ) {
+        .map(
+          (
+            item,
+            index
+          ) => {
+
+            const name =
+
+              item.name
+
+              ||
+
+              item.blazon_name
+
+              ||
+
+              item.key
+
+              ||
+
+              'Blazon EAH';
 
 
-          const name =
+            const image =
 
-            item.name
+              item.image_url
 
-            ||
+              ||
 
-            item.blazon_name
+              item.photo_url
 
-            ||
+              ||
 
-            item.key
-
-            ||
-
-            'Blazon EAH';
+              '';
 
 
-          const image =
+            return `
 
-            item.image_url
+              <article
+                class="blazon-card"
+                data-blazon-index="${index}"
+              >
 
-            ||
+                ${
 
-            item.photo_url
+                  image
 
-            ||
+                  ?
 
-            '';
+                  `
 
+                  <img
+                    src="${escapeAttr(image)}"
+                    alt="${escapeAttr(name)}"
+                    loading="eager"
+                  >
 
-          return `
+                  `
 
-            <article
+                  :
 
-              class="blazon-card"
+                  ''
 
-              data-blazon-index="${index}"
+                }
 
-            >
+                <div class="blazon-card-content">
 
+                  <span class="overline">
+                    PROGRESSION
+                  </span>
 
-              ${
+                  <h3>
+                    ${escapeHtml(name)}
+                  </h3>
 
-                image
+                  <p>
 
-                ?
+                    ${escapeHtml(
+                      item.summary
+                      ||
+                      item.description
+                      ||
+                      'Voir les conditions du blazon.'
+                    )}
 
-                `
+                  </p>
 
-                <img
+                </div>
 
-                  src="${escapeAttr(image)}"
+              </article>
 
-                  alt="${escapeAttr(name)}"
+            `;
 
-                  loading="eager"
-
-                >
-
-                `
-
-                :
-
-                ''
-
-              }
-
-
-              <div class="blazon-card-content">
-
-
-                <span class="overline">
-
-                  PROGRESSION
-
-                </span>
-
-
-                <h3>
-
-                  ${escapeHtml(name)}
-
-                </h3>
-
-
-                <p>
-
-                  ${escapeHtml(
-                    item.summary
-                    ||
-                    item.description
-                    ||
-                    'Voir les conditions du blazon.'
-                  )}
-
-                </p>
-
-
-              </div>
-
-
-            </article>
-
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          }
+        )
+        .join(
+          ''
+        );
 
   }
 
@@ -2243,7 +2154,6 @@
   /* ============================================================
      SPOTS
   ============================================================ */
-
 
   function renderSpots() {
 
@@ -2280,22 +2190,16 @@
 
     root.innerHTML =
       state.spots
-      .map(
-        function(
-          spot,
-          index
-        ) {
-
-          return `
+        .map(
+          (
+            spot,
+            index
+          ) => `
 
             <article
-
               class="spot-card"
-
               data-spot-index="${index}"
-
             >
-
 
               ${
 
@@ -2306,18 +2210,15 @@
                 `
 
                 <img
-
                   src="${escapeAttr(
                     spot.photo_url
                   )}"
-
                   alt="${escapeAttr(
-                    spot.name ||
+                    spot.name
+                    ||
                     'Spot EAH'
                   )}"
-
                   loading="eager"
-
                 >
 
                 `
@@ -2328,52 +2229,47 @@
 
               }
 
-
               <div>
-
 
                 <span class="overline">
 
                   ${escapeHtml(
-                    spot.city ||
+                    spot.city
+                    ||
                     'SPOT EAH'
                   )}
 
                 </span>
 
-
                 <h3>
 
                   ${escapeHtml(
-                    spot.name ||
+                    spot.name
+                    ||
                     'Spot'
                   )}
 
                 </h3>
 
-
                 <p>
 
                   ${escapeHtml(
-                    spot.heights ||
+                    spot.heights
+                    ||
                     ''
                   )}
 
                 </p>
 
-
               </div>
-
 
             </article>
 
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          `
+        )
+        .join(
+          ''
+        );
 
   }
 
@@ -2381,7 +2277,6 @@
   /* ============================================================
      ACTUALITES
   ============================================================ */
-
 
   function renderNews() {
 
@@ -2418,22 +2313,16 @@
 
     root.innerHTML =
       state.news
-      .map(
-        function(
-          item,
-          index
-        ) {
-
-          return `
+        .map(
+          (
+            item,
+            index
+          ) => `
 
             <article
-
               class="news-card"
-
               data-news-index="${index}"
-
             >
-
 
               ${
 
@@ -2444,18 +2333,15 @@
                 `
 
                 <img
-
                   src="${escapeAttr(
                     item.image_url
                   )}"
-
                   alt="${escapeAttr(
-                    item.title ||
+                    item.title
+                    ||
                     'Actualité'
                   )}"
-
                   loading="eager"
-
                 >
 
                 `
@@ -2466,9 +2352,7 @@
 
               }
 
-
               <div>
-
 
                 <span class="overline">
 
@@ -2484,39 +2368,35 @@
 
                 </span>
 
-
                 <h3>
 
                   ${escapeHtml(
-                    item.title ||
+                    item.title
+                    ||
                     'Actualité'
                   )}
 
                 </h3>
 
-
                 <p>
 
                   ${escapeHtml(
-                    item.summary ||
+                    item.summary
+                    ||
                     ''
                   )}
 
                 </p>
 
-
               </div>
-
 
             </article>
 
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          `
+        )
+        .join(
+          ''
+        );
 
   }
 
@@ -2524,7 +2404,6 @@
   /* ============================================================
      TARIFS
   ============================================================ */
-
 
   function renderPricing() {
 
@@ -2561,124 +2440,117 @@
 
     root.innerHTML =
       state.pricing
-      .map(
-        function(item) {
+        .map(
+          item => {
+
+            const price =
+              item.price ==
+                null
+              ?
+              ''
+              :
+              fmtNumber(
+                item.price
+              )
+              +
+              ' €';
 
 
-          const price =
+            return `
 
-            item.price ==
-            null
-
-            ?
-
-            ''
-
-            :
-
-            fmtNumber(
-              item.price
-            )
-            +
-            ' €';
-
-
-          return `
-
-            <article
-
-              class="pricing-card ${item.featured ? 'featured' : ''}"
-
-            >
-
-
-              <span class="overline">
-
-                EAH DIVING PRO
-
-              </span>
-
-
-              <h3>
-
-                ${escapeHtml(
-                  item.name
-                  ||
-                  item.offer_name
-                  ||
-                  'Offre'
-                )}
-
-              </h3>
-
-
-              ${
-
-                price
-
-                ?
-
-                `
-
-                <strong class="price">
-
-                  ${escapeHtml(price)}
-
-                </strong>
-
-                `
-
-                :
-
-                ''
-
-              }
-
-
-              <p>
-
-                ${escapeHtml(
-                  item.description ||
+              <article
+                class="pricing-card ${
+                  item.featured
+                  ?
+                  'featured'
+                  :
                   ''
-                )}
+                }"
+              >
 
-              </p>
+                <span class="overline">
+                  EAH DIVING PRO
+                </span>
 
-
-              ${
-
-                item.renewal
-
-                ?
-
-                `
-
-                <small>
+                <h3>
 
                   ${escapeHtml(
-                    item.renewal
+                    item.name
+                    ||
+                    item.offer_name
+                    ||
+                    'Offre'
                   )}
 
-                </small>
+                </h3>
 
-                `
+                ${
 
-                :
+                  price
 
-                ''
+                  ?
 
-              }
+                  `
 
+                  <strong class="price">
 
-            </article>
+                    ${escapeHtml(
+                      price
+                    )}
 
-          `;
+                  </strong>
 
-        }
-      )
-      .join(
-        ''
-      );
+                  `
+
+                  :
+
+                  ''
+
+                }
+
+                <p>
+
+                  ${escapeHtml(
+                    item.description
+                    ||
+                    ''
+                  )}
+
+                </p>
+
+                ${
+
+                  item.renewal
+
+                  ?
+
+                  `
+
+                  <small>
+
+                    ${escapeHtml(
+                      item.renewal
+                    )}
+
+                  </small>
+
+                  `
+
+                  :
+
+                  ''
+
+                }
+
+              </article>
+
+            `;
+
+          }
+        )
+        .join(
+          ''
+        );
 
   }
 
@@ -2686,7 +2558,6 @@
   /* ============================================================
      SELECT SPOTS EVALUATION
   ============================================================ */
-
 
   function renderSpotSelect() {
 
@@ -2718,24 +2589,22 @@
       +
 
       state.spots
-      .map(
-        function(spot) {
-
-          return `
+        .map(
+          spot => `
 
             <option
-
               value="${escapeAttr(
-                spot.id ||
+                spot.id
+                ||
                 ''
               )}"
-
             >
 
               ${escapeHtml(
 
                 (
-                  spot.name ||
+                  spot.name
+                  ||
                   'Spot'
                 )
 
@@ -2744,7 +2613,8 @@
                 (
                   spot.city
                   ?
-                  ' — ' +
+                  ' — '
+                  +
                   spot.city
                   :
                   ''
@@ -2754,13 +2624,11 @@
 
             </option>
 
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          `
+        )
+        .join(
+          ''
+        );
 
 
     if (
@@ -2776,24 +2644,16 @@
 
 
   /* ============================================================
-     CLIC BLAZONS / SPOTS / ACTUALITES
+     CARTES PUBLIQUES
   ============================================================ */
 
-
   function bindPublicCards() {
-
 
     document.addEventListener(
 
       'click',
 
-      function(event) {
-
-
-        /*
-          BLAZON
-        */
-
+      event => {
 
         const blazonCard =
           event.target.closest(
@@ -2805,16 +2665,11 @@
           blazonCard
         ) {
 
-
           const item =
             state.blazons[
-
               Number(
-                blazonCard
-                  .dataset
-                  .blazonIndex
+                blazonCard.dataset.blazonIndex
               )
-
             ];
 
 
@@ -2829,13 +2684,9 @@
             safeJson(
 
               item.rules_json
-
               ||
-
               item.rules
-
               ||
-
               {},
 
               {}
@@ -2859,11 +2710,8 @@
           openModal(`
 
             <span class="overline">
-
               BLAZON EAH
-
             </span>
-
 
             <h2>
 
@@ -2879,7 +2727,6 @@
 
             </h2>
 
-
             ${
 
               item.image_url
@@ -2889,15 +2736,11 @@
               `
 
               <img
-
                 class="modal-image"
-
                 src="${escapeAttr(
                   item.image_url
                 )}"
-
                 alt=""
-
               >
 
               `
@@ -2907,7 +2750,6 @@
               ''
 
             }
-
 
             <p>
 
@@ -2921,7 +2763,6 @@
 
             </p>
 
-
             ${
 
               rulesText
@@ -2933,11 +2774,11 @@
 
               `
 
-              <pre class="modal-rules">
-
-${escapeHtml(rulesText)}
-
-              </pre>
+              <pre class="modal-rules">${
+                escapeHtml(
+                  rulesText
+                )
+              }</pre>
 
               `
 
@@ -2955,11 +2796,6 @@ ${escapeHtml(rulesText)}
         }
 
 
-        /*
-          SPOT
-        */
-
-
         const spotCard =
           event.target.closest(
             '[data-spot-index]'
@@ -2970,16 +2806,11 @@ ${escapeHtml(rulesText)}
           spotCard
         ) {
 
-
           const spot =
             state.spots[
-
               Number(
-                spotCard
-                  .dataset
-                  .spotIndex
+                spotCard.dataset.spotIndex
               )
-
             ];
 
 
@@ -2993,21 +2824,18 @@ ${escapeHtml(rulesText)}
           openModal(`
 
             <span class="overline">
-
               SPOT EAH
-
             </span>
-
 
             <h2>
 
               ${escapeHtml(
-                spot.name ||
+                spot.name
+                ||
                 'Spot'
               )}
 
             </h2>
-
 
             ${
 
@@ -3018,15 +2846,11 @@ ${escapeHtml(rulesText)}
               `
 
               <img
-
                 class="modal-image"
-
                 src="${escapeAttr(
                   spot.photo_url
                 )}"
-
                 alt=""
-
               >
 
               `
@@ -3037,20 +2861,19 @@ ${escapeHtml(rulesText)}
 
             }
 
-
             <p>
 
               <strong>
 
                 ${escapeHtml(
-                  spot.city ||
+                  spot.city
+                  ||
                   ''
                 )}
 
               </strong>
 
             </p>
-
 
             ${
 
@@ -3077,7 +2900,6 @@ ${escapeHtml(rulesText)}
 
             }
 
-
             ${
 
               spot.address
@@ -3101,7 +2923,6 @@ ${escapeHtml(rulesText)}
               ''
 
             }
-
 
             ${
 
@@ -3135,11 +2956,6 @@ ${escapeHtml(rulesText)}
         }
 
 
-        /*
-          ACTUALITE
-        */
-
-
         const newsCard =
           event.target.closest(
             '[data-news-index]'
@@ -3150,16 +2966,11 @@ ${escapeHtml(rulesText)}
           newsCard
         ) {
 
-
           const item =
             state.news[
-
               Number(
-                newsCard
-                  .dataset
-                  .newsIndex
+                newsCard.dataset.newsIndex
               )
-
             ];
 
 
@@ -3175,22 +2986,22 @@ ${escapeHtml(rulesText)}
             <span class="overline">
 
               ${escapeHtml(
-                item.category ||
+                item.category
+                ||
                 'EAH DIVING'
               )}
 
             </span>
 
-
             <h2>
 
               ${escapeHtml(
-                item.title ||
+                item.title
+                ||
                 'Actualité'
               )}
 
             </h2>
-
 
             <p class="muted">
 
@@ -3204,7 +3015,6 @@ ${escapeHtml(rulesText)}
 
             </p>
 
-
             ${
 
               item.image_url
@@ -3214,15 +3024,11 @@ ${escapeHtml(rulesText)}
               `
 
               <img
-
                 class="modal-image"
-
                 src="${escapeAttr(
                   item.image_url
                 )}"
-
                 alt=""
-
               >
 
               `
@@ -3232,7 +3038,6 @@ ${escapeHtml(rulesText)}
               ''
 
             }
-
 
             ${
 
@@ -3245,21 +3050,14 @@ ${escapeHtml(rulesText)}
               <p>
 
                 <a
-
                   class="button small"
-
                   href="${escapeAttr(
                     item.video_url
                   )}"
-
                   target="_blank"
-
                   rel="noopener"
-
                 >
-
                   Voir la vidéo
-
                 </a>
 
               </p>
@@ -3272,23 +3070,23 @@ ${escapeHtml(rulesText)}
 
             }
 
-
             <div class="article-content">
 
-              ${escapeHtml(
-                item.content
-                ||
-                item.summary
-                ||
-                ''
-              )
-              .replace(
-                /\n/g,
-                '<br>'
-              )}
+              ${
+                escapeHtml(
+                  item.content
+                  ||
+                  item.summary
+                  ||
+                  ''
+                )
+                  .replace(
+                    /\n/g,
+                    '<br>'
+                  )
+              }
 
             </div>
-
 
             ${
 
@@ -3301,21 +3099,14 @@ ${escapeHtml(rulesText)}
               <p>
 
                 <a
-
                   class="button secondary small"
-
                   href="${escapeAttr(
                     item.link_url
                   )}"
-
                   target="_blank"
-
                   rel="noopener"
-
                 >
-
                   En savoir plus
-
                 </a>
 
               </p>
@@ -3340,150 +3131,70 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     RPC AVEC PLUSIEURS SIGNATURES POSSIBLES
+     POPULATION
+     PROFILS PUBLICS UNIQUEMENT
   ============================================================ */
 
-
-  async function rpcAttempt(
-    name,
-    payloads
+  function publicPopulationRows(
+    rows
   ) {
 
-    let lastError =
-      null;
-
-
-    for (
-      const payload
-      of payloads
-    ) {
-
-
-      try {
-
-
-        const {
-
-          data,
-
-          error
-
-        } =
-          await requireSupabase()
-            .rpc(
-              name,
-              payload
-            );
-
-
-        if (
-          !error
-        ) {
-
-          return data;
-
-        }
-
-
-        lastError =
-          error;
-
-
-      } catch (
-        error
-      ) {
-
-        lastError =
-          error;
-
-      }
-
-    }
-
-
-    throw (
-
-      lastError
-
+    return (
+      rows
       ||
+      []
+    )
+      .filter(
+        row => {
 
-      new Error(
-        'RPC '
-        +
-        name
-        +
-        ' indisponible.'
-      )
-
-    );
-
-  }
+          const visibility =
+            row.profile_visibility
+            ??
+            row.visibility;
 
 
-  /* ============================================================
-     SHA256
-  ============================================================ */
+          if (
+            visibility != null
+            &&
+            String(
+              visibility
+            ).trim() !==
+              ''
+          ) {
 
-
-  async function sha256Hex(
-    text
-  ) {
-
-    const bytes =
-      new TextEncoder()
-        .encode(
-          String(
-            text || ''
-          )
-        );
-
-
-    const digest =
-      await crypto
-        .subtle
-        .digest(
-
-          'SHA-256',
-
-          bytes
-
-        );
-
-
-    return Array
-      .from(
-        new Uint8Array(
-          digest
-        )
-      )
-      .map(
-        function(byte) {
-
-          return byte
-            .toString(
-              16
-            )
-            .padStart(
-              2,
-              '0'
+            return (
+              normalizeVisibility(
+                visibility
+              )
+              ===
+              'PUBLIC'
             );
 
+          }
+
+
+          if (
+            row.is_public ===
+              true
+            ||
+            row.public_profile ===
+              true
+          ) {
+
+            return true;
+
+          }
+
+
+          return false;
+
         }
-      )
-      .join(
-        ''
       );
 
   }
 
 
-  /* ============================================================
-     POPULATION
-  ============================================================ */
-
-
   async function searchPopulation() {
-
 
     const code =
       normalizeDiveCode(
@@ -3501,7 +3212,7 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     const root =
@@ -3556,7 +3267,6 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const data =
         await rpcAttempt(
 
@@ -3567,52 +3277,43 @@ ${escapeHtml(rulesText)}
             {
 
               p_dive_code:
-                code ||
-                null,
+                code || null,
 
               p_search:
-                name ||
-                null
+                name || null
 
             },
 
             {
 
               p_dive_code:
-                code ||
-                null,
+                code || null,
 
               p_name:
-                name ||
-                null
+                name || null
 
             },
 
             {
 
               p_code:
-                code ||
-                null,
+                code || null,
 
               p_query:
-                name ||
-                null
+                name || null
 
             },
 
             {
 
               p_club_slug:
-                CLUB_SLUG ||
-                null,
+                CLUB_SLUG || null,
 
               p_dive_code:
-                code ||
-                null,
+                code || null,
 
               p_search:
-                name ||
-                null
+                name || null
 
             }
 
@@ -3636,7 +3337,6 @@ ${escapeHtml(rulesText)}
           []
         );
 
-
     } catch (
       error
     ) {
@@ -3647,73 +3347,62 @@ ${escapeHtml(rulesText)}
     }
 
 
-    /*
-      Fallback direct pour une recherche nom/prénom.
-    */
-
-
     if (
       !rows.length
       &&
       name
     ) {
 
-
       try {
-
 
         const clean =
           name
-
-          .replace(
-            /[,%()]/g,
-            ' '
-          )
-
-          .trim();
+            .replace(
+              /[,%()]/g,
+              ' '
+            )
+            .trim();
 
 
         const {
-
           data,
-
           error
-
         } =
           await requireSupabase()
 
-          .from(
-            'divers'
-          )
+            .from(
+              'divers'
+            )
 
-          .select(
+            .select(
+              'eah_id,first_name,last_name,sex,current_blazon,profile_visibility,club_slug,photo_url,public_name,public_photo,active'
+            )
 
-            'eah_id,first_name,last_name,sex,current_blazon,profile_visibility,club_slug,photo_url,public_name,public_photo,active'
+            .eq(
+              'active',
+              true
+            )
 
-          )
+            .eq(
+              'profile_visibility',
+              'PUBLIC'
+            )
 
-          .eq(
-            'active',
-            true
-          )
+            .or(
+              'first_name.ilike.%'
+              +
+              clean
+              +
+              '%,last_name.ilike.%'
+              +
+              clean
+              +
+              '%'
+            )
 
-          .or(
-
-            'first_name.ilike.%'
-            +
-            clean
-            +
-            '%,last_name.ilike.%'
-            +
-            clean
-            +
-            '%'
-
-          )
-
-          .limit(
-            50
-          );
+            .limit(
+              50
+            );
 
 
         if (
@@ -3721,14 +3410,21 @@ ${escapeHtml(rulesText)}
         ) {
 
           rows =
-            data || [];
+            data
+            ||
+            [];
 
         }
-
 
       } catch (_) {}
 
     }
+
+
+    rows =
+      publicPopulationRows(
+        rows
+      );
 
 
     if (
@@ -3769,17 +3465,21 @@ ${escapeHtml(rulesText)}
     }
 
 
+    const publicRows =
+      publicPopulationRows(
+        rows
+      );
+
+
     if (
-      !rows
-      ||
-      !rows.length
+      !publicRows.length
     ) {
 
       root.innerHTML =
 
         '<div class="loading-panel">'
         +
-        'Aucun résultat.'
+        'Aucun profil public trouvé.'
         +
         '</div>';
 
@@ -3790,372 +3490,316 @@ ${escapeHtml(rulesText)}
 
 
     root.innerHTML =
-      rows
-      .map(
-        function(
-          row,
-          index
-        ) {
+      publicRows
+        .map(
+          row => {
 
+            const eahId =
 
-          const eahId =
-
-            row.eah_id
-
-            ||
-
-            row.EAH_ID
-
-            ||
-
-            '';
-
-
-          const visibility =
-            normalizeVisibility(
-
-              row.profile_visibility
+              row.eah_id
 
               ||
 
-              row.visibility
+              row.EAH_ID
 
-            );
+              ||
 
+              '';
 
-          const isPublic =
-            visibility ===
-            'PUBLIC';
 
+            const first =
 
-          const first =
-            row.first_name
-            ||
-            row.firstName
-            ||
-            '';
+              row.first_name
 
+              ||
 
-          const last =
-            row.last_name
-            ||
-            row.lastName
-            ||
-            '';
+              row.firstName
 
+              ||
 
-          const display =
+              '';
 
-            row.diver_display
 
-            ||
+            const last =
 
-            row.public_name_display
+              row.last_name
 
-            ||
+              ||
 
-            [
-              first,
-              last
-            ]
-            .filter(
-              Boolean
-            )
-            .join(
-              ' '
-            )
+              row.lastName
 
-            ||
+              ||
 
-            eahId
+              '';
 
-            ||
 
-            'Plongeur EAH';
+            const allowName =
+              row.public_name !==
+              false;
 
 
-          const score =
+            const display =
 
-            row.eah_score
+              row.diver_display
 
-            ??
+              ||
 
-            row.EAH_SCORE
+              row.public_name_display
 
-            ??
+              ||
 
-            row.score;
+              (
+                allowName
+                ?
+                [
+                  first,
+                  last
+                ]
+                  .filter(
+                    Boolean
+                  )
+                  .join(
+                    ' '
+                  )
+                :
+                ''
+              )
 
+              ||
 
-          const diveCode =
+              eahId
 
-            row.dive_code
+              ||
 
-            ||
+              'Plongeur EAH';
 
-            row.DIVE_CODE
 
-            ||
+            const score =
 
-            '';
+              row.eah_score
 
+              ??
 
-          const clubSlug =
+              row.EAH_SCORE
 
-            row.club_slug
+              ??
 
-            ||
+              row.score;
 
-            row.CLUB_SLUG
 
-            ||
+            const diveCode =
 
-            CLUB_SLUG
+              row.dive_code
 
-            ||
+              ||
 
-            '';
+              row.DIVE_CODE
 
+              ||
 
-          return `
+              '';
 
-            <article
 
-              class="population-card"
+            const clubSlug =
 
-              data-pop-index="${index}"
+              row.club_slug
 
-            >
+              ||
 
+              row.CLUB_SLUG
 
-              <div>
+              ||
 
+              CLUB_SLUG
 
-                <span class="overline">
+              ||
 
-                  ${escapeHtml(
-                    isPublic
-                    ?
-                    'PROFIL PUBLIC'
-                    :
-                    'PROFIL PRIVÉ'
-                  )}
+              '';
 
-                </span>
 
+            return `
 
-                <h3>
+              <article class="population-card">
 
-                  ${escapeHtml(
-                    display
-                  )}
+                <div>
 
-                </h3>
+                  <span class="overline">
+                    PROFIL PUBLIC
+                  </span>
 
+                  <h3>
 
-                <p>
+                    ${escapeHtml(
+                      display
+                    )}
 
-                  ${escapeHtml(
-                    eahId
-                  )}
-
-                </p>
-
-
-                ${
-
-                  diveCode
-
-                  ?
-
-                  `
-
-                  <p>
-
-                    <strong>
-
-                      ${escapeHtml(
-                        diveCode
-                      )}
-
-                    </strong>
-
-                    ${
-
-                      score != null
-
-                      ?
-
-                      ' — EAH '
-                      +
-                      escapeHtml(
-                        fmtNumber(
-                          score
-                        )
-                      )
-                      +
-                      '/10'
-
-                      :
-
-                      ''
-
-                    }
-
-                  </p>
-
-                  `
-
-                  :
-
-                  ''
-
-                }
-
-
-                ${
-
-                  row.current_blazon
-
-                  ?
-
-                  `
+                  </h3>
 
                   <p>
 
                     ${escapeHtml(
-                      row.current_blazon
+                      eahId
                     )}
 
                   </p>
 
-                  `
+                  ${
 
-                  :
+                    diveCode
 
-                  ''
+                    ?
 
-                }
+                    `
 
+                    <p>
 
-              </div>
+                      <strong>
 
+                        ${escapeHtml(
+                          diveCode
+                        )}
 
-              ${
+                      </strong>
 
-                isPublic
+                      ${
 
-                ?
+                        score != null
 
-                `
+                        ?
+
+                        ' — EAH '
+                        +
+                        escapeHtml(
+                          fmtNumber(
+                            score
+                          )
+                        )
+                        +
+                        '/10'
+
+                        :
+
+                        ''
+
+                      }
+
+                    </p>
+
+                    `
+
+                    :
+
+                    ''
+
+                  }
+
+                  ${
+
+                    row.current_blazon
+
+                    ?
+
+                    `
+
+                    <p>
+
+                      ${escapeHtml(
+                        row.current_blazon
+                      )}
+
+                    </p>
+
+                    `
+
+                    :
+
+                    ''
+
+                  }
+
+                </div>
 
                 <button
-
                   type="button"
-
                   class="button small"
-
                   data-public-profile="${escapeAttr(
                     eahId
                   )}"
-
                   data-club-slug="${escapeAttr(
                     clubSlug
                   )}"
-
                 >
-
                   Voir le profil
-
                 </button>
 
-                `
+              </article>
 
-                :
+            `;
 
-                `
-
-                <span class="badge">
-
-                  Détails privés
-
-                </span>
-
-                `
-
-              }
-
-
-            </article>
-
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          }
+        )
+        .join(
+          ''
+        );
 
   }
 
 
   function bindPopulation() {
 
-
     byId(
       'populationSearchButton'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'click',
+        'click',
 
-      searchPopulation
+        searchPopulation
 
-    );
+      );
 
 
     [
       'populationCode',
       'populationName'
     ]
-    .forEach(
-      function(id) {
+      .forEach(
+        id => {
 
-        byId(
-          id
-        )
-        ?.addEventListener(
+          byId(
+            id
+          )
+            ?.addEventListener(
 
-          'keydown',
+              'keydown',
 
-          function(event) {
+              event => {
 
-            if (
-              event.key ===
-              'Enter'
-            ) {
+                if (
+                  event.key ===
+                  'Enter'
+                ) {
 
-              event.preventDefault();
+                  event.preventDefault();
 
 
-              searchPopulation();
+                  searchPopulation();
 
-            }
+                }
 
-          }
+              }
 
-        );
+            );
 
-      }
-    );
+        }
+      );
 
 
     document.addEventListener(
 
       'click',
 
-      function(event) {
-
+      event => {
 
         const button =
           event.target.closest(
@@ -4171,35 +3815,28 @@ ${escapeHtml(rulesText)}
 
 
         const eahId =
-          button
-            .dataset
-            .publicProfile;
+          button.dataset.publicProfile;
 
 
         const clubSlug =
-          button
-            .dataset
-            .clubSlug
-
+          button.dataset.clubSlug
           ||
-
           CLUB_SLUG;
 
 
-        if (!eahId) {
+        if (
+          eahId
+        ) {
 
-          return;
+          loadPublicProfile(
+
+            eahId,
+
+            clubSlug
+
+          );
 
         }
-
-
-        loadPublicProfile(
-
-          eahId,
-
-          clubSlug
-
-        );
 
       }
 
@@ -4212,163 +3849,106 @@ ${escapeHtml(rulesText)}
      ETATS PROFIL
   ============================================================ */
 
-
   function showProfileState(
     mode
   ) {
 
+    const map = {
 
-    const loading =
-      byId(
-        'profileLoading'
+      loading:
+        byId(
+          'profileLoading'
+        ),
+
+      noauth:
+        byId(
+          'profileNoAuth'
+        ),
+
+      setup:
+        byId(
+          'profileSetup'
+        ),
+
+      view:
+        byId(
+          'profileView'
+        )
+
+    };
+
+
+    Object
+      .values(
+        map
+      )
+      .forEach(
+        element =>
+          element
+            ?.classList
+            .add(
+              'hidden'
+            )
       );
 
 
-    const noAuth =
-      byId(
-        'profileNoAuth'
-      );
-
-
-    const setup =
-      byId(
-        'profileSetup'
-      );
-
-
-    const view =
-      byId(
-        'profileView'
-      );
-
-
-    [
-      loading,
-      noAuth,
-      setup,
-      view
+    map[
+      mode
     ]
-    .forEach(
-      function(element) {
-
-        element
-          ?.classList
-          .add(
-            'hidden'
-          );
-
-      }
-    );
-
-
-    if (
-      mode ===
-      'loading'
-    ) {
-
-      loading
-        ?.classList
-        .remove(
-          'hidden'
-        );
-
-    }
-
-
-    if (
-      mode ===
-      'noauth'
-    ) {
-
-      noAuth
-        ?.classList
-        .remove(
-          'hidden'
-        );
-
-    }
-
-
-    if (
-      mode ===
-      'setup'
-    ) {
-
-      setup
-        ?.classList
-        .remove(
-          'hidden'
-        );
-
-    }
-
-
-    if (
-      mode ===
-      'view'
-    ) {
-
-      view
-        ?.classList
-        .remove(
-          'hidden'
-        );
-
-    }
+      ?.classList
+      .remove(
+        'hidden'
+      );
 
   }
 
 
   /* ============================================================
-     NORMALISATION PROFIL
+     NORMALISER PROFIL
   ============================================================ */
-
 
   function normalizeProfilePayload(
     data
   ) {
 
-
-    const root =
+    const raw =
       firstObject(
         data
       )
+      ||
+      data
       ||
       {};
 
 
     const profile =
 
-      root.profile
+      raw.profile
 
       ||
 
-      root.diver
+      raw.diver
 
       ||
 
-      root.athlete
+      raw.profile_data
 
       ||
 
-      root;
+      raw;
 
 
     const evaluations =
 
-      root.evaluations
+      raw.evaluations
 
       ||
 
-      root.history
+      raw.history
 
       ||
 
-      root.profile_history
-
-      ||
-
-      profile?.evaluations
+      raw.profile_history
 
       ||
 
@@ -4377,19 +3957,11 @@ ${escapeHtml(rulesText)}
 
     const blazons =
 
-      root.blazons
+      raw.blazons
 
       ||
 
-      root.progress
-
-      ||
-
-      root.blazon_progress
-
-      ||
-
-      profile?.blazons
+      raw.blazon_progress
 
       ||
 
@@ -4399,27 +3971,53 @@ ${escapeHtml(rulesText)}
     return {
 
       raw:
-        root,
+
+        raw,
+
 
       profile:
-        profile || {},
+
+        profile
+        &&
+        typeof profile ===
+          'object'
+
+        ?
+
+        profile
+
+        :
+
+        {},
+
 
       evaluations:
+
         Array.isArray(
           evaluations
         )
+
         ?
+
         evaluations
+
         :
+
         [],
 
+
       blazons:
+
         Array.isArray(
           blazons
         )
+
         ?
+
         blazons
+
         :
+
         []
 
     };
@@ -4428,514 +4026,109 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     CRITERES D'UNE EVALUATION EXISTANTE
+     TYPE DE NOTE PRINCIPALE
   ============================================================ */
 
-
-  function evaluationCriteriaData(
-    evaluation = {}
+  function primaryScoreType(
+    item
   ) {
-
-    return safeJson(
-
-      evaluation.criteria
-
-      ??
-
-      evaluation.criteria_json
-
-      ??
-
-      evaluation.CRITERIA_JSON
-
-      ??
-
-      {},
-
-      {}
-
-    );
-
-  }
-
-
-  /* ============================================================
-     NOTE PRINCIPALE D'UNE EVALUATION
-  ============================================================ */
-
-
-  function evaluationScoreData(
-    evaluation = {}
-  ) {
-
 
     const criteria =
-      evaluationCriteriaData(
-        evaluation
-      );
+      safeJson(
 
+        item.criteria
 
-    const eah =
-      numberOrNull(
+        ||
 
-        evaluation.eah_score
+        item.CRITERIA_JSON
 
-        ??
+        ||
 
-        evaluation.eahScore
+        {},
 
-        ??
-
-        evaluation.EAH_SCORE
-
-        ??
-
-        evaluation.score_eah
-
-        ??
-
-        evaluation.final_eah_score
+        {}
 
       );
 
 
-    const wa =
-      numberOrNull(
-
-        evaluation.wa_score
-
-        ??
-
-        evaluation.waScore
-
-        ??
-
-        evaluation.WA_SCORE
-
-        ??
-
-        evaluation.score_wa
-
-      );
-
-
-    let type =
+    const raw =
       String(
 
-        evaluation.primary_score_type
+        item.primary_score_type
 
-        ??
+        ||
 
-        evaluation.primaryScoreType
+        item.score_type
 
-        ??
+        ||
 
-        evaluation.PRIMARY_SCORE_TYPE
+        item.scoring_mode
 
-        ??
-
-        evaluation.scoring_mode
-
-        ??
-
-        evaluation.SCORING_MODE
-
-        ??
-
-        evaluation.score_type
-
-        ??
-
-        evaluation.SCORE_TYPE
-
-        ??
+        ||
 
         criteria._primaryScoreType
 
-        ??
+        ||
 
         criteria._scoreType
 
-        ??
+        ||
 
-        ''
+        'EAH'
 
       )
-      .trim()
-      .toUpperCase();
+        .trim()
+        .toUpperCase();
 
 
-    if (
-      type !==
+    return (
+      raw ===
         'WA'
-      &&
-      type !==
-        'EAH'
-    ) {
-
-      type =
-        eah !==
-        null
-
-        ?
-
-        'EAH'
-
-        :
-
-        (
-          wa !==
-          null
-          ?
-          'WA'
-          :
-          'EAH'
-        );
-
-    }
-
-
-    if (
-      type ===
-        'WA'
-      &&
-      wa ===
-        null
-      &&
-      eah !==
-        null
-    ) {
-
-      type =
-        'EAH';
-
-    }
-
-
-    if (
-      type ===
-        'EAH'
-      &&
-      eah ===
-        null
-      &&
-      wa !==
-        null
-    ) {
-
-      type =
-        'WA';
-
-    }
-
-
-    return {
-
-      type,
-
-      eah,
-
-      wa,
-
-      main:
-        type ===
-          'WA'
-        ?
-        wa
-        :
-        eah
-
-    };
+    )
+      ?
+      'WA'
+      :
+      'EAH';
 
   }
 
 
   /* ============================================================
-     SCORE TAKEOFF / TRICK / ENTRY EXISTANT
+     CARTE HISTORIQUE EVALUATION
   ============================================================ */
-
-
-  function phaseScore(
-    evaluation,
-    phase
-  ) {
-
-
-    const criteria =
-      evaluationCriteriaData(
-        evaluation
-      );
-
-
-    const directMap = {
-
-      D:
-
-        evaluation.takeoff
-
-        ??
-
-        evaluation.TAKEOFF,
-
-
-      T:
-
-        evaluation.trick
-
-        ??
-
-        evaluation.TRICK,
-
-
-      E:
-
-        evaluation.entry_score
-
-        ??
-
-        evaluation.entry
-
-        ??
-
-        evaluation.ENTRY
-
-    };
-
-
-    const direct =
-      numberOrNull(
-        directMap[
-          phase
-        ]
-      );
-
-
-    if (
-      direct !==
-      null
-    ) {
-
-      return direct;
-
-    }
-
-
-    const keys =
-      CRITERIA[
-        phase
-      ]
-      .map(
-        function(item) {
-
-          return item[0];
-
-        }
-      );
-
-
-    const values =
-      keys
-
-      .map(
-        function(key) {
-
-          return criteria[
-            key
-          ];
-
-        }
-      )
-
-      .filter(
-        function(value) {
-
-          return (
-
-            value !==
-              null
-
-            &&
-
-            value !==
-              'NA'
-
-            &&
-
-            value !==
-              'N/A'
-
-            &&
-
-            value !==
-              ''
-
-            &&
-
-            typeof value !==
-              'undefined'
-
-          );
-
-        }
-      )
-
-      .map(
-        Number
-      )
-
-      .filter(
-        Number.isFinite
-      );
-
-
-    if (
-      !values.length
-    ) {
-
-      return null;
-
-    }
-
-
-    return (
-
-      Math.round(
-
-        (
-          values.reduce(
-            function(a,b) {
-
-              return a + b;
-
-            },
-            0
-          )
-
-          /
-
-          (
-            values.length
-            *
-            2
-          )
-
-        )
-
-        *
-
-        100
-
-      )
-
-      /
-
-      10
-
-    );
-
-  }
-
-
-  /* ============================================================
-     LIENS REPORT / VIDEO
-  ============================================================ */
-
-
-  function evaluationReportUrl(
-    evaluation
-  ) {
-
-    return (
-
-      evaluation.report_url
-
-      ||
-
-      evaluation.REPORT_URL
-
-      ||
-
-      evaluation.grade_report_url
-
-      ||
-
-      ''
-
-    );
-
-  }
-
-
-  function evaluationVideoUrl(
-    evaluation
-  ) {
-
-    return (
-
-      evaluation.video_url
-
-      ||
-
-      evaluation.VIDEO_URL
-
-      ||
-
-      evaluation.videoUrl
-
-      ||
-
-      ''
-
-    );
-
-  }
-
-
-  /* ============================================================
-     CARTE HISTORIQUE
-  ============================================================ */
-
 
   function evaluationCardHtml(
-    evaluation,
-    detailed = true
+    item,
+    full = true
   ) {
 
-
-    const score =
-      evaluationScoreData(
-        evaluation
-      );
-
-
     const code =
-      normalizeDiveCode(
 
-        evaluation.dive_code
-
-        ||
-
-        evaluation.DIVE_CODE
-
-        ||
-
-        ''
-
-      );
-
-
-    const diveName =
-
-      evaluation.dive_name
+      item.dive_code
 
       ||
 
-      evaluation.DIVE_NAME
+      item.DIVE_CODE
+
+      ||
+
+      '';
+
+
+    const name =
+
+      item.dive_name
+
+      ||
+
+      item.DIVE_NAME
 
       ||
 
       DIVE_NAMES[
-        code
+        normalizeDiveCode(
+          code
+        )
       ]
 
       ||
@@ -4947,100 +4140,156 @@ ${escapeHtml(rulesText)}
       'Plongeon';
 
 
-    const date =
+    const type =
+      primaryScoreType(
+        item
+      );
 
-      evaluation.evaluated_at
+
+    const eahScore =
+
+      item.eah_score
+
+      ??
+
+      item.EAH_SCORE;
+
+
+    const waScore =
+
+      item.wa_score
+
+      ??
+
+      item.WA_SCORE;
+
+
+    const mainScore =
+      (
+        type ===
+          'WA'
+        &&
+        numberOrNull(
+          waScore
+        ) !==
+          null
+      )
+      ?
+      waScore
+      :
+      eahScore;
+
+
+    const reportUrl =
+
+      item.report_url
 
       ||
 
-      evaluation.EVALUATED_AT
+      item.grade_report_url
 
       ||
 
-      evaluation.date
+      item.REPORT_URL
 
       ||
 
-      evaluation.DATE
+      '';
+
+
+    const videoUrl =
+
+      item.video_url
 
       ||
 
-      evaluation.created_at;
+      item.VIDEO_URL
+
+      ||
+
+      '';
 
 
     const height =
 
-      evaluation.height
+      item.height
 
       ??
 
-      evaluation.HEIGHT;
+      item.HEIGHT;
 
 
-    const reportUrl =
-      evaluationReportUrl(
-        evaluation
-      );
+    const date =
 
+      item.evaluated_at
 
-    const videoUrl =
-      evaluationVideoUrl(
-        evaluation
-      );
+      ||
+
+      item.created_at
+
+      ||
+
+      item.DATE;
 
 
     const takeoff =
-      phaseScore(
-        evaluation,
-        'D'
-      );
+
+      item.takeoff
+
+      ??
+
+      item.TAKEOFF;
 
 
     const trick =
-      phaseScore(
-        evaluation,
-        'T'
-      );
+
+      item.trick
+
+      ??
+
+      item.TRICK;
 
 
     const entry =
-      phaseScore(
-        evaluation,
-        'E'
-      );
+
+      item.entry_score
+
+      ??
+
+      item.entry
+
+      ??
+
+      item.ENTRY;
 
 
     return `
 
-      <article class="history-card evaluation-history-card">
-
+      <article class="history-card">
 
         <div class="history-card-head">
 
-
           <div>
-
 
             <span class="overline">
 
               ${escapeHtml(
-                code ||
-                'EAH DIVING'
+                code
+                ||
+                'PLONGEON'
               )}
 
             </span>
 
-
             <h3>
 
               ${escapeHtml(
-                diveName
+                name
               )}
 
             </h3>
 
-
-            <p>
+            <p class="muted">
 
               ${escapeHtml(
                 fmtDate(
@@ -5050,14 +4299,10 @@ ${escapeHtml(rulesText)}
 
               ${
 
-                height !==
-                  null
+                height != null
                 &&
                 height !==
                   ''
-                &&
-                typeof height !==
-                  'undefined'
 
                 ?
 
@@ -5079,31 +4324,27 @@ ${escapeHtml(rulesText)}
 
             </p>
 
-
           </div>
-
 
           <strong class="history-main-score">
 
             ${escapeHtml(
-              score.type
+              type
             )}
 
             ${escapeHtml(
               fmtNumber(
-                score.main
+                mainScore
               )
             )}/10
 
           </strong>
 
-
         </div>
-
 
         ${
 
-          detailed
+          full
 
           ?
 
@@ -5111,57 +4352,64 @@ ${escapeHtml(rulesText)}
 
           <div class="history-phase-scores">
 
-
             <span>
-
-              Takeoff
-
-              <strong>
-
-                ${escapeHtml(
-                  fmtNumber(
-                    takeoff
-                  )
-                )}/10
-
-              </strong>
-
+              Takeoff ${escapeHtml(
+                fmtNumber(
+                  takeoff
+                )
+              )}/10
             </span>
 
-
             <span>
-
-              Trick
-
-              <strong>
-
-                ${escapeHtml(
-                  fmtNumber(
-                    trick
-                  )
-                )}/10
-
-              </strong>
-
+              Trick ${escapeHtml(
+                fmtNumber(
+                  trick
+                )
+              )}/10
             </span>
 
-
             <span>
-
-              Entry
-
-              <strong>
-
-                ${escapeHtml(
-                  fmtNumber(
-                    entry
-                  )
-                )}/10
-
-              </strong>
-
+              Entry ${escapeHtml(
+                fmtNumber(
+                  entry
+                )
+              )}/10
             </span>
 
+            <span>
+              EAH ${escapeHtml(
+                fmtNumber(
+                  eahScore
+                )
+              )}/10
+            </span>
+
+            ${
+
+              numberOrNull(
+                waScore
+              ) !==
+                null
+
+              ?
+
+              `
+
+              <span>
+                WA ${escapeHtml(
+                  fmtNumber(
+                    waScore
+                  )
+                )}/10
+              </span>
+
+              `
+
+              :
+
+              ''
+
+            }
 
           </div>
 
@@ -5173,82 +4421,81 @@ ${escapeHtml(rulesText)}
 
         }
 
+        ${
 
-        <div class="history-actions">
+          reportUrl
+          ||
+          videoUrl
 
+          ?
 
-          ${
+          `
 
-            reportUrl
+          <div class="history-actions">
 
-            ?
+            ${
 
-            `
+              reportUrl
 
-            <a
+              ?
 
-              class="button small"
+              `
 
-              href="${escapeAttr(
-                reportUrl
-              )}"
+              <a
+                class="button small"
+                href="${escapeAttr(
+                  reportUrl
+                )}"
+                target="_blank"
+                rel="noopener"
+              >
+                Grade Report
+              </a>
 
-              target="_blank"
+              `
 
-              rel="noopener"
+              :
 
-            >
+              ''
 
-              Grade Report
+            }
 
-            </a>
+            ${
 
-            `
+              videoUrl
 
-            :
+              ?
 
-            ''
+              `
 
-          }
+              <a
+                class="button secondary small"
+                href="${escapeAttr(
+                  videoUrl
+                )}"
+                target="_blank"
+                rel="noopener"
+              >
+                Vidéo
+              </a>
 
+              `
 
-          ${
+              :
 
-            videoUrl
+              ''
 
-            ?
+            }
 
-            `
+          </div>
 
-            <a
+          `
 
-              class="button secondary small"
+          :
 
-              href="${escapeAttr(
-                videoUrl
-              )}"
+          ''
 
-              target="_blank"
-
-              rel="noopener"
-
-            >
-
-              Vidéo
-
-            </a>
-
-            `
-
-            :
-
-            ''
-
-          }
-
-
-        </div>
-
+        }
 
       </article>
 
@@ -5261,11 +4508,9 @@ ${escapeHtml(rulesText)}
      AFFICHER PROFIL
   ============================================================ */
 
-
   function renderProfile(
     profileData
   ) {
-
 
     const profile =
       profileData.profile
@@ -5346,16 +4591,12 @@ ${escapeHtml(rulesText)}
         first,
         last
       ]
-      .filter(
-        Boolean
-      )
-      .join(
-        ' '
-      )
-
-      ||
-
-      profile.public_name
+        .filter(
+          Boolean
+        )
+        .join(
+          ' '
+        )
 
       ||
 
@@ -5426,6 +4667,48 @@ ${escapeHtml(rulesText)}
       );
 
 
+    const profileClubSlug =
+
+      profile.club_slug
+
+      ||
+
+      profile.club?.slug
+
+      ||
+
+      state.cardContext?.clubSlug
+
+      ||
+
+      CLUB_SLUG
+
+      ||
+
+      '';
+
+
+    state.gradingProfile = {
+
+      eahId:
+
+        eahId,
+
+      firstName:
+
+        first,
+
+      lastName:
+
+        last,
+
+      clubSlug:
+
+        profileClubSlug
+
+    };
+
+
     const root =
       byId(
         'profileView'
@@ -5441,9 +4724,7 @@ ${escapeHtml(rulesText)}
 
     root.innerHTML = `
 
-
       <article class="profile-hero-card">
-
 
         ${
 
@@ -5454,17 +4735,13 @@ ${escapeHtml(rulesText)}
           `
 
           <img
-
             class="profile-avatar"
-
             src="${escapeAttr(
               photo
             )}"
-
             alt="${escapeAttr(
               name
             )}"
-
           >
 
           `
@@ -5474,25 +4751,18 @@ ${escapeHtml(rulesText)}
           `
 
           <div class="profile-avatar profile-avatar-fallback">
-
             EAH
-
           </div>
 
           `
 
         }
 
-
         <div class="profile-main-info">
 
-
           <span class="overline">
-
             PROFIL EAH
-
           </span>
-
 
           <h1>
 
@@ -5502,7 +4772,6 @@ ${escapeHtml(rulesText)}
 
           </h1>
 
-
           <p>
 
             ${escapeHtml(
@@ -5511,9 +4780,7 @@ ${escapeHtml(rulesText)}
 
           </p>
 
-
           <div class="profile-tags">
-
 
             <span>
 
@@ -5523,7 +4790,6 @@ ${escapeHtml(rulesText)}
 
             </span>
 
-
             <span>
 
               ${escapeHtml(
@@ -5532,36 +4798,28 @@ ${escapeHtml(rulesText)}
 
             </span>
 
-
             <span>
 
-              ${escapeHtml(
+              ${
                 visibility ===
                   'PUBLIC'
                 ?
                 'PUBLIC'
                 :
                 'PRIVÉ'
-              )}
+              }
 
             </span>
 
-
           </div>
-
 
         </div>
 
-
         <div class="profile-blazon-box">
 
-
           <span>
-
             Blazon actuel
-
           </span>
-
 
           <strong>
 
@@ -5571,38 +4829,26 @@ ${escapeHtml(rulesText)}
 
           </strong>
 
-
         </div>
-
 
       </article>
 
 
       <section class="profile-history-block">
 
-
         <div class="section-title left">
 
-
           <span class="overline">
-
             HISTORIQUE
-
           </span>
 
-
           <h2>
-
             Évaluations
-
           </h2>
-
 
         </div>
 
-
         <div class="profile-history-list">
-
 
           ${
 
@@ -5611,37 +4857,87 @@ ${escapeHtml(rulesText)}
             ?
 
             evaluations
-            .map(
-              function(item) {
-
-                return evaluationCardHtml(
-                  item,
-                  true
-                );
-
-              }
-            )
-            .join(
-              ''
-            )
+              .map(
+                item =>
+                  evaluationCardHtml(
+                    item,
+                    true
+                  )
+              )
+              .join(
+                ''
+              )
 
             :
 
             `
 
             <div class="loading-panel">
-
               Aucune évaluation.
-
             </div>
 
             `
 
           }
 
+        </div>
+
+      </section>
+
+
+      <section class="profile-history-block">
+
+        <div class="section-title left">
+
+          <span class="overline">
+            GRADING
+          </span>
+
+          <h2>
+            Faire grader un plongeon
+          </h2>
+
+          <p>
+            Choisissez à qui envoyer votre demande.
+          </p>
 
         </div>
 
+        <div class="history-actions">
+
+          ${
+
+            profileClubSlug
+
+            ?
+
+            `
+
+            <button
+              type="button"
+              class="button"
+              data-profile-grading="CLUB"
+            >
+              Envoyer au coach du club
+            </button>
+
+            `
+
+            :
+
+            ''
+
+          }
+
+          <button
+            type="button"
+            class="button secondary"
+            data-profile-grading="EAH"
+          >
+            Envoyer à EAH Grading
+          </button>
+
+        </div>
 
       </section>
 
@@ -5664,12 +4960,10 @@ ${escapeHtml(rulesText)}
      PROFIL PUBLIC
   ============================================================ */
 
-
   async function loadPublicProfile(
     eahId,
     clubSlug
   ) {
-
 
     showPage(
       'profil'
@@ -5682,7 +4976,6 @@ ${escapeHtml(rulesText)}
 
 
     try {
-
 
       const data =
         await rpcAttempt(
@@ -5699,7 +4992,8 @@ ${escapeHtml(rulesText)}
                 ),
 
               p_club_slug:
-                clubSlug ||
+                clubSlug
+                ||
                 null
 
             },
@@ -5730,11 +5024,18 @@ ${escapeHtml(rulesText)}
         {};
 
 
-      if (
+      const visibility =
+
         raw.profile_visibility
-        &&
+
+        ||
+
+        normalized.profile?.profile_visibility;
+
+
+      if (
         normalizeVisibility(
-          raw.profile_visibility
+          visibility
         )
         !==
         'PUBLIC'
@@ -5751,11 +5052,9 @@ ${escapeHtml(rulesText)}
         normalized
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Public profile:',
@@ -5777,7 +5076,6 @@ ${escapeHtml(rulesText)}
       if (
         panel
       ) {
-
 
         const title =
           panel.querySelector(
@@ -5823,9 +5121,8 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     CARTE NFC PLONGEUR
+     CARTE NFC / QR PLONGEUR
   ============================================================ */
-
 
   async function loadPrivateProfileByCard(
     clubSlug,
@@ -5833,14 +5130,13 @@ ${escapeHtml(rulesText)}
     token
   ) {
 
-
     state.cardContext = {
 
       clubSlug:
         String(
           clubSlug || ''
         )
-        .trim(),
+          .trim(),
 
       eahId:
         normalizeEahId(
@@ -5851,7 +5147,7 @@ ${escapeHtml(rulesText)}
         String(
           token || ''
         )
-        .trim()
+          .trim()
 
     };
 
@@ -5878,7 +5174,6 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const data =
         await rpcAttempt(
 
@@ -5889,7 +5184,9 @@ ${escapeHtml(rulesText)}
             {
 
               p_club_slug:
-                state.cardContext.clubSlug,
+                state.cardContext.clubSlug
+                ||
+                null,
 
               p_eah_id:
                 state.cardContext.eahId,
@@ -5927,7 +5224,6 @@ ${escapeHtml(rulesText)}
           'UNASSIGNED'
       ) {
 
-
         prepareProfileSetup(
           root
         );
@@ -5946,11 +5242,9 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Private profile:',
@@ -5972,7 +5266,6 @@ ${escapeHtml(rulesText)}
       if (
         panel
       ) {
-
 
         const title =
           panel.querySelector(
@@ -6018,14 +5311,12 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     PREPARER ACTIVATION PROFIL
+     PREPARER PREMIERE ACTIVATION
   ============================================================ */
-
 
   function prepareProfileSetup(
     data = {}
   ) {
-
 
     showProfileState(
       'setup'
@@ -6033,8 +5324,6 @@ ${escapeHtml(rulesText)}
 
 
     if (
-      data.first_name
-      &&
       byId(
         'setupFirstName'
       )
@@ -6043,14 +5332,14 @@ ${escapeHtml(rulesText)}
       byId(
         'setupFirstName'
       ).value =
-        data.first_name;
+        data.first_name
+        ||
+        '';
 
     }
 
 
     if (
-      data.last_name
-      &&
       byId(
         'setupLastName'
       )
@@ -6059,14 +5348,14 @@ ${escapeHtml(rulesText)}
       byId(
         'setupLastName'
       ).value =
-        data.last_name;
+        data.last_name
+        ||
+        '';
 
     }
 
 
     if (
-      data.birth_date
-      &&
       byId(
         'setupBirthDate'
       )
@@ -6075,20 +5364,21 @@ ${escapeHtml(rulesText)}
       byId(
         'setupBirthDate'
       ).value =
+        data.birth_date
+        ?
         String(
           data.birth_date
-        )
-        .slice(
+        ).slice(
           0,
           10
-        );
+        )
+        :
+        '';
 
     }
 
 
     if (
-      data.sex
-      &&
       byId(
         'setupSex'
       )
@@ -6097,14 +5387,14 @@ ${escapeHtml(rulesText)}
       byId(
         'setupSex'
       ).value =
-        data.sex;
+        data.sex
+        ||
+        '';
 
     }
 
 
     if (
-      data.group_name
-      &&
       byId(
         'setupGroup'
       )
@@ -6113,14 +5403,14 @@ ${escapeHtml(rulesText)}
       byId(
         'setupGroup'
       ).value =
-        data.group_name;
+        data.group_name
+        ||
+        '';
 
     }
 
 
     if (
-      data.profile_visibility
-      &&
       byId(
         'setupProfileVisibility'
       )
@@ -6153,9 +5443,7 @@ ${escapeHtml(rulesText)}
      ACTIVER PROFIL
   ============================================================ */
 
-
   async function setupProfile() {
-
 
     const context =
       state.cardContext;
@@ -6191,7 +5479,7 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     const lastName =
@@ -6202,7 +5490,7 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     const pin =
@@ -6213,11 +5501,10 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     const visibility =
-
       val(
         'setupProfileVisibility'
       )
@@ -6270,75 +5557,72 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const {
-
         error
-
       } =
         await requireSupabase()
-        .rpc(
+          .rpc(
 
-          'activate_diver_profile',
+            'activate_diver_profile',
 
-          {
+            {
 
-            p_eah_id:
-              context.eahId,
+              p_eah_id:
+                context.eahId,
 
-            p_token:
-              context.token,
+              p_token:
+                context.token,
 
-            p_first_name:
-              firstName,
+              p_first_name:
+                firstName,
 
-            p_last_name:
-              lastName,
+              p_last_name:
+                lastName,
 
-            p_photo_url:
-              String(
+              p_photo_url:
+                String(
+                  val(
+                    'setupPhotoUrl'
+                  )
+                  ||
+                  ''
+                )
+                  .trim()
+                ||
+                null,
+
+              p_birth_date:
                 val(
-                  'setupPhotoUrl'
+                  'setupBirthDate'
                 )
                 ||
-                ''
-              )
-              .trim()
-              ||
-              null,
+                null,
 
-            p_birth_date:
-              val(
-                'setupBirthDate'
-              )
-              ||
-              null,
-
-            p_sex:
-              val(
-                'setupSex'
-              )
-              ||
-              null,
-
-            p_group_name:
-              String(
+              p_sex:
                 val(
-                  'setupGroup'
+                  'setupSex'
                 )
                 ||
-                ''
-              )
-              .trim()
-              ||
-              null,
+                null,
 
-            p_pin:
-              pin
+              p_group_name:
+                String(
+                  val(
+                    'setupGroup'
+                  )
+                  ||
+                  ''
+                )
+                  .trim()
+                ||
+                null,
 
-          }
+              p_pin:
+                pin
 
-        );
+            }
+
+          );
 
 
       if (
@@ -6350,39 +5634,31 @@ ${escapeHtml(rulesText)}
       }
 
 
-      /*
-        Visibilité.
-      */
-
-
       try {
 
-
         const {
-
           error:
             visibilityError
-
         } =
           await requireSupabase()
-          .rpc(
+            .rpc(
 
-            'eah_set_diver_visibility',
+              'eah_set_diver_visibility',
 
-            {
+              {
 
-              p_eah_id:
-                context.eahId,
+                p_eah_id:
+                  context.eahId,
 
-              p_token:
-                context.token,
+                p_token:
+                  context.token,
 
-              p_visibility:
-                visibility
+                p_visibility:
+                  visibility
 
-            }
+              }
 
-          );
+            );
 
 
         if (
@@ -6395,7 +5671,6 @@ ${escapeHtml(rulesText)}
           );
 
         }
-
 
       } catch (
         visibilityError
@@ -6430,11 +5705,9 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Setup profile:',
@@ -6465,14 +5738,11 @@ ${escapeHtml(rulesText)}
      CONNEXION PLONGEUR
   ============================================================ */
 
-
   async function diverLogin(
     event
   ) {
 
-
-    event
-      ?.preventDefault();
+    event?.preventDefault();
 
 
     const eahId =
@@ -6491,7 +5761,7 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     if (
@@ -6527,7 +5797,6 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const pinHash =
         await sha256Hex(
           pin
@@ -6542,31 +5811,25 @@ ${escapeHtml(rulesText)}
         null;
 
 
-      /*
-        Connexion globale.
-      */
-
-
       try {
-
 
         const result =
           await requireSupabase()
-          .rpc(
+            .rpc(
 
-            'eah_diver_login_global_fast',
+              'eah_diver_login_global_fast',
 
-            {
+              {
 
-              p_eah_id:
-                eahId,
+                p_eah_id:
+                  eahId,
 
-              p_pin_hash:
-                pinHash
+                p_pin_hash:
+                  pinHash
 
-            }
+              }
 
-          );
+            );
 
 
         if (
@@ -6581,7 +5844,6 @@ ${escapeHtml(rulesText)}
         data =
           result.data;
 
-
       } catch (
         error
       ) {
@@ -6592,45 +5854,36 @@ ${escapeHtml(rulesText)}
       }
 
 
-      /*
-        Fallback club.
-      */
-
-
       if (
         !data
         &&
         CLUB_SLUG
       ) {
 
-
         const {
-
           data:
             localData,
-
           error
-
         } =
           await requireSupabase()
-          .rpc(
+            .rpc(
 
-            'eah_diver_login_fast',
+              'eah_diver_login_fast',
 
-            {
+              {
 
-              p_club_slug:
-                CLUB_SLUG,
+                p_club_slug:
+                  CLUB_SLUG,
 
-              p_eah_id:
-                eahId,
+                p_eah_id:
+                  eahId,
 
-              p_pin_hash:
-                pinHash
+                p_pin_hash:
+                  pinHash
 
-            }
+              }
 
-          );
+            );
 
 
         if (
@@ -6711,11 +5964,9 @@ ${escapeHtml(rulesText)}
         normalized
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Diver login:',
@@ -6743,45 +5994,186 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     TROUVER L'ADHESION COACH
+     DEMANDE DE GRADING DEPUIS LE PROFIL
   ============================================================ */
 
+  function openProfileGrading(
+    destination
+  ) {
+
+    const profile =
+      state.gradingProfile;
+
+
+    if (!profile) {
+
+      return;
+
+    }
+
+
+    state.gradingDestination =
+      destination ===
+        'CLUB'
+      ?
+      'CLUB'
+      :
+      'EAH';
+
+
+    if (
+      state.gradingDestination ===
+        'CLUB'
+      &&
+      !profile.clubSlug
+    ) {
+
+      toast(
+
+        'Aucun club associé à ce profil.',
+
+        'error'
+
+      );
+
+
+      return;
+
+    }
+
+
+    showPage(
+      'faire-grader'
+    );
+
+
+    if (
+      byId(
+        'publicFirstName'
+      )
+    ) {
+
+      byId(
+        'publicFirstName'
+      ).value =
+        profile.firstName
+        ||
+        '';
+
+    }
+
+
+    if (
+      byId(
+        'publicLastName'
+      )
+    ) {
+
+      byId(
+        'publicLastName'
+      ).value =
+        profile.lastName
+        ||
+        '';
+
+    }
+
+
+    const title =
+      qs(
+        '#faire-grader h1'
+      );
+
+
+    const description =
+      qs(
+        '#faire-grader .page-hero p'
+      );
+
+
+    if (
+      state.gradingDestination ===
+        'CLUB'
+    ) {
+
+      if (
+        title
+      ) {
+
+        title.textContent =
+          'Envoyer au coach du club';
+
+      }
+
+
+      if (
+        description
+      ) {
+
+        description.textContent =
+          'La demande sera rattachée au club du plongeur.';
+
+      }
+
+    } else {
+
+      if (
+        title
+      ) {
+
+        title.textContent =
+          'Faire grader un plongeon';
+
+      }
+
+
+      if (
+        description
+      ) {
+
+        description.textContent =
+          'La demande sera envoyée à EAH Grading.';
+
+      }
+
+    }
+
+  }
+
+
+  /* ============================================================
+     TROUVER ADHESION COACH
+  ============================================================ */
 
   async function loadCoachMembership(
     userId
   ) {
 
-
     const {
-
       data:
         members,
-
       error:
         memberError
-
     } =
       await requireSupabase()
 
-      .from(
-        'club_members'
-      )
+        .from(
+          'club_members'
+        )
 
-      .select(
+        .select(
+          'id,club_id,user_id,display_name,email,role,active,photo_url'
+        )
 
-        'id,club_id,user_id,display_name,email,role,active,photo_url'
+        .eq(
+          'user_id',
+          userId
+        )
 
-      )
-
-      .eq(
-        'user_id',
-        userId
-      )
-
-      .eq(
-        'active',
-        true
-      );
+        .eq(
+          'active',
+          true
+        );
 
 
     if (
@@ -6812,46 +6204,36 @@ ${escapeHtml(rulesText)}
       null;
 
 
-    /*
-      Si une URL contient ?club=
-      on privilégie ce club.
-    */
-
-
     if (
       CLUB_SLUG
     ) {
 
-
       const {
-
         data:
           requestedClub,
-
         error
-
       } =
         await requireSupabase()
 
-        .from(
-          'clubs'
-        )
+          .from(
+            'clubs'
+          )
 
-        .select(
-          '*'
-        )
+          .select(
+            '*'
+          )
 
-        .eq(
-          'slug',
-          CLUB_SLUG
-        )
+          .eq(
+            'slug',
+            CLUB_SLUG
+          )
 
-        .eq(
-          'active',
-          true
-        )
+          .eq(
+            'active',
+            true
+          )
 
-        .maybeSingle();
+          .maybeSingle();
 
 
       if (
@@ -6860,17 +6242,11 @@ ${escapeHtml(rulesText)}
         requestedClub
       ) {
 
-
         const matching =
           members.find(
-            function(item) {
-
-              return (
-                item.club_id ===
-                requestedClub.id
-              );
-
-            }
+            item =>
+              item.club_id ===
+              requestedClub.id
           );
 
 
@@ -6892,46 +6268,37 @@ ${escapeHtml(rulesText)}
     }
 
 
-    /*
-      Sinon club de l'adhésion.
-    */
-
-
     if (
       !club
     ) {
 
-
       const {
-
         data:
           clubData,
-
         error:
           clubError
-
       } =
         await requireSupabase()
 
-        .from(
-          'clubs'
-        )
+          .from(
+            'clubs'
+          )
 
-        .select(
-          '*'
-        )
+          .select(
+            '*'
+          )
 
-        .eq(
-          'id',
-          membership.club_id
-        )
+          .eq(
+            'id',
+            membership.club_id
+          )
 
-        .eq(
-          'active',
-          true
-        )
+          .eq(
+            'active',
+            true
+          )
 
-        .single();
+          .single();
 
 
       if (
@@ -6982,14 +6349,11 @@ ${escapeHtml(rulesText)}
      LOGIN COACH
   ============================================================ */
 
-
   async function coachLogin(
     event
   ) {
 
-
-    event
-      ?.preventDefault();
+    event?.preventDefault();
 
 
     const email =
@@ -7000,7 +6364,7 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
     const password =
@@ -7062,23 +6426,19 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const {
-
         data,
-
         error
-
       } =
         await requireSupabase()
-        .auth
-        .signInWithPassword({
+          .auth
+          .signInWithPassword({
 
-          email,
+            email,
 
-          password
+            password
 
-        });
+          });
 
 
       if (
@@ -7119,11 +6479,9 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Coach login:',
@@ -7145,9 +6503,7 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } finally {
-
 
       if (
         button
@@ -7167,23 +6523,17 @@ ${escapeHtml(rulesText)}
      RESTAURER SESSION COACH
   ============================================================ */
 
-
   async function restoreCoachSession() {
-
 
     try {
 
-
       const {
-
         data,
-
         error
-
       } =
         await requireSupabase()
-        .auth
-        .getSession();
+          .auth
+          .getSession();
 
 
       if (
@@ -7198,16 +6548,13 @@ ${escapeHtml(rulesText)}
 
 
       await loadCoachMembership(
-
         data.session.user.id
-
       );
 
 
       await enterCoachWorkspace(
         false
       );
-
 
     } catch (
       error
@@ -7224,16 +6571,173 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     CARTE NFC COACH
-
-     Remplace coach-card.js.
+     APPLIQUER WORKSPACE CARTE COACH
   ============================================================ */
 
+  function applyCoachWorkspacePayload(
+    payload
+  ) {
+
+    const root =
+      firstObject(
+        payload
+      )
+      ||
+      payload
+      ||
+      {};
+
+
+    const club =
+
+      root.club
+
+      ||
+
+      root.club_data
+
+      ||
+
+      root.workspace?.club
+
+      ||
+
+      null;
+
+
+    const member =
+
+      root.member
+
+      ||
+
+      root.coach
+
+      ||
+
+      root.membership
+
+      ||
+
+      root.workspace?.member
+
+      ||
+
+      null;
+
+
+    const divers =
+
+      root.divers
+
+      ||
+
+      root.workspace?.divers
+
+      ||
+
+      root.members
+
+      ||
+
+      [];
+
+
+    const evaluations =
+
+      root.evaluations
+
+      ||
+
+      root.workspace?.evaluations
+
+      ||
+
+      root.history
+
+      ||
+
+      [];
+
+
+    if (
+      club
+    ) {
+
+      state.club =
+        club;
+
+    }
+
+
+    if (
+      member
+    ) {
+
+      state.membership =
+        member;
+
+
+      state.coach =
+        member;
+
+    }
+
+
+    if (
+      Array.isArray(
+        divers
+      )
+    ) {
+
+      state.divers =
+        divers;
+
+    }
+
+
+    if (
+      Array.isArray(
+        evaluations
+      )
+    ) {
+
+      state.evaluations =
+        evaluations;
+
+    }
+
+
+    if (
+      state.club?.slug
+    ) {
+
+      CLUB_SLUG =
+        state.club.slug;
+
+    }
+
+
+    return Boolean(
+
+      state.club
+
+      &&
+
+      state.membership
+
+    );
+
+  }
+
+
+  /* ============================================================
+     CARTE NFC COACH
+  ============================================================ */
 
   async function openCoachCard(
     coachToken
   ) {
-
 
     if (
       !coachToken
@@ -7244,90 +6748,52 @@ ${escapeHtml(rulesText)}
     }
 
 
+    state.coachCardToken =
+      String(
+        coachToken
+      )
+        .trim();
+
+
     try {
 
-
-      const {
-
-        data,
-
-        error
-
-      } =
-        await requireSupabase()
-        .rpc(
+      const data =
+        await rpcAttempt(
 
           'eah_coach_card_workspace',
 
-          {
+          [
 
-            p_token:
-              coachToken
+            {
 
-          }
+              p_token:
+                state.coachCardToken
+
+            },
+
+            {
+
+              coach_token:
+                state.coachCardToken
+
+            },
+
+            {
+
+              p_coach_token:
+                state.coachCardToken
+
+            }
+
+          ]
 
         );
 
 
       if (
-        error
-      ) {
-
-        throw error;
-
-      }
-
-
-      const payload =
-        firstObject(
+        !applyCoachWorkspacePayload(
           data
         )
-        ||
-        {};
-
-
-      const club =
-
-        payload.club
-
-        ||
-
-        payload.club_data
-
-        ||
-
-        payload.workspace?.club
-
-        ||
-
-        null;
-
-
-      const member =
-
-        payload.member
-
-        ||
-
-        payload.coach
-
-        ||
-
-        payload.membership
-
-        ||
-
-        payload.workspace?.member
-
-        ||
-
-        null;
-
-
-      if (
-        !club
-        ||
-        !member
       ) {
 
         throw new Error(
@@ -7337,34 +6803,14 @@ ${escapeHtml(rulesText)}
       }
 
 
-      state.club =
-        club;
-
-
-      state.membership =
-        member;
-
-
-      state.coach =
-        member;
-
-
-      CLUB_SLUG =
-        club.slug
-        ||
-        CLUB_SLUG;
-
-
       await enterCoachWorkspace();
 
 
       return true;
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Coach card:',
@@ -7400,14 +6846,12 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     ENTRER DANS L'ESPACE COACH
+     ENTRER ESPACE COACH
   ============================================================ */
-
 
   async function enterCoachWorkspace(
     navigate = true
   ) {
-
 
     if (
       !state.club
@@ -7423,19 +6867,19 @@ ${escapeHtml(rulesText)}
     byId(
       'clubAccess'
     )
-    ?.classList
-    .add(
-      'hidden'
-    );
+      ?.classList
+      .add(
+        'hidden'
+      );
 
 
     byId(
       'coachPrivate'
     )
-    ?.classList
-    .remove(
-      'hidden'
-    );
+      ?.classList
+      .remove(
+        'hidden'
+      );
 
 
     setText(
@@ -7512,9 +6956,7 @@ ${escapeHtml(rulesText)}
      DECONNEXION COACH
   ============================================================ */
 
-
   async function logoutCoach() {
-
 
     try {
 
@@ -7537,6 +6979,10 @@ ${escapeHtml(rulesText)}
       null;
 
 
+    state.coachCardToken =
+      '';
+
+
     state.divers =
       [];
 
@@ -7548,19 +6994,19 @@ ${escapeHtml(rulesText)}
     byId(
       'coachPrivate'
     )
-    ?.classList
-    .add(
-      'hidden'
-    );
+      ?.classList
+      .add(
+        'hidden'
+      );
 
 
     byId(
       'clubAccess'
     )
-    ?.classList
-    .remove(
-      'hidden'
-    );
+      ?.classList
+      .remove(
+        'hidden'
+      );
 
 
     updateEvaluationAccess();
@@ -7583,12 +7029,81 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     CHARGER DASHBOARD COACH
+     RECHARGER WORKSPACE CARTE COACH
   ============================================================ */
 
+  async function loadCoachDataFromCard() {
+
+    if (
+      !state.coachCardToken
+    ) {
+
+      return false;
+
+    }
+
+
+    try {
+
+      const data =
+        await rpcAttempt(
+
+          'eah_coach_card_workspace',
+
+          [
+
+            {
+
+              p_token:
+                state.coachCardToken
+
+            },
+
+            {
+
+              coach_token:
+                state.coachCardToken
+
+            },
+
+            {
+
+              p_coach_token:
+                state.coachCardToken
+
+            }
+
+          ]
+
+        );
+
+
+      return applyCoachWorkspacePayload(
+        data
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.warn(
+        'Coach card refresh:',
+        error
+      );
+
+
+      return false;
+
+    }
+
+  }
+
+
+  /* ============================================================
+     CHARGER DONNEES COACH
+  ============================================================ */
 
   async function loadCoachData() {
-
 
     if (
       !state.club?.id
@@ -7599,121 +7114,132 @@ ${escapeHtml(rulesText)}
     }
 
 
-    const supabase =
-      requireSupabase();
+    let directLoaded =
+      false;
 
 
-    const [
+    try {
 
-      diversResult,
-
-      evalResult
-
-    ] =
-      await Promise.all([
+      const supabase =
+        requireSupabase();
 
 
-        supabase
+      const [
 
-        .from(
-          'divers'
-        )
+        diversResult,
 
-        .select(
-          '*'
-        )
+        evalResult
 
-        .eq(
-          'club_id',
-          state.club.id
-        )
+      ] =
+        await Promise.all([
 
-        .eq(
-          'active',
-          true
-        )
+          supabase
 
-        .order(
+            .from(
+              'divers'
+            )
 
-          'last_name',
+            .select(
+              '*'
+            )
 
-          {
+            .eq(
+              'club_id',
+              state.club.id
+            )
 
-            ascending:
+            .eq(
+              'active',
               true
+            )
 
-          }
-
-        ),
-
-
-        supabase
-
-        .from(
-          'evaluations'
-        )
-
-        .select(
-          '*'
-        )
-
-        .eq(
-          'club_id',
-          state.club.id
-        )
-
-        .order(
-
-          'evaluated_at',
-
-          {
-
-            ascending:
-              false
-
-          }
-
-        )
-
-        .limit(
-          100
-        )
+            .order(
+              'last_name',
+              {
+                ascending:
+                  true
+              }
+            ),
 
 
-      ]);
+          supabase
+
+            .from(
+              'evaluations'
+            )
+
+            .select(
+              '*'
+            )
+
+            .eq(
+              'club_id',
+              state.club.id
+            )
+
+            .order(
+              'evaluated_at',
+              {
+                ascending:
+                  false
+              }
+            )
+
+            .limit(
+              100
+            )
+
+        ]);
 
 
-    if (
-      diversResult.error
-    ) {
+      if (
+        !diversResult.error
+      ) {
 
-      throw diversResult.error;
+        state.divers =
+          diversResult.data
+          ||
+          [];
 
-    }
+
+        directLoaded =
+          true;
+
+      }
 
 
-    if (
-      evalResult.error
+      if (
+        !evalResult.error
+      ) {
+
+        state.evaluations =
+          evalResult.data
+          ||
+          [];
+
+      }
+
+    } catch (
+      error
     ) {
 
       console.warn(
-        'Evaluations:',
-        evalResult.error
+        'Coach data direct:',
+        error
       );
 
     }
 
 
-    state.divers =
-      diversResult.data
-      ||
-      [];
+    if (
+      !directLoaded
+      &&
+      state.coachCardToken
+    ) {
 
+      await loadCoachDataFromCard();
 
-    state.evaluations =
-      evalResult.data
-      ||
-      [];
+    }
 
 
     renderDashboard();
@@ -7733,9 +7259,7 @@ ${escapeHtml(rulesText)}
      DASHBOARD
   ============================================================ */
 
-
   function renderDashboard() {
-
 
     const divers =
       state.divers
@@ -7755,16 +7279,13 @@ ${escapeHtml(rulesText)}
         new Set(
 
           divers
-          .map(
-            function(diver) {
-
-              return diver.group_name;
-
-            }
-          )
-          .filter(
-            Boolean
-          )
+            .map(
+              diver =>
+                diver.group_name
+            )
+            .filter(
+              Boolean
+            )
 
         )
       ];
@@ -7772,38 +7293,27 @@ ${escapeHtml(rulesText)}
 
     const verified =
       evaluations
-      .filter(
-        function(evaluation) {
-
-          return (
+        .filter(
+          evaluation =>
             evaluation.eah_verified ===
             true
-          );
-
-        }
-      )
-      .length;
+        )
+        .length;
 
 
     const scores =
       evaluations
-      .map(
-        function(evaluation) {
-
-          return numberOrNull(
-            evaluation.eah_score
-          );
-
-        }
-      )
-      .filter(
-        function(value) {
-
-          return value !==
-          null;
-
-        }
-      );
+        .map(
+          evaluation =>
+            numberOrNull(
+              evaluation.eah_score
+            )
+        )
+        .filter(
+          value =>
+            value !==
+            null
+        );
 
 
     const average =
@@ -7812,11 +7322,11 @@ ${escapeHtml(rulesText)}
       ?
 
       scores.reduce(
-        function(a,b) {
-
-          return a + b;
-
-        },
+        (
+          a,
+          b
+        ) =>
+          a + b,
         0
       )
       /
@@ -7825,11 +7335,6 @@ ${escapeHtml(rulesText)}
       :
 
       null;
-
-
-    /*
-      STATS
-    */
 
 
     const stats =
@@ -7844,7 +7349,6 @@ ${escapeHtml(rulesText)}
 
       stats.innerHTML = `
 
-
         <article class="stat-card">
 
           <span>
@@ -7856,7 +7360,6 @@ ${escapeHtml(rulesText)}
           </strong>
 
         </article>
-
 
         <article class="stat-card">
 
@@ -7870,7 +7373,6 @@ ${escapeHtml(rulesText)}
 
         </article>
 
-
         <article class="stat-card">
 
           <span>
@@ -7882,7 +7384,6 @@ ${escapeHtml(rulesText)}
           </strong>
 
         </article>
-
 
         <article class="stat-card">
 
@@ -7907,11 +7408,6 @@ ${escapeHtml(rulesText)}
     }
 
 
-    /*
-      DERNIERES EVALUATIONS
-    */
-
-
     const recent =
       byId(
         'recentDashboard'
@@ -7929,34 +7425,26 @@ ${escapeHtml(rulesText)}
         ?
 
         evaluations
-        .slice(
-          0,
-          6
-        )
-        .map(
-          function(item) {
-
-            return evaluationCardHtml(
-              item,
-              false
-            );
-
-          }
-        )
-        .join(
-          ''
-        )
+          .slice(
+            0,
+            6
+          )
+          .map(
+            item =>
+              evaluationCardHtml(
+                item,
+                false
+              )
+          )
+          .join(
+            ''
+          )
 
         :
 
         '<div class="mini-loading">Aucune évaluation.</div>';
 
     }
-
-
-    /*
-      GROUPES
-    */
 
 
     const groupsRoot =
@@ -7976,29 +7464,10 @@ ${escapeHtml(rulesText)}
         ?
 
         groups
-        .map(
-          function(group) {
-
-
-            const count =
-              divers
-              .filter(
-                function(diver) {
-
-                  return (
-                    diver.group_name ===
-                    group
-                  );
-
-                }
-              )
-              .length;
-
-
-            return `
+          .map(
+            group => `
 
               <div class="dashboard-group-row">
-
 
                 <span>
 
@@ -8008,23 +7477,27 @@ ${escapeHtml(rulesText)}
 
                 </span>
 
-
                 <strong>
 
-                  ${count}
+                  ${
+                    divers
+                      .filter(
+                        diver =>
+                          diver.group_name ===
+                          group
+                      )
+                      .length
+                  }
 
                 </strong>
 
-
               </div>
 
-            `;
-
-          }
-        )
-        .join(
-          ''
-        )
+            `
+          )
+          .join(
+            ''
+          )
 
         :
 
@@ -8036,9 +7509,8 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     SELECT PLONGEUR EVALUATION
+     SELECT PLONGEUR
   ============================================================ */
-
 
   function renderDiversSelect() {
 
@@ -8066,65 +7538,61 @@ ${escapeHtml(rulesText)}
       +
 
       state.divers
-      .map(
-        function(diver) {
+        .map(
+          diver => {
+
+            const name =
+
+              [
+                diver.first_name,
+                diver.last_name
+              ]
+                .filter(
+                  Boolean
+                )
+                .join(
+                  ' '
+                )
+
+              ||
+
+              diver.eah_id;
 
 
-          const name =
+            return `
 
-            [
-              diver.first_name,
-              diver.last_name
-            ]
-            .filter(
-              Boolean
-            )
-            .join(
-              ' '
-            )
+              <option
+                value="${escapeAttr(
+                  diver.eah_id
+                )}"
+              >
 
-            ||
+                ${escapeHtml(
+                  name
+                )}
 
-            diver.eah_id;
+                —
 
+                ${escapeHtml(
+                  diver.eah_id
+                )}
 
-          return `
+              </option>
 
-            <option
+            `;
 
-              value="${escapeAttr(
-                diver.eah_id
-              )}"
-
-            >
-
-              ${escapeHtml(
-                name
-              )}
-
-              —
-
-              ${escapeHtml(
-                diver.eah_id
-              )}
-
-            </option>
-
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          }
+        )
+        .join(
+          ''
+        );
 
   }
 
 
   /* ============================================================
-     LISTE DES PLONGEURS COACH
+     MES PLONGEURS
   ============================================================ */
-
 
   function renderCoachDivers(
     divers
@@ -8163,159 +7631,139 @@ ${escapeHtml(rulesText)}
 
     root.innerHTML =
       divers
-      .map(
-        function(diver) {
+        .map(
+          diver => {
+
+            const name =
+
+              [
+                diver.first_name,
+                diver.last_name
+              ]
+                .filter(
+                  Boolean
+                )
+                .join(
+                  ' '
+                )
+
+              ||
+
+              diver.eah_id;
 
 
-          const name =
+            return `
 
-            [
-              diver.first_name,
-              diver.last_name
-            ]
-            .filter(
-              Boolean
-            )
-            .join(
-              ' '
-            )
+              <article class="coach-diver-row">
 
-            ||
+                <div class="coach-diver-identity">
 
-            diver.eah_id;
+                  ${
 
+                    diver.photo_url
 
-          return `
+                    ?
 
-            <article class="coach-diver-row">
+                    `
 
+                    <img
+                      src="${escapeAttr(
+                        diver.photo_url
+                      )}"
+                      alt=""
+                    >
 
-              <div class="coach-diver-identity">
+                    `
 
+                    :
 
-                ${
+                    `
 
-                  diver.photo_url
+                    <span class="coach-diver-avatar">
+                      EAH
+                    </span>
 
-                  ?
+                    `
 
-                  `
+                  }
 
-                  <img
+                  <div>
 
-                    src="${escapeAttr(
-                      diver.photo_url
-                    )}"
+                    <strong>
 
-                    alt=""
+                      ${escapeHtml(
+                        name
+                      )}
 
-                  >
+                    </strong>
 
-                  `
+                    <small>
 
-                  :
+                      ${escapeHtml(
+                        diver.eah_id
+                        ||
+                        ''
+                      )}
 
-                  `
+                      ${
 
-                  <span class="coach-diver-avatar">
-
-                    EAH
-
-                  </span>
-
-                  `
-
-                }
-
-
-                <div>
-
-
-                  <strong>
-
-                    ${escapeHtml(
-                      name
-                    )}
-
-                  </strong>
-
-
-                  <small>
-
-                    ${escapeHtml(
-                      diver.eah_id ||
-                      ''
-                    )}
-
-                    ${
-
-                      diver.group_name
-
-                      ?
-
-                      ' • '
-                      +
-                      escapeHtml(
                         diver.group_name
-                      )
 
-                      :
+                        ?
 
-                      ''
+                        ' • '
+                        +
+                        escapeHtml(
+                          diver.group_name
+                        )
 
-                    }
+                        :
 
-                  </small>
+                        ''
 
+                      }
+
+                    </small>
+
+                  </div>
 
                 </div>
 
+                <button
+                  type="button"
+                  class="button small"
+                  data-coach-diver-detail="${escapeAttr(
+                    diver.eah_id
+                  )}"
+                >
+                  Voir le profil
+                </button>
 
-              </div>
+              </article>
 
+            `;
 
-              <button
-
-                type="button"
-
-                class="button small"
-
-                data-coach-diver-detail="${escapeAttr(
-                  diver.eah_id
-                )}"
-
-              >
-
-                Voir le profil
-
-              </button>
-
-
-            </article>
-
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          }
+        )
+        .join(
+          ''
+        );
 
   }
 
 
   /* ============================================================
-     DETAIL PLONGEUR DEPUIS LE COACH
+     PROFIL PLONGEUR DEPUIS COACH
   ============================================================ */
-
 
   async function openCoachDiverDetail(
     eahId
   ) {
 
-
     if (
       !state.club?.id
+      ||
+      !state.membership
     ) {
 
       return;
@@ -8324,16 +7772,10 @@ ${escapeHtml(rulesText)}
 
 
     const diver =
-      state.divers
-      .find(
-        function(item) {
-
-          return (
-            item.eah_id ===
-            eahId
-          );
-
-        }
+      state.divers.find(
+        item =>
+          item.eah_id ===
+          eahId
       );
 
 
@@ -8355,48 +7797,43 @@ ${escapeHtml(rulesText)}
     );
 
 
+    let evaluations =
+      [];
+
+
     try {
 
-
       const {
-
         data,
-
         error
-
       } =
         await requireSupabase()
 
-        .from(
-          'evaluations'
-        )
+          .from(
+            'evaluations'
+          )
 
-        .select(
-          '*'
-        )
+          .select(
+            '*'
+          )
 
-        .eq(
-          'club_id',
-          state.club.id
-        )
+          .eq(
+            'club_id',
+            state.club.id
+          )
 
-        .eq(
-          'eah_id',
-          eahId
-        )
+          .eq(
+            'eah_id',
+            eahId
+          )
 
-        .order(
-
-          'evaluated_at',
-
-          {
-
-            ascending:
-              false
-
-          }
-
-        );
+          .order(
+            'evaluated_at',
+            {
+              ascending:
+                false
+            }
+          );
 
 
       if (
@@ -8408,12 +7845,72 @@ ${escapeHtml(rulesText)}
       }
 
 
-      const name =
+      evaluations =
+        data
+        ||
+        [];
 
-        [
-          diver.first_name,
-          diver.last_name
-        ]
+    } catch (
+      error
+    ) {
+
+      if (
+        state.coachCardToken
+      ) {
+
+        await loadCoachDataFromCard();
+
+
+        evaluations =
+          (
+            state.evaluations
+            ||
+            []
+          )
+            .filter(
+              item =>
+                item.eah_id ===
+                eahId
+            );
+
+      } else {
+
+        openModal(`
+
+          <div class="content-panel">
+
+            <h2>
+              Erreur
+            </h2>
+
+            <p>
+
+              ${escapeHtml(
+                error?.message
+                ||
+                'Profil impossible à charger.'
+              )}
+
+            </p>
+
+          </div>
+
+        `);
+
+
+        return;
+
+      }
+
+    }
+
+
+    const name =
+
+      [
+        diver.first_name,
+        diver.last_name
+      ]
         .filter(
           Boolean
         )
@@ -8421,164 +7918,116 @@ ${escapeHtml(rulesText)}
           ' '
         )
 
-        ||
+      ||
 
-        diver.eah_id;
-
-
-      openModal(`
+      diver.eah_id;
 
 
-        <div class="coach-profile-modal">
+    openModal(`
 
+      <div class="coach-profile-modal">
 
-          <span class="overline">
+        <span class="overline">
+          PLONGEUR DU CLUB
+        </span>
 
-            PLONGEUR DU CLUB
+        <h2>
 
-          </span>
+          ${escapeHtml(
+            name
+          )}
 
+        </h2>
 
-          <h2>
+        <p>
+
+          ${escapeHtml(
+            diver.eah_id
+            ||
+            ''
+          )}
+
+        </p>
+
+        <p>
+
+          ${escapeHtml(
+            diver.sex
+            ||
+            '—'
+          )}
+
+          •
+
+          ${escapeHtml(
+            diver.group_name
+            ||
+            'Sans groupe'
+          )}
+
+        </p>
+
+        <p>
+
+          <strong>
+
+            Blazon :
 
             ${escapeHtml(
-              name
+
+              diver.manual_blazon
+
+              ||
+
+              diver.current_blazon
+
+              ||
+
+              'En progression'
+
             )}
 
-          </h2>
+          </strong>
 
+        </p>
 
-          <p>
+        <div class="profile-history-list">
 
-            ${escapeHtml(
-              diver.eah_id ||
-              ''
-            )}
+          ${
 
-          </p>
+            evaluations.length
 
+            ?
 
-          <p>
-
-            ${escapeHtml(
-              diver.sex ||
-              '—'
-            )}
-
-            •
-
-            ${escapeHtml(
-              diver.group_name ||
-              'Sans groupe'
-            )}
-
-          </p>
-
-
-          <p>
-
-            <strong>
-
-              Blazon :
-
-              ${escapeHtml(
-
-                diver.manual_blazon
-
-                ||
-
-                diver.current_blazon
-
-                ||
-
-                'En progression'
-
-              )}
-
-            </strong>
-
-          </p>
-
-
-          <div class="profile-history-list">
-
-
-            ${
-
-              (
-                data ||
-                []
-              )
-              .length
-
-              ?
-
-              data
+            evaluations
               .map(
-                function(item) {
-
-                  return evaluationCardHtml(
+                item =>
+                  evaluationCardHtml(
                     item,
                     true
-                  );
-
-                }
+                  )
               )
               .join(
                 ''
               )
 
-              :
+            :
 
-              `
+            `
 
-              <div class="loading-panel">
+            <div class="loading-panel">
+              Aucune évaluation.
+            </div>
 
-                Aucune évaluation.
+            `
 
-              </div>
-
-              `
-
-            }
-
-
-          </div>
-
+          }
 
         </div>
 
-      `);
+      </div>
 
-
-    } catch (
-      error
-    ) {
-
-
-      openModal(`
-
-        <div class="content-panel">
-
-          <h2>
-            Erreur
-          </h2>
-
-          <p>
-
-            ${escapeHtml(
-              error?.message
-              ||
-              'Profil impossible à charger.'
-            )}
-
-          </p>
-
-        </div>
-
-      `);
-
-    }
+    `);
 
   }
 
@@ -8587,9 +8036,7 @@ ${escapeHtml(rulesText)}
      CRITERES DU FORMULAIRE
   ============================================================ */
 
-
   function renderCriteria() {
-
 
     const targets = {
 
@@ -8616,16 +8063,12 @@ ${escapeHtml(rulesText)}
         CRITERIA
       )
       .forEach(
-        function(entry) {
-
-
-          const phase =
-            entry[0];
-
-
-          const items =
-            entry[1];
-
+        (
+          [
+            phase,
+            items
+          ]
+        ) => {
 
           const root =
             targets[
@@ -8642,22 +8085,15 @@ ${escapeHtml(rulesText)}
 
           root.innerHTML =
             items
-            .map(
-              function(item) {
-
-
-                const code =
-                  item[0];
-
-
-                const label =
-                  item[1];
-
-
-                return `
+              .map(
+                (
+                  [
+                    code,
+                    label
+                  ]
+                ) => `
 
                   <label class="criterion-row">
-
 
                     <span>
 
@@ -8677,51 +8113,37 @@ ${escapeHtml(rulesText)}
 
                     </span>
 
-
                     <select
-
                       data-criterion="${escapeAttr(
                         code
                       )}"
-
                     >
 
                       <option value="0">
-
                         0 — Non validé
-
                       </option>
 
                       <option value="1">
-
                         1 — Partiel
-
                       </option>
 
                       <option value="2">
-
                         2 — Validé
-
                       </option>
 
                       <option value="NA">
-
                         N/A
-
                       </option>
 
                     </select>
 
-
                   </label>
 
-                `;
-
-              }
-            )
-            .join(
-              ''
-            );
+                `
+              )
+              .join(
+                ''
+              );
 
         }
       );
@@ -8733,9 +8155,7 @@ ${escapeHtml(rulesText)}
      RECUPERER CRITERES
   ============================================================ */
 
-
   function collectCriteria() {
-
 
     const result =
       {};
@@ -8744,28 +8164,23 @@ ${escapeHtml(rulesText)}
     qsa(
       '[data-criterion]'
     )
-    .forEach(
-      function(select) {
+      .forEach(
+        select => {
 
+          result[
+            select.dataset.criterion
+          ] =
+            select.value ===
+              'NA'
+            ?
+            null
+            :
+            Number(
+              select.value
+            );
 
-        const raw =
-          select.value;
-
-
-        result[
-          select.dataset.criterion
-        ] =
-          raw ===
-            'NA'
-          ?
-          null
-          :
-          Number(
-            raw
-          );
-
-      }
-    );
+        }
+      );
 
 
     const scoreType =
@@ -8776,7 +8191,7 @@ ${escapeHtml(rulesText)}
         ||
         'EAH'
       )
-      .toUpperCase();
+        .toUpperCase();
 
 
     result._scoreType =
@@ -8796,52 +8211,39 @@ ${escapeHtml(rulesText)}
      CALCUL PHASE
   ============================================================ */
 
-
   function calculatePhaseScore(
     criteria,
     phase
   ) {
 
-
     const values =
       CRITERIA[
         phase
       ]
-
-      .map(
-        function(item) {
-
-          return criteria[
-            item[0]
-          ];
-
-        }
-      )
-
-      .filter(
-        function(value) {
-
-          return (
-
+        .map(
+          (
+            [
+              code
+            ]
+          ) =>
+            criteria[
+              code
+            ]
+        )
+        .filter(
+          value =>
             value !==
               null
-
             &&
-
             Number.isFinite(
               Number(
                 value
               )
             )
-
-          );
-
-        }
-      )
-
-      .map(
-        Number
-      );
+        )
+        .map(
+          Number
+        );
 
 
     if (
@@ -8859,11 +8261,11 @@ ${escapeHtml(rulesText)}
 
         (
           values.reduce(
-            function(a,b) {
-
-              return a + b;
-
-            },
+            (
+              a,
+              b
+            ) =>
+              a + b,
             0
           )
 
@@ -8874,7 +8276,6 @@ ${escapeHtml(rulesText)}
             *
             2
           )
-
         )
 
         *
@@ -8896,13 +8297,11 @@ ${escapeHtml(rulesText)}
      CALCUL NOTE EAH
   ============================================================ */
 
-
   function calculateEahScore(
     takeoff,
     trick,
     entry
   ) {
-
 
     const values = [
 
@@ -8923,17 +8322,12 @@ ${escapeHtml(rulesText)}
 
     const count =
       values
-      .filter(
-        function(value) {
-
-          return (
+        .filter(
+          value =>
             value ===
             minimum
-          );
-
-        }
-      )
-      .length;
+        )
+        .length;
 
 
     return Math.min(
@@ -8948,7 +8342,8 @@ ${escapeHtml(rulesText)}
 
           ?
 
-          minimum + 0.5
+          minimum +
+          0.5
 
           :
 
@@ -8974,9 +8369,7 @@ ${escapeHtml(rulesText)}
      NOM AUTOMATIQUE PLONGEON
   ============================================================ */
 
-
   function updateDiveName() {
-
 
     const code =
       normalizeDiveCode(
@@ -8992,14 +8385,9 @@ ${escapeHtml(rulesText)}
       );
 
 
-    if (!input) {
-
-      return;
-
-    }
-
-
     if (
+      input
+      &&
       DIVE_NAMES[
         code
       ]
@@ -9017,7 +8405,6 @@ ${escapeHtml(rulesText)}
 
   function fillDiveCodes() {
 
-
     const list =
       byId(
         'diveCodes'
@@ -9033,15 +8420,17 @@ ${escapeHtml(rulesText)}
 
     list.innerHTML =
       Object
-      .keys(
-        DIVE_NAMES
-      )
-      .map(
-        function(code) {
+        .keys(
+          DIVE_NAMES
+        )
+        .map(
+          code => `
 
-          return `
-
-            <option value="${escapeAttr(code)}">
+            <option
+              value="${escapeAttr(
+                code
+              )}"
+            >
 
               ${escapeHtml(
                 DIVE_NAMES[
@@ -9051,24 +8440,20 @@ ${escapeHtml(rulesText)}
 
             </option>
 
-          `;
-
-        }
-      )
-      .join(
-        ''
-      );
+          `
+        )
+        .join(
+          ''
+        );
 
   }
 
 
   /* ============================================================
-     AUTORISATION FORMULAIRE COACH
+     AUTORISATION EVALUATION
   ============================================================ */
 
-
   function updateEvaluationAccess() {
-
 
     const form =
       byId(
@@ -9122,23 +8507,15 @@ ${escapeHtml(rulesText)}
      PAYLOAD EVALUATION
   ============================================================ */
 
-
   function evaluationPayload() {
 
-
     const diver =
-      state.divers
-      .find(
-        function(item) {
-
-          return (
-            item.eah_id ===
-            val(
-              'eahId'
-            )
-          );
-
-        }
+      state.divers.find(
+        item =>
+          item.eah_id ===
+          val(
+            'eahId'
+          )
       );
 
 
@@ -9196,7 +8573,7 @@ ${escapeHtml(rulesText)}
         ||
         'EAH'
       )
-      .toUpperCase();
+        .toUpperCase();
 
 
     const waScore =
@@ -9248,7 +8625,7 @@ ${escapeHtml(rulesText)}
         code
 
       )
-      .trim();
+        .trim();
 
 
     const videoUrl =
@@ -9259,89 +8636,71 @@ ${escapeHtml(rulesText)}
         ||
         ''
       )
-      .trim();
+        .trim();
 
 
-    const payload = {
+    const coachName =
 
+      state.membership.display_name
+
+      ||
+
+      state.membership.email
+
+      ||
+
+      'Coach';
+
+
+    return {
 
       clubSlug:
         state.club.slug,
 
-
-      club_id:
-        state.club.id,
-
+      club_slug:
+        state.club.slug,
 
       clubId:
         state.club.id,
 
+      club_id:
+        state.club.id,
 
       eahId:
         diver.eah_id,
 
-
       eah_id:
         diver.eah_id,
-
 
       diverId:
         diver.id,
 
-
       diver_id:
         diver.id,
 
-
       coachName:
-
-        state.membership.display_name
-
-        ||
-
-        state.membership.email
-
-        ||
-
-        'Coach',
-
+        coachName,
 
       coach_name:
-
-        state.membership.display_name
-
-        ||
-
-        state.membership.email
-
-        ||
-
-        'Coach',
-
+        coachName,
 
       primaryScoreType:
         scoreType,
 
-
       primary_score_type:
         scoreType,
-
 
       scoreType:
         scoreType,
 
-
       score_type:
         scoreType,
-
 
       scoringMode:
         scoreType,
 
-
       scoring_mode:
         scoreType,
-
 
       discipline:
         val(
@@ -9350,22 +8709,17 @@ ${escapeHtml(rulesText)}
         ||
         'Plongeon',
 
-
       diveCode:
         code,
-
 
       dive_code:
         code,
 
-
       diveName:
         diveName,
 
-
       dive_name:
         diveName,
-
 
       height:
         numberOrNull(
@@ -9374,14 +8728,12 @@ ${escapeHtml(rulesText)}
           )
         ),
 
-
       heightType:
         val(
           'heightType'
         )
         ||
         'KNOWN',
-
 
       height_type:
         val(
@@ -9390,7 +8742,6 @@ ${escapeHtml(rulesText)}
         ||
         'KNOWN',
 
-
       spotId:
         val(
           'spotId'
@@ -9398,14 +8749,12 @@ ${escapeHtml(rulesText)}
         ||
         null,
 
-
       spot_id:
         val(
           'spotId'
         )
         ||
         null,
-
 
       spotName:
         String(
@@ -9415,10 +8764,9 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim()
+          .trim()
         ||
         null,
-
 
       spot_name:
         String(
@@ -9428,10 +8776,9 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim()
+          .trim()
         ||
         null,
-
 
       dd:
         numberOrNull(
@@ -9440,14 +8787,12 @@ ${escapeHtml(rulesText)}
           )
         ),
 
-
       eahDifficulty:
         numberOrNull(
           val(
             'eahDifficulty'
           )
         ),
-
 
       eah_difficulty:
         numberOrNull(
@@ -9456,42 +8801,32 @@ ${escapeHtml(rulesText)}
           )
         ),
 
-
       waScore:
         waScore,
-
 
       wa_score:
         waScore,
 
-
       takeoff:
         takeoff,
-
 
       trick:
         trick,
 
-
       entry:
         entry,
-
 
       entry_score:
         entry,
 
-
       eahScore:
         eahScore,
-
 
       eah_score:
         eahScore,
 
-
       criteria:
         criteria,
-
 
       positive:
         String(
@@ -9501,8 +8836,7 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       improve:
         String(
@@ -9512,8 +8846,7 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       comment:
         String(
@@ -9523,39 +8856,31 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       videoUrl:
         videoUrl,
 
-
       video_url:
         videoUrl,
-
 
       videoQrAccessible:
         Boolean(
           byId(
             'videoQrAccessible'
           )
-          ?.checked
+            ?.checked
         ),
-
 
       video_qr_accessible:
         Boolean(
           byId(
             'videoQrAccessible'
           )
-          ?.checked
+            ?.checked
         )
 
-
     };
-
-
-    return payload;
 
   }
 
@@ -9564,14 +8889,11 @@ ${escapeHtml(rulesText)}
      ENVOYER EVALUATION
   ============================================================ */
 
-
   async function submitEvaluation(
     event
   ) {
 
-
-    event
-      ?.preventDefault();
+    event?.preventDefault();
 
 
     if (
@@ -9614,7 +8936,6 @@ ${escapeHtml(rulesText)}
 
     try {
 
-
       const payload =
         evaluationPayload();
 
@@ -9627,13 +8948,7 @@ ${escapeHtml(rulesText)}
         null;
 
 
-      /*
-        RPC principale.
-      */
-
-
       try {
-
 
         result =
           await rpcAttempt(
@@ -9670,7 +8985,6 @@ ${escapeHtml(rulesText)}
 
           );
 
-
       } catch (
         error
       ) {
@@ -9681,140 +8995,109 @@ ${escapeHtml(rulesText)}
       }
 
 
-      /*
-        Fallback direct si la RPC
-        n'est pas disponible.
-      */
-
-
       if (
         !result
       ) {
 
-
         const record = {
-
 
           club_id:
             state.club.id,
 
-
           club_slug:
             state.club.slug,
-
 
           diver_id:
             payload.diver_id,
 
-
           eah_id:
             payload.eah_id,
-
 
           coach_name:
             payload.coach_name,
 
-
           discipline:
             payload.discipline,
-
 
           dive_code:
             payload.dive_code,
 
-
           dive_name:
             payload.dive_name,
-
 
           height:
             payload.height,
 
-
           height_type:
             payload.height_type,
-
 
           wa_score:
             payload.wa_score,
 
+          score_type:
+            payload.score_type,
 
           takeoff:
             payload.takeoff,
 
-
           trick:
             payload.trick,
-
 
           entry_score:
             payload.entry_score,
 
-
           eah_score:
             payload.eah_score,
-
 
           criteria:
             payload.criteria,
 
-
           positive:
             payload.positive,
-
 
           improve:
             payload.improve,
 
-
           comment:
             payload.comment,
 
-
           video_url:
             payload.video_url,
-
 
           video_public:
             Boolean(
               payload.video_url
             ),
 
-
           eah_verified:
             false,
 
-
           evaluated_at:
             new Date()
-            .toISOString()
-
+              .toISOString()
 
         };
 
 
         const {
-
           data,
-
           error
-
         } =
           await requireSupabase()
 
-          .from(
-            'evaluations'
-          )
+            .from(
+              'evaluations'
+            )
 
-          .insert(
-            record
-          )
+            .insert(
+              record
+            )
 
-          .select(
-            '*'
-          )
+            .select(
+              '*'
+            )
 
-          .single();
+            .single();
 
 
         if (
@@ -9891,11 +9174,9 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } catch (
       error
     ) {
-
 
       console.error(
         'Submit evaluation:',
@@ -9917,9 +9198,7 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } finally {
-
 
       state.evaluationBusy =
         false;
@@ -9940,17 +9219,14 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     DEMANDE PUBLIQUE DE GRADING
+     DEMANDE PUBLIQUE / DEPUIS PROFIL
   ============================================================ */
-
 
   async function submitPublicGrading(
     event
   ) {
 
-
-    event
-      ?.preventDefault();
+    event?.preventDefault();
 
 
     const button =
@@ -9978,8 +9254,109 @@ ${escapeHtml(rulesText)}
     );
 
 
-    const payload = {
+    const fromProfile =
+      state.gradingProfile
+      ||
+      {};
 
+
+    const destination =
+      state.gradingDestination ===
+        'CLUB'
+      ?
+      'CLUB'
+      :
+      'EAH';
+
+
+    const targetClubSlug =
+      destination ===
+        'CLUB'
+
+      ?
+
+      (
+        fromProfile.clubSlug
+        ||
+        CLUB_SLUG
+        ||
+        null
+      )
+
+      :
+
+      null;
+
+
+    if (
+      destination ===
+        'CLUB'
+      &&
+      !targetClubSlug
+    ) {
+
+      showMessage(
+
+        'publicFormMessage',
+
+        'Aucun club n’est associé à ce profil.',
+
+        'error'
+
+      );
+
+
+      if (
+        button
+      ) {
+
+        button.disabled =
+          false;
+
+      }
+
+
+      return;
+
+    }
+
+
+    const baseMessage =
+      String(
+        val(
+          'publicMessage'
+        )
+        ||
+        ''
+      )
+        .trim();
+
+
+    const metadata =
+      [
+
+        'Destination: '
+        +
+        destination,
+
+        fromProfile.eahId
+        ?
+        'EAH_ID: '
+        +
+        fromProfile.eahId
+        :
+        ''
+
+      ]
+        .filter(
+          Boolean
+        )
+        .join(
+          ' | '
+        );
+
+
+    const payload = {
 
       first_name:
         String(
@@ -9989,8 +9366,7 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       last_name:
         String(
@@ -10000,8 +9376,7 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       email:
         String(
@@ -10011,8 +9386,7 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       discipline:
         val(
@@ -10021,14 +9395,12 @@ ${escapeHtml(rulesText)}
         ||
         'Plongeon',
 
-
       dive_code:
         normalizeDiveCode(
           val(
             'publicDive'
           )
         ),
-
 
       height:
         numberOrNull(
@@ -10037,14 +9409,12 @@ ${escapeHtml(rulesText)}
           )
         ),
 
-
       height_type:
         val(
           'publicHeightType'
         )
         ||
         'KNOWN',
-
 
       video_url:
         String(
@@ -10054,43 +9424,48 @@ ${escapeHtml(rulesText)}
           ||
           ''
         )
-        .trim(),
-
+          .trim(),
 
       message:
-        String(
-          val(
-            'publicMessage'
-          )
-          ||
+
+        (
+          baseMessage
+          ?
+          baseMessage
+          +
+          '\n\n'
+          :
           ''
         )
-        .trim(),
 
+        +
+
+        metadata,
 
       club_slug:
-        CLUB_SLUG
+        targetClubSlug,
+
+      destination:
+        destination,
+
+      target:
+        destination,
+
+      eah_id:
+        fromProfile.eahId
         ||
         null
-
 
     };
 
 
     try {
 
-
       let sent =
         false;
 
 
-      /*
-        RPC existante.
-      */
-
-
       try {
-
 
         await rpcAttempt(
 
@@ -10122,7 +9497,6 @@ ${escapeHtml(rulesText)}
         sent =
           true;
 
-
       } catch (
         rpcError
       ) {
@@ -10135,30 +9509,63 @@ ${escapeHtml(rulesText)}
       }
 
 
-      /*
-        Fallback table.
-      */
-
-
       if (
         !sent
       ) {
 
+        /*
+          Fallback compatible avec l'ancienne table.
+          destination et EAH_ID restent inscrits dans MESSAGE.
+          club_slug permet de rattacher la demande au club.
+        */
+
+        const compatiblePayload = {
+
+          first_name:
+            payload.first_name,
+
+          last_name:
+            payload.last_name,
+
+          email:
+            payload.email,
+
+          discipline:
+            payload.discipline,
+
+          dive_code:
+            payload.dive_code,
+
+          height:
+            payload.height,
+
+          height_type:
+            payload.height_type,
+
+          video_url:
+            payload.video_url,
+
+          message:
+            payload.message,
+
+          club_slug:
+            payload.club_slug
+
+        };
+
 
         const {
-
           error
-
         } =
           await requireSupabase()
 
-          .from(
-            'public_grading_requests'
-          )
+            .from(
+              'public_grading_requests'
+            )
 
-          .insert(
-            payload
-          );
+            .insert(
+              compatiblePayload
+            );
 
 
         if (
@@ -10175,14 +9582,27 @@ ${escapeHtml(rulesText)}
       byId(
         'publicGradingForm'
       )
-      ?.reset();
+        ?.reset();
+
+
+      const successText =
+        destination ===
+          'CLUB'
+
+        ?
+
+        'Demande envoyée au coach du club.'
+
+        :
+
+        'Demande envoyée à EAH Grading.';
 
 
       showMessage(
 
         'publicFormMessage',
 
-        'Demande envoyée à EAH Diving.',
+        successText,
 
         'success'
 
@@ -10191,17 +9611,23 @@ ${escapeHtml(rulesText)}
 
       toast(
 
-        'Demande envoyée.',
+        successText,
 
         'success'
 
       );
 
 
+      state.gradingDestination =
+        'EAH';
+
+
+      state.gradingProfile =
+        null;
+
     } catch (
       error
     ) {
-
 
       console.error(
         'Public grading:',
@@ -10223,9 +9649,7 @@ ${escapeHtml(rulesText)}
 
       );
 
-
     } finally {
-
 
       if (
         button
@@ -10242,33 +9666,35 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     URL NFC / QR
+     DEEP LINKS NFC / QR
   ============================================================ */
-
 
   async function handleDeepLink() {
 
-
-    /*
-      CARTE COACH
-    */
-
-
     const coachToken =
       String(
+
         URL_PARAMS.get(
           'coachToken'
         )
+
         ||
+
+        URL_PARAMS.get(
+          'coach_token'
+        )
+
+        ||
+
         ''
+
       )
-      .trim();
+        .trim();
 
 
     if (
       coachToken
     ) {
-
 
       showPage(
 
@@ -10292,11 +9718,6 @@ ${escapeHtml(rulesText)}
       return true;
 
     }
-
-
-    /*
-      CARTE PLONGEUR
-    */
 
 
     const eahId =
@@ -10357,7 +9778,6 @@ ${escapeHtml(rulesText)}
       token
     ) {
 
-
       showPage(
 
         'profil',
@@ -10394,142 +9814,128 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     EVENEMENTS FORMULAIRES
+     EVENEMENTS
   ============================================================ */
 
-
   function bindForms() {
-
 
     byId(
       'coachLoginForm'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'submit',
+        'submit',
 
-      coachLogin
+        coachLogin
 
-    );
+      );
 
 
     byId(
       'diverLoginForm'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'submit',
+        'submit',
 
-      diverLogin
+        diverLogin
 
-    );
+      );
 
 
     byId(
       'publicGradingForm'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'submit',
+        'submit',
 
-      submitPublicGrading
+        submitPublicGrading
 
-    );
+      );
 
 
     byId(
       'evaluationForm'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'submit',
+        'submit',
 
-      submitEvaluation
+        submitEvaluation
 
-    );
+      );
 
 
     byId(
       'setupProfileButton'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'click',
+        'click',
 
-      setupProfile
+        setupProfile
 
-    );
+      );
 
 
     byId(
       'logoutCoachButton'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'click',
+        'click',
 
-      logoutCoach
+        logoutCoach
 
-    );
+      );
 
 
     byId(
       'openEvaluationButton'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'click',
+        'click',
 
-      function() {
+        () =>
+          showPage(
+            'evaluation'
+          )
 
-        showPage(
-          'evaluation'
-        );
-
-      }
-
-    );
+      );
 
 
     byId(
       'diveCode'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'input',
+        'input',
 
-      updateDiveName
+        updateDiveName
 
-    );
-
-
-    /*
-      SPOT -> NOM DU LIEU
-    */
+      );
 
 
     byId(
       'spotId'
     )
-    ?.addEventListener(
+      ?.addEventListener(
 
-      'change',
+        'change',
 
-      function() {
+        () => {
+
+          const id =
+            val(
+              'spotId'
+            );
 
 
-        const id =
-          val(
-            'spotId'
-          );
-
-
-        const spot =
-          state.spots
-          .find(
-            function(item) {
-
-              return (
+          const spot =
+            state.spots.find(
+              item =>
                 String(
                   item.id
                 )
@@ -10537,45 +9943,36 @@ ${escapeHtml(rulesText)}
                 String(
                   id
                 )
-              );
-
-            }
-          );
+            );
 
 
-        if (
-          spot
-          &&
-          byId(
-            'spotName'
-          )
-        ) {
+          if (
+            spot
+            &&
+            byId(
+              'spotName'
+            )
+          ) {
 
-          byId(
-            'spotName'
-          ).value =
-            spot.name
-            ||
-            '';
+            byId(
+              'spotName'
+            ).value =
+              spot.name
+              ||
+              '';
+
+          }
 
         }
 
-      }
-
-    );
-
-
-    /*
-      PROFIL PLONGEUR COACH
-    */
+      );
 
 
     document.addEventListener(
 
       'click',
 
-      function(event) {
-
+      event => {
 
         const detail =
           event.target.closest(
@@ -10587,15 +9984,37 @@ ${escapeHtml(rulesText)}
           detail
         ) {
 
-
           event.preventDefault();
 
 
           openCoachDiverDetail(
 
-            detail
-              .dataset
-              .coachDiverDetail
+            detail.dataset.coachDiverDetail
+
+          );
+
+
+          return;
+
+        }
+
+
+        const grading =
+          event.target.closest(
+            '[data-profile-grading]'
+          );
+
+
+        if (
+          grading
+        ) {
+
+          event.preventDefault();
+
+
+          openProfileGrading(
+
+            grading.dataset.profileGrading
 
           );
 
@@ -10609,24 +10028,19 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     FIN DU CHARGEMENT DES IMAGES
+     CHARGEMENT DES IMAGES
   ============================================================ */
-
 
   function removeImageLoadingGuard() {
 
-
     const done =
-      function() {
-
+      () =>
         document
           .documentElement
           .classList
           .remove(
             'eah-images-loading'
           );
-
-      };
 
 
     if (
@@ -10637,7 +10051,6 @@ ${escapeHtml(rulesText)}
       done();
 
     } else {
-
 
       window.addEventListener(
 
@@ -10655,14 +10068,7 @@ ${escapeHtml(rulesText)}
       );
 
 
-      /*
-        Sécurité :
-        le site n'attend jamais indéfiniment
-        une image absente.
-      */
-
-
-      window.setTimeout(
+      setTimeout(
 
         done,
 
@@ -10676,20 +10082,10 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     CHARGEMENT ASYNCHRONE
+     INITIALISATION ASYNCHRONE
   ============================================================ */
 
-
   async function initAsync() {
-
-
-    /*
-      Données publiques.
-
-      Une erreur ici
-      NE bloque pas la navigation.
-    */
-
 
     try {
 
@@ -10707,13 +10103,7 @@ ${escapeHtml(rulesText)}
     }
 
 
-    /*
-      NFC ou session coach.
-    */
-
-
     try {
-
 
       const deepLinkHandled =
         await handleDeepLink();
@@ -10726,7 +10116,6 @@ ${escapeHtml(rulesText)}
         await restoreCoachSession();
 
       }
-
 
     } catch (
       error
@@ -10743,20 +10132,18 @@ ${escapeHtml(rulesText)}
 
 
   /* ============================================================
-     INITIALISATION PRINCIPALE
+     INITIALISATION
   ============================================================ */
-
 
   function init() {
 
-
     /*
-      LE ROUTEUR EST LANCE EN PREMIER.
+      Le routeur est initialisé AVANT Supabase.
 
-      C'est ce qui évite désormais
-      le site bloqué sur l'accueil.
+      Une erreur Supabase ne doit donc plus bloquer
+      Grading / Blazons / Spots / Actualités /
+      Tarifs / Population / Disciplines.
     */
-
 
     initRouter();
 
@@ -10785,17 +10172,6 @@ ${escapeHtml(rulesText)}
     removeImageLoadingGuard();
 
 
-    /*
-      Supabase est lancé ensuite.
-
-      Donc même si une RPC Supabase
-      rencontre une erreur,
-      Grading / Blazons / Population /
-      Spots / Actualités / Tarifs /
-      Disciplines continuent à s'ouvrir.
-    */
-
-
     initAsync();
 
   }
@@ -10805,12 +10181,10 @@ ${escapeHtml(rulesText)}
      DEMARRAGE
   ============================================================ */
 
-
   if (
     document.readyState ===
     'loading'
   ) {
-
 
     document.addEventListener(
 
@@ -10827,14 +10201,10 @@ ${escapeHtml(rulesText)}
 
     );
 
-
   } else {
-
 
     init();
 
-
   }
-
 
 })();
