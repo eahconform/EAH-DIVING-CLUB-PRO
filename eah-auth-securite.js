@@ -628,99 +628,72 @@ function diverRegisterEmail() {
      PLONGEUR — CODE OUBLIE
   =================================================== */
 
-  function diverForgot() {
-    openDialog(
-      'Code personnel oublié',
-      [
-        {
-          name: 'id',
-          label: 'Numéro EAH',
-          value: $('#diverEahId')?.value || ''
-        },
-        {
-          name: 'email',
-          label: 'E-mail de récupération déjà vérifié',
-          type: 'email',
-          autocomplete: 'email'
-        }
-      ],
-      async (values, { close }) => {
-        const id =
-          values.id.trim().toUpperCase();
 
-        const slug = clubSlug();
+function diverForgot() {
 
-        const email =
-          values.email.trim().toLowerCase();
+  openDialog(
+    'Demande de récupération plongeur',
+    [
+      {
+        name: 'id',
+        label: 'Numéro EAH du plongeur',
+        value: $('#diverEahId')?.value || '',
+        autocomplete: 'off'
+      }
+    ],
 
-        if (!id) {
-          throw new Error(
-            'Numéro EAH obligatoire.'
-          );
-        }
+    async (values, { close }) => {
 
-        await sendEmailCode(email, false);
+      const id = String(
+        values.id || ''
+      ).trim().toUpperCase();
 
-        close();
-
-        openDialog(
-          'Réinitialiser mon code personnel',
-          [
-            {
-              name: 'otp',
-              label: 'Code reçu par e-mail',
-              inputmode: 'numeric',
-              autocomplete: 'one-time-code'
-            },
-            {
-              name: 'pin',
-              label: 'Nouveau code (6 à 8 chiffres)',
-              type: 'password',
-              inputmode: 'numeric'
-            },
-            {
-              name: 'confirm',
-              label: 'Confirmer le nouveau code',
-              type: 'password',
-              inputmode: 'numeric'
-            }
-          ],
-          async (step, { close: done }) => {
-            if (
-              !validPin(step.pin) ||
-              step.pin !== step.confirm
-            ) {
-              throw new Error(
-                'Nouveau code invalide ou confirmation différente.'
-              );
-            }
-
-            await verifyEmailCode(
-              email, step.otp
-            );
-
-            await diverRpc(
-              'eah_diver_reset_pin_v1',
-              {
-                p_club_slug: slug,
-                p_eah_id: id,
-                p_new_pin: step.pin
-              }
-            );
-
-            done();
-
-            alert(
-              'Code réinitialisé. ' +
-              'Tu peux maintenant te connecter.'
-            );
-          },
-          'Valider et réinitialiser'
+      if (!id) {
+        throw new Error(
+          'Saisis ton numéro EAH.'
         );
-      },
-      'Recevoir un code e-mail'
-    );
-  }
+      }
+
+      const sb = coachClient();
+
+      if (!sb) {
+        throw new Error(
+          'Connexion Supabase indisponible.'
+        );
+      }
+
+      const { data, error } = await sb.rpc(
+        'eah_request_recovery_v1',
+        {
+          p_club_slug: clubSlug(),
+          p_account_type: 'DIVER',
+          p_identifier: id
+        }
+      );
+
+      if (error) throw error;
+
+      if (!data?.ok) {
+        throw new Error(
+          'Impossible de transmettre la demande.'
+        );
+      }
+
+      close();
+
+      alert(
+        'Demande transmise.\n\n' +
+        'Si ce numéro correspond à un profil, ' +
+        'la demande sera examinée par ' +
+        'l’administrateur EAH Diving.\n\n' +
+        'Ton code personnel reste inchangé.'
+      );
+    },
+
+    'Envoyer ma demande'
+  );
+}
+
 
   /* ===================================================
      SELECTION AUTOMATIQUE DU CLUB
