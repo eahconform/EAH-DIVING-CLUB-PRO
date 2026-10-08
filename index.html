@@ -91,13 +91,41 @@
   <link
     rel="preload"
     as="image"
+    href="population-hero.jpg"
+  >
+
+  <link
+    rel="preload"
+    as="image"
+    href="grading-hero.jpg"
+  >
+
+  <link
+    rel="preload"
+    as="image"
     href="freestyle-desktop.jpg"
+    media="(min-width:701px)"
+  >
+
+  <link
+    rel="preload"
+    as="image"
+    href="freestyle-mobile.jpg"
+    media="(max-width:700px)"
   >
 
   <link
     rel="preload"
     as="image"
     href="high-diving-desktop.png"
+    media="(min-width:701px)"
+  >
+
+  <link
+    rel="preload"
+    as="image"
+    href="high-diving-mobile.jpg"
+    media="(max-width:700px)"
   >
 
   <link
@@ -115,15 +143,21 @@
   <link
     rel="preload"
     as="image"
+    href="saut-ange-desktop.jpg"
+  >
+
+  <link
+    rel="preload"
+    as="image"
     href="pricing-hero.jpg"
-    media="(min-width: 601px)"
+    media="(min-width:601px)"
   >
 
   <link
     rel="preload"
     as="image"
     href="tarifs-mobile.png"
-    media="(max-width: 600px)"
+    media="(max-width:600px)"
   >
 
   <link
@@ -138,6 +172,12 @@
     href="club-dashboard-hero.jpg"
   >
 
+  <link
+    rel="preload"
+    as="image"
+    href="evaluation-hero.jpg"
+  >
+
 
   <!-- ============================================================
        CSS PRINCIPAL
@@ -145,7 +185,7 @@
 
   <link
     rel="stylesheet"
-    href="styles.css?v=20261006-20"
+    href="styles.css?v=20261008-1"
   >
 
 
@@ -161,7 +201,7 @@
         "EAH DIVING PRO CLUB",
 
       VERSION:
-        "8.0.0",
+        "8.1.0",
 
       SUPABASE_URL:
         "https://limyeqpdzjjwsdximehp.supabase.co",
@@ -191,26 +231,24 @@
 
 
   <!-- ============================================================
-       UN SEUL SCRIPT PRINCIPAL
+       SCRIPT PRINCIPAL EAH
   ============================================================ -->
 
   <script
     defer
-    src="script.js?v=20261006-20"
+    src="script.js?v=20261008-1"
   ></script>
 
 
   <!-- ============================================================
-       CORRECTIONS DE SECURITE D'AFFICHAGE
+       SECURITE D'AFFICHAGE + COMPLEMENTS INTERFACE
   ============================================================ -->
 
   <style>
 
     /*
-      IMPORTANT :
-
-      une seule page EAH est visible.
-      La navigation JS ajoute / retire .active.
+      Une seule page EAH est visible.
+      script.js ajoute / retire la classe .active.
     */
 
     .page {
@@ -228,9 +266,9 @@
     }
 
 
-    /*
-      PROFIL / HISTORIQUE
-    */
+    /* ============================================================
+       PROFIL / HISTORIQUE / COACH
+    ============================================================ */
 
     .profile-history-list,
     #coachDiversList {
@@ -565,9 +603,9 @@
     }
 
 
-    /*
-      MODAL
-    */
+    /* ============================================================
+       MODAL
+    ============================================================ */
 
     .modal-image {
 
@@ -597,9 +635,9 @@
     }
 
 
-    /*
-      IMAGES HERO
-    */
+    /* ============================================================
+       IMAGES HERO
+    ============================================================ */
 
     .page-hero-image {
 
@@ -2400,7 +2438,9 @@
         <div class="container">
 
 
-          <!-- CONNEXION -->
+          <!-- ====================================================
+               CONNEXION
+          ===================================================== -->
 
 
           <div
@@ -2568,7 +2608,9 @@
           </div>
 
 
-          <!-- ESPACE COACH -->
+          <!-- ====================================================
+               ESPACE COACH
+          ===================================================== -->
 
 
           <section
@@ -2693,6 +2735,11 @@
             </div>
 
 
+            <!-- ==================================================
+                 MES PLONGEURS
+            =================================================== -->
+
+
             <article
               class="dashboard-card"
               style="margin-top:25px"
@@ -2773,11 +2820,13 @@
 
               <div>
 
+
                 <div class="skeleton-line large"></div>
 
                 <div class="skeleton-line"></div>
 
                 <div class="skeleton-line small"></div>
+
 
               </div>
 
@@ -2825,6 +2874,11 @@
           </div>
 
 
+          <!-- ====================================================
+               ACTIVATION PREMIER SCAN NFC / QR
+          ===================================================== -->
+
+
           <div
             id="profileSetup"
             class="content-panel hidden"
@@ -2839,6 +2893,15 @@
             <h2>
               Activez votre profil EAH
             </h2>
+
+
+            <p class="muted">
+
+              Configurez votre profil une seule fois.
+              Les prochains scans de votre carte
+              ouvriront directement votre passeport EAH.
+
+            </p>
 
 
             <div class="premium-form">
@@ -2856,6 +2919,7 @@
                   <input
                     id="setupFirstName"
                     type="text"
+                    autocomplete="given-name"
                     required
                   >
 
@@ -2871,6 +2935,7 @@
                   <input
                     id="setupLastName"
                     type="text"
+                    autocomplete="family-name"
                     required
                   >
 
@@ -2961,8 +3026,10 @@
                     id="setupAccessPin"
                     type="password"
                     inputmode="numeric"
+                    pattern="[0-9]{4,8}"
                     minlength="4"
                     maxlength="8"
+                    autocomplete="new-password"
                     required
                   >
 
@@ -3008,6 +3075,11 @@
           </div>
 
 
+          <!-- ====================================================
+               PROFIL GENERE PAR SCRIPT.JS
+          ===================================================== -->
+
+
           <div
             id="profileView"
             class="hidden"
@@ -3024,7 +3096,7 @@
 
 
     <!-- ==========================================================
-         EVALUATION
+         EVALUATION / GRADE REPORT
     ========================================================== -->
 
     <section
@@ -3391,7 +3463,9 @@
             </div>
 
 
-            <!-- TAKEOFF -->
+            <!-- ==================================================
+                 TAKEOFF
+            =================================================== -->
 
 
             <div class="form-section criteria-section">
@@ -3430,7 +3504,9 @@
             </div>
 
 
-            <!-- TRICK -->
+            <!-- ==================================================
+                 TRICK
+            =================================================== -->
 
 
             <div class="form-section criteria-section">
@@ -3469,7 +3545,9 @@
             </div>
 
 
-            <!-- ENTRY -->
+            <!-- ==================================================
+                 ENTRY
+            =================================================== -->
 
 
             <div class="form-section criteria-section">
@@ -3508,7 +3586,9 @@
             </div>
 
 
-            <!-- RETOUR COACH -->
+            <!-- ==================================================
+                 RETOUR COACH
+            =================================================== -->
 
 
             <div class="form-section">
@@ -3570,7 +3650,9 @@
             </div>
 
 
-            <!-- VIDEO -->
+            <!-- ==================================================
+                 VIDEO
+            =================================================== -->
 
 
             <div class="form-section">
