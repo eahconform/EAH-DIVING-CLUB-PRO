@@ -4609,5 +4609,35 @@ html:not(.eah-page-club) #eah-tarifs {
 </style>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const mode = document.getElementById('scoreType');
+  const wa = document.getElementById('waScore');
+  const form = document.getElementById('evaluationForm');
+
+  if (!mode || !wa || !form) return;
+
+  function updateScoringFields() {
+    const onlyWA = mode.value === 'WA';
+
+    form.querySelectorAll('.criteria-section')
+      .forEach(section => {
+        section.style.display = onlyWA ? 'none' : '';
+      });
+
+    const waField = wa.closest('label');
+
+    if (waField) {
+      waField.style.display = onlyWA ? '' : 'none';
+    }
+
+    wa.required = onlyWA;
+  }
+
+  mode.addEventListener('change', updateScoringFields);
+  updateScoringFields();
+});
+</script>
+
 </body>
 </html>
