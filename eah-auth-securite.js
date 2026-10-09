@@ -850,13 +850,19 @@ function diverForgot() {
     // Options dans le profil plongeur.
     const profile = $('#profileView');
 
-    if (
-      profile &&
-      profile.children.length &&
-      typeof state !== 'undefined' &&
-      state.profile &&
-      !$('#eahDiverSecurity')
-    ) {
+    
+if (
+  profile &&
+  profile.children.length &&
+  profile
+    .querySelector('.eah-fast-profile .overline')
+    ?.textContent
+    ?.includes('ESPACE PERSONNEL EAH') &&
+  typeof state !== 'undefined' &&
+  state.profile &&
+  !$('#eahDiverSecurity')
+) {
+
       const area = document.createElement('div');
 
       area.id = 'eahDiverSecurity';
