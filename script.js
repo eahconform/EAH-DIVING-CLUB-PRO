@@ -9188,12 +9188,12 @@ async function submitEvaluation(
     .toUpperCase();
 
 
-  const waScore =
-    asNumber(
-      val(
-        'waScore'
-      )
-    );
+  
+const waScore =
+  scoreType === 'WA'
+    ? asNumber(val('waScore'))
+    : null;
+
 
 
   if (
@@ -9228,38 +9228,32 @@ async function submitEvaluation(
   }
 
 
-  const takeoff =
-    criterionScore(
-      'D'
-    );
+  
+const takeoff =
+  scoreType === 'EAH'
+    ? criterionScore('D')
+    : null;
 
+const trick =
+  scoreType === 'EAH'
+    ? criterionScore('T')
+    : null;
 
-  const trick =
-    criterionScore(
-      'T'
-    );
+const entry =
+  scoreType === 'EAH'
+    ? criterionScore('E')
+    : null;
 
+const eahScore =
+  scoreType === 'EAH'
+    ? finalEahScore(takeoff, trick, entry)
+    : null;
 
-  const entry =
-    criterionScore(
-      'E'
-    );
+const criteria =
+  scoreType === 'EAH'
+    ? collectCriteria()
+    : {};
 
-
-  const eahScore =
-    finalEahScore(
-
-      takeoff,
-
-      trick,
-
-      entry
-
-    );
-
-
-  const criteria =
-    collectCriteria();
 
 
   const button =
@@ -9411,7 +9405,9 @@ async function submitEvaluation(
       await requireSupabase()
         .rpc(
 
-          'eah_submit_evaluation_fast',
+          
+'eah_submit_evaluation_mode_v2',
+
 
           {
 
@@ -9444,76 +9440,28 @@ async function submitEvaluation(
     }
 
 
-    setMessage(
+    
+setMessage(
+  'evaluationMsg',
+  `
+    <div class="notice success">
+      <strong>Évaluation enregistrée.</strong>
+      <p>
+        ${
+          scoreType === 'WA'
+            ? 'World Aquatics : ' +
+              fmtNumber(waScore) + '/10'
+            : 'EAH Diving : ' +
+              fmtNumber(eahScore) + '/10'
+        }
+      </p>
+      <small>
+        Le Grade Report est généré en arrière-plan.
+      </small>
+    </div>
+  `
+);
 
-      'evaluationMsg',
-
-      `
-        <div class="notice success">
-
-          <strong>
-            Évaluation enregistrée.
-          </strong>
-
-          <br><br>
-
-          Takeoff :
-          ${esc(takeoff)}/10
-
-          •
-
-          Trick :
-          ${esc(trick)}/10
-
-          •
-
-          Entry :
-          ${esc(entry)}/10
-
-          <br>
-
-          <strong>
-
-            EAH :
-            ${esc(
-              fmtNumber(
-                eahScore
-              )
-            )}/10
-
-          </strong>
-
-          ${
-            scoreType ===
-              'WA'
-            ?
-            `
-              <br>
-
-              Note principale :
-              <strong>
-                WA
-                ${esc(
-                  fmtNumber(
-                    waScore
-                  )
-                )}/10
-              </strong>
-            `
-            :
-            ''
-          }
-
-          <br><br>
-
-          <small>
-            Le Grade Report est généré en arrière-plan.
-          </small>
-
-        </div>
-      `
-
-    );
 
 
     showToast(
