@@ -9230,6 +9230,7 @@ const waScore =
 
   
 
+
 const needsWA =
   scoreType === 'WA' ||
   scoreType === 'BOTH';
@@ -9256,6 +9257,7 @@ if (
   );
   return;
 }
+
 
 const takeoff = needsEAH
   ? criterionScore('D')
