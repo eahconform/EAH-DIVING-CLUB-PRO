@@ -9229,30 +9229,53 @@ const waScore =
 
 
   
-const takeoff =
-  scoreType === 'EAH'
-    ? criterionScore('D')
-    : null;
 
-const trick =
-  scoreType === 'EAH'
-    ? criterionScore('T')
-    : null;
+const needsWA =
+  scoreType === 'WA' ||
+  scoreType === 'BOTH';
 
-const entry =
-  scoreType === 'EAH'
-    ? criterionScore('E')
-    : null;
+const needsEAH =
+  scoreType === 'EAH' ||
+  scoreType === 'BOTH';
 
-const eahScore =
-  scoreType === 'EAH'
-    ? finalEahScore(takeoff, trick, entry)
-    : null;
+const waScore = needsWA
+  ? asNumber(val('waScore'))
+  : null;
 
-const criteria =
-  scoreType === 'EAH'
-    ? collectCriteria()
-    : {};
+if (
+  needsWA &&
+  (waScore === null ||
+   waScore < 0 ||
+   waScore > 10)
+) {
+  setMessage(
+    'evaluationMsg',
+    '<div class="notice error">' +
+    'Saisis une note WA entre 0 et 10.' +
+    '</div>'
+  );
+  return;
+}
+
+const takeoff = needsEAH
+  ? criterionScore('D')
+  : null;
+
+const trick = needsEAH
+  ? criterionScore('T')
+  : null;
+
+const entry = needsEAH
+  ? criterionScore('E')
+  : null;
+
+const eahScore = needsEAH
+  ? finalEahScore(takeoff, trick, entry)
+  : null;
+
+const criteria = needsEAH
+  ? collectCriteria()
+  : {};
 
 
 
@@ -9406,7 +9429,7 @@ const criteria =
         .rpc(
 
           
-'eah_submit_evaluation_mode_v2',
+'eah_submit_evaluation_mode_v3',
 
 
           {
