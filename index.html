@@ -232,6 +232,12 @@ window.EAH_CONFIG = {
   src="eah-admin-recuperation.js?v=20261009-1"
 ></script>
 
+<!-- EAH DIVING - LIENS DE RECUPERATION V2 -->
+<script
+  defer
+  src="eah-recovery-links-v2.js?v=20261011-1"
+></script>
+
 </head>
 
 
@@ -2364,6 +2370,10 @@ EAH Diving
 
 <option value="WA">
 World Aquatics
+</option>
+
+<option value="BOTH">
+  EAH Diving + World Aquatics
 </option>
 
 </select>
@@ -4617,26 +4627,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!mode || !wa || !form) return;
 
-  function updateScoringFields() {
-    const onlyWA = mode.value === 'WA';
+  
+function updateScoringFields() {
 
-    form.querySelectorAll('.criteria-section')
-      .forEach(section => {
-        section.style.display = onlyWA ? 'none' : '';
-      });
+  const onlyWA = mode.value === 'WA';
+  const needsWA =
+    mode.value === 'WA' ||
+    mode.value === 'BOTH';
 
-    const waField = wa.closest('label');
+  form.querySelectorAll('.criteria-section')
+    .forEach(section => {
+      section.style.display =
+        onlyWA ? 'none' : '';
+    });
 
-    if (waField) {
-      waField.style.display = onlyWA ? '' : 'none';
-    }
+  const waField = wa.closest('label');
 
-    wa.required = onlyWA;
+  if (waField) {
+    waField.style.display =
+      needsWA ? '' : 'none';
   }
 
-  mode.addEventListener('change', updateScoringFields);
-  updateScoringFields();
-});
+  wa.required = needsWA;
+}
+
 </script>
 
 </body>
