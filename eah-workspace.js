@@ -720,6 +720,23 @@
             "
           >
 
+<label>
+  Type de notation
+</label>
+
+<select
+  id="evalScoringMode"
+  style="
+    width:100%;
+    min-height:52px;
+    margin-bottom:12px;
+  "
+>
+  <option value="EAH">EAH Diving</option>
+  <option value="WA">World Aquatics</option>
+  <option value="BOTH">EAH + WA</option>
+</select>
+
 
           <label>
             Note WA /10
@@ -758,22 +775,17 @@
           >
 
 
-          ${phaseHTML(
-            "takeoff",
-            "Takeoff"
-          )}
+          
+<div id="eahEvalPhaseFields">
 
+  ${phaseHTML("takeoff", "Takeoff")}
 
-          ${phaseHTML(
-            "trick",
-            "Trick"
-          )}
+  ${phaseHTML("trick", "Trick")}
 
+  ${phaseHTML("entry", "Entry")}
 
-          ${phaseHTML(
-            "entry",
-            "Entry"
-          )}
+</div>
+
 
 
           <div
@@ -863,6 +875,46 @@
       </div>
 
     `;
+
+const scoringMode =
+  document.getElementById('evalScoringMode');
+
+function updateEvalMode() {
+
+  const mode = scoringMode.value;
+
+  const needsEAH = mode !== 'WA';
+  const needsWA = mode !== 'EAH';
+
+  const phaseFields =
+    document.getElementById('eahEvalPhaseFields');
+
+  if (phaseFields) {
+    phaseFields.style.display =
+      needsEAH ? '' : 'none';
+  }
+
+  const wa =
+    document.getElementById('evalWA');
+
+  const waLabel = wa?.closest('label');
+
+  if (waLabel) {
+    waLabel.style.display =
+      needsWA ? '' : 'none';
+  }
+
+  if (wa) {
+    wa.required = needsWA;
+  }
+}
+
+scoringMode.addEventListener(
+  'change',
+  updateEvalMode
+);
+
+updateEvalMode();
 
 
     /*
