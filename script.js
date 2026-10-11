@@ -9188,47 +9188,6 @@ async function submitEvaluation(
     .toUpperCase();
 
 
-  
-const waScore =
-  scoreType === 'WA'
-    ? asNumber(val('waScore'))
-    : null;
-
-
-
-  if (
-    scoreType ===
-      'WA'
-    &&
-    waScore ===
-      null
-  ) {
-
-    setMessage(
-
-      'evaluationMsg',
-
-      `
-        <div class="notice error">
-
-          La note principale sélectionnée est World Aquatics.
-
-          <br><br>
-
-          Renseigne d'abord la note WA.
-
-        </div>
-      `
-
-    );
-
-
-    return;
-
-  }
-
-
-  
 
 
 const needsWA =
