@@ -4626,37 +4626,54 @@ html:not(.eah-page-club) #eah-tarifs {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const mode = document.getElementById('scoreType');
-  const wa = document.getElementById('waScore');
-  const form = document.getElementById('evaluationForm');
 
-  if (!mode || !wa || !form) return;
+  const mode =
+    document.getElementById('scoreType');
 
-  
-function updateScoringFields() {
+  const wa =
+    document.getElementById('waScore');
 
-  const onlyWA = mode.value === 'WA';
-  const needsWA =
-    mode.value === 'WA' ||
-    mode.value === 'BOTH';
+  const form =
+    document.getElementById('evaluationForm');
 
-  form.querySelectorAll('.criteria-section')
-    .forEach(section => {
-      section.style.display =
-        onlyWA ? 'none' : '';
-    });
-
-  const waField = wa.closest('label');
-
-  if (waField) {
-    waField.style.display =
-      needsWA ? '' : 'none';
+  if (!mode || !wa || !form) {
+    return;
   }
 
-  wa.required = needsWA;
-}
+  function updateScoringFields() {
 
+    const onlyWA = mode.value === 'WA';
+
+    const needsWA =
+      mode.value === 'WA' ||
+      mode.value === 'BOTH';
+
+    form.querySelectorAll('.criteria-section')
+      .forEach(section => {
+
+        section.style.display =
+          onlyWA ? 'none' : '';
+
+      });
+
+    const waField = wa.closest('label');
+
+    if (waField) {
+      waField.style.display =
+        needsWA ? '' : 'none';
+    }
+
+    wa.required = needsWA;
+  }
+
+  mode.addEventListener(
+    'change',
+    updateScoringFields
+  );
+
+  updateScoringFields();
+
+});
 </script>
-
 </body>
 </html>
