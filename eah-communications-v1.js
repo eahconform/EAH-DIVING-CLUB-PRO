@@ -393,7 +393,30 @@
         'padding:12px'
       ].join(';');
 
-      b.onclick = () => openCoachForm(kind);
+      
+b.onclick = (event) => {
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  Promise.resolve(
+    openCoachForm(kind)
+  ).catch(err => {
+
+    console.error(
+      'EAH formulaire coach :',
+      err
+    );
+
+    alert(
+      "Impossible d'ouvrir le formulaire : " +
+      (err?.message || 'Erreur inconnue')
+    );
+
+  });
+
+};
+
       wrapper.appendChild(b);
     }
 
@@ -451,7 +474,9 @@
   }
 
   function showProfileItems(items) {
-    const profile = $('#profileView');
+    const profile =
+  $('#eahDiverProfileHost') ||
+  $('#profileView');
     if (!profile) return;
 
     $('#eahPrivateCommunications')?.remove();
@@ -498,31 +523,128 @@
       };
   }
 
-  window.EAH_COMM_LOAD = async function(credentials) {
-    if (!credentials?.club || !credentials?.eahId) return;
+  
+/* ============================================================
+   EAH DIVING - ACTUALISATION COMMUNICATIONS V1.2
 
-    profileCredentials = credentials;
+   - Affiche les erreurs dans le profil
+   - Rafraîchit toutes les 20 secondes
+   - Évite les chargements simultanés
+   - Ne modifie aucune donnée
+============================================================ */
 
-    try {
-      const {data,error} = await db.rpc(
-        'eah_comm_private_feed_v1',
-        {
-          p_club_slug:credentials.club,
-          p_eah_id:credentials.eahId,
-          p_token:credentials.token || '',
-          p_pin_hash:credentials.pinHash || ''
-        }
-      );
+let eahCommLoading = false;
+let eahCommAutoRefresh = null;
 
-      if (error) throw error;
-      if (!data?.ok) throw new Error('Accès privé requis.');
+window.EAH_COMM_LOAD = async function(credentials) {
 
-      showProfileItems(data.items || []);
+  if (!credentials?.club || !credentials?.eahId) {
+    return;
+  }
 
-    } catch(err) {
-      console.warn('Communications EAH :',err.message);
+  profileCredentials = credentials;
+
+  if (eahCommLoading) return;
+
+  eahCommLoading = true;
+
+  try {
+
+    const { data, error } = await db.rpc(
+      'eah_comm_private_feed_v1',
+      {
+        p_club_slug: credentials.club,
+        p_eah_id: credentials.eahId,
+        p_token: credentials.token || '',
+        p_pin_hash: credentials.pinHash || ''
+      }
+    );
+
+    if (error) {
+      throw error;
     }
-  };
+
+    if (!data?.ok) {
+      throw new Error(
+        data?.error || 'Accès privé requis.'
+      );
+    }
+
+    // Retire une éventuelle ancienne erreur.
+    $('#eahCommLoadError')?.remove();
+
+    // Affiche les publications réellement reçues.
+    showProfileItems(data.items || []);
+
+  } catch (err) {
+
+    console.warn(
+      'Communications EAH :',
+      err
+    );
+
+    const host =
+      $('#eahDiverProfileHost') ||
+      $('#profileView');
+
+    if (host) {
+
+      let notice = $('#eahCommLoadError');
+
+      if (!notice) {
+
+        notice = document.createElement('div');
+        notice.id = 'eahCommLoadError';
+
+        notice.style.cssText = [
+          'margin:15px 0',
+          'padding:12px',
+          'border-radius:12px',
+          'background:rgba(224,82,94,.15)',
+          'color:#fff'
+        ].join(';');
+
+        host.appendChild(notice);
+      }
+
+      notice.textContent =
+        'Informations et conseils : ' +
+        'chargement impossible. ' +
+        (err?.message || 'Erreur inconnue') +
+        ' — Réessaie dans 20 secondes.';
+    }
+
+  } finally {
+
+    eahCommLoading = false;
+  }
+
+  // Un seul intervalle, même après plusieurs clics.
+  if (!eahCommAutoRefresh) {
+
+    eahCommAutoRefresh = setInterval(() => {
+
+      const view = $('#profileView');
+
+      if (
+        !document.hidden &&
+        profileCredentials &&
+        view &&
+        !view.classList.contains('hidden')
+      ) {
+
+        window.EAH_COMM_LOAD(
+          profileCredentials
+        );
+
+      }
+
+    }, 20000);
+
+  }
+
+};
+
 
   if (coachToken) {
     let attempts = 0;
