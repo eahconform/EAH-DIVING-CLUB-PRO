@@ -992,6 +992,44 @@ if (
           );
         }
 
+/* ==================================================
+   PREMIERE ACTIVATION D'UN COMPTE COACH
+
+   Après acceptation d'une invitation Supabase,
+   le coach choisit son premier mot de passe.
+================================================== */
+
+if (
+  new URLSearchParams(
+    window.location.search
+  ).has('eahCoachInvite') &&
+  (
+    event === 'SIGNED_IN' ||
+    event === 'INITIAL_SESSION'
+  )
+) {
+
+  setTimeout(async () => {
+
+    const { data } = await sb.auth.getUser();
+
+    const email = String(
+      data?.user?.email || ''
+    ).trim().toLowerCase();
+
+    if (
+      email === 'redstyles@outlook.fr' &&
+      !document.querySelector('.eah-security-overlay')
+    ) {
+
+      coachNewPassword(true);
+
+    }
+
+  }, 300);
+
+}
+
         setTimeout(installButtons, 0);
       });
 
