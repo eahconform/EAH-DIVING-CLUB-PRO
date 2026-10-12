@@ -140,7 +140,11 @@
       </div>
     `;
 
-    document.body.appendChild(overlay);
+    const host =
+  document.getElementById('eahCoachCardApp') ||
+  document.body;
+
+host.appendChild(overlay);
 
     const form = $('[data-security-form]', overlay);
     const status = $('[data-status]', overlay);
@@ -916,16 +920,14 @@ if (
 
       area.appendChild(heading);
 
-      const actions = [
-        [
-          'Modifier mon code personnel',
-          diverChange
-        ],
-        [
-          'Associer mon e-mail de récupération',
-          diverRegisterEmail
-        ]
-      ];
+      
+const actions = [
+  [
+    'Modifier mon code personnel',
+    diverChange
+  ]
+];
+
 
       for (const [label, handler] of actions) {
         const button = document.createElement('button');
