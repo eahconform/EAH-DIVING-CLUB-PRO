@@ -8412,6 +8412,12 @@ async function loadPrivateProfileByCard(
       state.profileHistory
     );
 
+window.EAH_COMM_LOAD?.({
+  club: CLUB_SLUG || data.club?.slug,
+  eahId: state.profile.eahId,
+  token: token
+});
+
 
   } catch (
     error
@@ -9018,6 +9024,12 @@ async function diverLogin(
     renderProfileHistory(
       state.profileHistory
     );
+
+window.EAH_COMM_LOAD?.({
+  club: CLUB_SLUG || data.club?.slug,
+  eahId: state.profile.eahId,
+  pinHash: pinHash
+});
 
 
   } catch (
