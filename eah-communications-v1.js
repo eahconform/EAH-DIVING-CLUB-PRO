@@ -290,8 +290,23 @@
     close.onclick = closeOverlay;
     box.appendChild(close);
 
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
+    
+overlay.appendChild(box);
+
+// Ajouter le formulaire dans l'espace coach NFC
+// afin qu'il ne soit pas masqué par coach-card.js.
+const coachApp = document.getElementById(
+  'eahCoachCardApp'
+);
+
+if (!coachApp) {
+  throw new Error(
+    "L'espace coach est introuvable."
+  );
+}
+
+coachApp.appendChild(overlay);
+
 
     form.addEventListener('submit',async e=>{
       e.preventDefault();
