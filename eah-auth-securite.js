@@ -446,40 +446,60 @@ function coachForgot() {
      PLONGEUR — MODIFIER SON CODE
   =================================================== */
 
-  function diverChange() {
-    openDialog(
-      'Modifier mon code personnel',
-      [
-        {
-          name: 'old',
-          label: 'Ancien code personnel',
-          type: 'password',
-          inputmode: 'numeric'
-        },
-        {
-          name: 'pin',
-          label: 'Nouveau code (6 à 8 chiffres)',
-          type: 'password',
-          inputmode: 'numeric'
-        },
-        {
-          name: 'confirm',
-          label: 'Confirmer le nouveau code',
-          type: 'password',
-          inputmode: 'numeric'
-        }
-      ],
-      async (values, { close }) => {
-        if (
-          !validPin(values.pin) ||
-          values.pin !== values.confirm
-        ) {
-          throw new Error(
-            'Codes différents ou nouveau code invalide.'
-          );
-        }
+  
+/* ===================================================
+   EAH DIVING - MODIFIER LE CODE PERSONNEL
 
-        await diverRpc(
+   NFC ou URL : ouverture du profil sans code.
+   Modification : ancien code obligatoire.
+   Code oublié : lien de récupération distinct.
+=================================================== */
+
+function diverChange() {
+
+  openDialog(
+    'Modifier mon code personnel',
+
+    [
+      {
+        name: 'old',
+        label: 'Code personnel actuel',
+        type: 'password',
+        inputmode: 'numeric',
+        autocomplete: 'current-password'
+      },
+      {
+        name: 'pin',
+        label: 'Nouveau code (6 à 8 chiffres)',
+        type: 'password',
+        inputmode: 'numeric',
+        autocomplete: 'new-password'
+      },
+      {
+        name: 'confirm',
+        label: 'Confirmer le nouveau code',
+        type: 'password',
+        inputmode: 'numeric',
+        autocomplete: 'new-password'
+      }
+    ],
+
+    async (values, { close }) => {
+
+      if (!/^[0-9]{6,8}$/.test(values.pin)) {
+        throw new Error(
+          'Le nouveau code doit contenir 6 à 8 chiffres.'
+        );
+      }
+
+      if (values.pin !== values.confirm) {
+        throw new Error(
+          'Les deux nouveaux codes sont différents.'
+        );
+      }
+
+      const { data, error } =
+        await requireSupabase().rpc(
           'eah_diver_change_pin_v1',
           {
             p_club_slug: clubSlug(),
@@ -489,16 +509,36 @@ function coachForgot() {
           }
         );
 
-        close();
+      if (error) throw error;
 
-        alert(
-          'Code personnel changé. ' +
-          'Reconnecte-toi avec le nouveau code.'
+      if (!data?.ok) {
+        throw new Error(
+          data?.error || 'Modification refusée.'
         );
-      },
-      'Modifier mon code'
-    );
-  }
+      }
+
+      if (typeof state !== 'undefined') {
+        state.diverPinHash = '';
+      }
+
+      try {
+        sessionStorage.removeItem(
+          'EAH_DIVER_PIN_SESSION'
+        );
+      } catch (_) {}
+
+      close();
+
+      alert(
+        'Code personnel modifié.\n' +
+        'Utilise ton nouveau code à la prochaine connexion.'
+      );
+
+    },
+
+    'Enregistrer mon nouveau code'
+  );
+}
 
   /* ===================================================
      PLONGEUR — ASSOCIER SON E-MAIL
