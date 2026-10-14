@@ -1251,39 +1251,55 @@
           </div>
 
 
-          <div class="eah-v6-main-score">
+          
+<div class="eah-v6-main-score">
 
-            <small>
-              NOTE ${html(score.type)}
-            </small>
+  <strong class="eah-v17-scores">
 
-            <strong>
+    ${
+      score.eahScore !== null
+        ? `
+          <span style="
+            display:block;
+            font-size:20px;
+            font-weight:800;
+            color:#ffffff;
+            white-space:nowrap;
+            line-height:1.4;
+          ">
+            EAH ${html(numberText(score.eahScore))}/10
+          </span>
+        `
+        : ''
+    }
 
-              ${html(numberText(score.mainScore))}
+    ${
+      score.waScore !== null
+        ? `
+          <span style="
+            display:block;
+            font-size:20px;
+            font-weight:800;
+            color:#30cfff;
+            white-space:nowrap;
+            line-height:1.4;
+          ">
+            WA ${html(numberText(score.waScore))}/10
+          </span>
+        `
+        : ''
+    }
 
-              <span>
-                /10
-              </span>
+  </strong>
 
-            </strong>
+  ${
+    verified
+      ? '<b>EAH VERIFIED</b>'
+      : ''
+  }
 
-            ${
-              secondary
-              ?
-              `<em>${html(secondary)}</em>`
-              :
-              ''
-            }
+</div>
 
-            ${
-              verified
-              ?
-              '<b>EAH VERIFIED</b>'
-              :
-              ''
-            }
-
-          </div>
 
         </div>
 
