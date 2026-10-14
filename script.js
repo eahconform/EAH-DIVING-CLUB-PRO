@@ -9246,12 +9246,14 @@ const eahScore = needsEAH
   ? finalEahScore(takeoff, trick, entry)
   : null;
 
+   
 const criteria = needsEAH
   ? collectCriteria()
-   criteria._diveCity = String(
+  : {};
+
+criteria._diveCity = String(
   document.getElementById('eahDiveCity')?.value || ''
 ).trim();
-  : {};
 
 
 
