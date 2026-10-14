@@ -9248,6 +9248,9 @@ const eahScore = needsEAH
 
 const criteria = needsEAH
   ? collectCriteria()
+   criteria._diveCity = String(
+  document.getElementById('eahDiveCity')?.value || ''
+).trim();
   : {};
 
 
