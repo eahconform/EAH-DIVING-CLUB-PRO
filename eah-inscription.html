@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
+
+<title>EAH Diving — Inscription</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(
+    145deg,
+    #03131f,
+    #061e33,
+    #0b3153
+  );
+  color: #fff;
+}
+
+.container {
+  max-width: 720px;
+  margin: 45px auto;
+  padding: 20px;
+}
+
+.card {
+  background: rgba(6,30,51,.95);
+  border: 1px solid #245477;
+  padding: 28px;
+  border-radius: 20px;
+}
+
+h1 {
+  color: #30cfff;
+}
+
+.offer {
+  display: block;
+  margin: 15px 0;
+  padding: 18px;
+  background: #102f4b;
+  border: 1px solid #356386;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.offer input {
+  width: auto;
+}
+
+label {
+  display: block;
+  margin-top: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  background: #0c2942;
+  border: 1px solid #45718f;
+  border-radius: 10px;
+  color: white;
+  margin-top: 7px;
+  font: inherit;
+}
+
+button {
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  color: #fff;
+  background: #0b6bff;
+  border: 0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.total {
+  text-align: center;
+  font-size: 28px;
+  color: #30cfff;
+  margin-top: 22px;
+  font-weight: bold;
+}
+
+.success {
+  display: none;
+  margin-top: 25px;
+  padding: 24px;
+  background: #0c483c;
+  border: 1px solid #20be8d;
+  border-radius: 15px;
+  text-align: center;
+}
+
+.success h2 {
+  color: #78ffcc;
+}
+
+.notice {
+  color: #b4cadd;
+  font-size: 13px;
+  line-height: 1.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <h1>EAH DIVING</h1>
+    <h2>Créer mon profil</h2>
+
+    <p>
+      Bienvenue dans le passeport numérique
+      EAH Diving.
+    </p>
+
+    <form id="registrationForm">
+
+      <label>
+        Prénom
+        <input id="firstName" required>
+      </label>
+
+      <label>
+        Nom
+        <input id="lastName" required>
+      </label>
+
+      <label>
+        Adresse e-mail
+        <input
+          id="email"
+          type="email"
+          required>
+      </label>
+
+      <h3>Choisissez votre offre</h3>
+
+      <label class="offer">
+        <input
+          type="radio"
+          name="offer"
+          value="30"
+          checked>
+        Profil EAH Diving — 30 €
+        <p>Profil numérique + 3 gradings inclus</p>
+      </label>
+
+      <label class="offer">
+        <input
+          type="radio"
+          name="offer"
+          value="40">
+        Profil EAH + Badge — 40 €
+        <p>
+          Profil numérique + badge personnalisé
+          + 5 gradings inclus
+        </p>
+      </label>
+
+      <label>
+        Code promotionnel
+        <input
+          id="promo"
+          placeholder="Code promo">
+      </label>
+
+      <p id="promoMessage"></p>
+
+      <div class="total">
+        Total : <span id="total">30 €</span>
+      </div>
+
+      <button type="submit">
+        Valider le paiement (simulation)
+      </button>
+
+      <p class="notice">
+        MODE TEST : aucun paiement réel ne sera
+        effectué et aucune carte bancaire
+        ne sera demandée.
+      </p>
+
+    </form>
+
+    <div id="success" class="success">
+      <h2>✓ PAIEMENT VALIDÉ</h2>
+
+      <h3>Simulation réussie !</h3>
+
+      <p id="confirmation"></p>
+
+      <p class="notice">
+        Aucun montant n'a été débité.
+        Cette simulation ne crée pas encore
+        de profil dans la base de données.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const form = document.getElementById(
+  'registrationForm'
+);
+
+const promo = document.getElementById('promo');
+
+const total = document.getElementById('total');
+
+const promoMessage = document.getElementById(
+  'promoMessage'
+);
+
+function offerPrice() {
+  return Number(
+    document.querySelector(
+      'input[name="offer"]:checked'
+    ).value
+  );
+}
+
+function hasPromo() {
+  return promo.value.trim().toUpperCase()
+    === 'LOULOU13';
+}
+
+function updatePrice() {
+  const initial = offerPrice();
+
+  const reduction = hasPromo() ? 10 : 0;
+
+  total.textContent =
+    (initial - reduction) + ' €';
+
+  promoMessage.textContent = hasPromo()
+    ? '✓ Code LOULOU13 : réduction de 10 €'
+    : '';
+}
+
+document.querySelectorAll(
+  'input[name="offer"]'
+).forEach(radio => {
+  radio.addEventListener('change', updatePrice);
+});
+
+promo.addEventListener('input', updatePrice);
+
+form.addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  const firstName = document.getElementById(
+    'firstName'
+  ).value.trim();
+
+  const lastName = document.getElementById(
+    'lastName'
+  ).value.trim();
+
+  const amount =
+    offerPrice() - (hasPromo() ? 10 : 0);
+
+  const credits =
+    offerPrice() === 40 ? 5 : 3;
+
+  document.getElementById(
+    'confirmation'
+  ).textContent =
+    firstName + ' ' + lastName +
+    ' — Offre sélectionnée : ' +
+    amount + ' € (simulation).' +
+    ' ' + credits +
+    ' gradings prévus avec cette offre.';
+
+  form.style.display = 'none';
+
+  document.getElementById(
+    'success'
+  ).style.display = 'block';
+});
+</script>
+
+</body>
+</html>
