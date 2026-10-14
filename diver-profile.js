@@ -1350,6 +1350,26 @@
 
           </label>
 
+<label>
+  Ville du plongeon
+  <input
+    id="diverRequestCity"
+    type="text"
+    maxlength="100"
+    placeholder="Ex. : Lyon"
+  >
+</label>
+
+<label>
+  Spot / piscine
+  <input
+    id="diverRequestSpot"
+    type="text"
+    maxlength="160"
+    placeholder="Nom du lieu"
+  >
+</label>
+
 
           <label>
 
@@ -1753,6 +1773,16 @@
 
       const payload = {
 
+diveCity: String(
+  document.getElementById('diverRequestCity')
+    ?.value || ''
+).trim(),
+
+spotName: String(
+  document.getElementById('diverRequestSpot')
+    ?.value || ''
+).trim(),
+
         discipline:
 
           document
@@ -1827,7 +1857,7 @@
         await requireSupabase()
           .rpc(
 
-            'submit_diver_grading_request',
+            'eah_submit_diver_grading_v17',
 
             {
 
