@@ -9428,6 +9428,22 @@
         ||
         'KNOWN',
 
+diveCity: String(
+  val('publicDiveCity') || ''
+).trim(),
+
+dive_city: String(
+  val('publicDiveCity') || ''
+).trim(),
+
+spotName: String(
+  val('publicSpotName') || ''
+).trim(),
+
+spot_name: String(
+  val('publicSpotName') || ''
+).trim(),
+
       video_url:
         String(
           val(
@@ -9480,8 +9496,7 @@
       try {
 
         await rpcAttempt(
-
-          'submit_public_grading_request',
+  'eah_submit_public_grading_v17',
 
           [
 
