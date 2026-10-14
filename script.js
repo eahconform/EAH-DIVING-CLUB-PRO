@@ -9677,6 +9677,26 @@ async function submitPublicGrading(
         ||
         'KNOWN',
 
+diveCity: String(
+  document.getElementById('publicDiveCity')
+    ?.value || ''
+).trim(),
+
+dive_city: String(
+  document.getElementById('publicDiveCity')
+    ?.value || ''
+).trim(),
+
+spotName: String(
+  document.getElementById('publicSpotName')
+    ?.value || ''
+).trim(),
+
+spot_name: String(
+  document.getElementById('publicSpotName')
+    ?.value || ''
+).trim(),
+
       video_url:
         videoUrl,
 
@@ -9705,7 +9725,7 @@ async function submitPublicGrading(
       await requireSupabase()
         .rpc(
 
-          'submit_public_grading_request',
+          'eah_submit_public_grading_v17',
 
           {
 
