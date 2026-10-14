@@ -1806,6 +1806,16 @@
           parsedVideoUrl.href,
 
 
+diveCity: String(
+  document.getElementById('diverRequestCity')
+    ?.value || ''
+).trim(),
+
+spotName: String(
+  document.getElementById('diverRequestSpot')
+    ?.value || ''
+).trim(),
+
         message:
 
           document
@@ -1827,7 +1837,7 @@
         await requireSupabase()
           .rpc(
 
-            'submit_diver_grading_request',
+            'eah_submit_diver_grading_v17',
 
             {
 
