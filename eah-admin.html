@@ -1,1 +1,841 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
+<title>EAH Diving — Administration</title>
+
+<style>
+:root {
+  --navy: #061e33;
+  --blue: #0b6bff;
+  --cyan: #30cfff;
+  --text: #ecf6ff;
+  --muted: #a7bed1;
+  --line: rgba(95,180,255,.24);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at top right,
+      #0d3963 0,
+      #061e33 40%,
+      #03131f 100%
+    );
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  padding: 22px;
+  background: rgba(3,19,31,.85);
+  border-bottom: 1px solid var(--line);
+}
+
+.container {
+  width: min(1180px,94%);
+  margin: 28px auto;
+}
+
+h1,h2,h3 { margin-top: 0; }
+
+h1 {
+  font-size: clamp(24px,4vw,36px);
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 21px;
+  color: var(--cyan);
+}
+
+p { line-height: 1.6; }
+
+.sub {
+  color: var(--muted);
+}
+
+.card {
+  padding: 22px;
+  background: rgba(6,30,51,.94);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 38px rgba(0,0,0,.16);
+}
+
+input,textarea,select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #386282;
+  background: #102e49;
+  color: white;
+  font: inherit;
+}
+
+label {
+  display: block;
+  margin: 12px 0;
+  color: var(--muted);
+}
+
+button {
+  background: var(--blue);
+  color: white;
+  padding: 12px 17px;
+  border: 0;
+  border-radius: 11px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+button.secondary {
+  background: #17456c;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(250px,1fr));
+  gap: 16px;
+}
+
+.details {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 12px 0;
+  background: rgba(8,43,70,.7);
+}
+
+.request {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+
+.request:last-child {
+  border-bottom: 0;
+}
+
+.request-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status {
+  font-weight: bold;
+  padding: 5px 9px;
+  border-radius: 8px;
+}
+
+.pending {
+  color: #ffb9c0;
+  background: rgba(216,30,55,.2);
+}
+
+.graded {
+  color: #9df0c5;
+  background: rgba(25,160,90,.2);
+}
+
+.review {
+  color: #ffe0a3;
+  background: rgba(220,150,20,.2);
+}
+
+.notes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notes strong {
+  color: #30cfff;
+}
+
+.criteria {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(145px,1fr));
+  gap: 10px;
+}
+
+.criteria label {
+  margin: 5px 0;
+}
+
+a { color: var(--cyan); }
+
+a:hover { text-decoration: underline; }
+
+#message {
+  margin-top: 12px;
+  color: var(--cyan);
+  min-height: 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media(max-width:600px) {
+  .card { padding: 16px; }
+  header { padding: 16px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h1>EAH DIVING — ADMINISTRATION</h1>
+    <p class="sub">
+      Espace administrateur sécurisé • Carte NFC
+    </p>
+  </div>
+</header>
+
+<main class="container">
+
+  <section id="loginBox" class="card">
+    <h2>Connexion administrateur</h2>
+
+    <form id="loginForm">
+      <label>
+        Adresse e-mail
+        <input
+          id="adminEmail"
+          type="email"
+          autocomplete="username"
+          required>
+      </label>
+
+      <label>
+        Mot de passe
+        <input
+          id="adminPassword"
+          type="password"
+          autocomplete="current-password"
+          required>
+      </label>
+
+      <button type="submit">
+        Me connecter
+      </button>
+    </form>
+
+    <p class="muted">
+      Le scan NFC ouvre cette page, mais ne
+      donne pas automatiquement accès aux données.
+    </p>
+  </section>
+
+  <section id="dashboard" class="hidden">
+
+    <div class="card toolbar">
+      <strong>Administrateur EAH Diving</strong>
+      <button id="refreshBtn">
+        Actualiser
+      </button>
+      <button id="logoutBtn" class="secondary">
+        Déconnexion
+      </button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Demandes en attente</h2>
+        <h1 id="pendingCount">0</h1>
+      </div>
+      <div class="card">
+        <h2>Évaluations terminées</h2>
+        <h1 id="gradedCount">0</h1>
+      </div>
+      <div class="card">
+        <h2>Clubs actifs</h2>
+        <h1 id="clubCount">0</h1>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>Demandes EAH Grading</h2>
+      <p class="muted">
+        Uniquement les demandes destinées à
+        EAH Diving, pas celles destinées aux coachs.
+      </p>
+
+      <div id="requestList"></div>
+    </section>
+
+    <section id="gradeBox" class="card hidden">
+      <h2>Évaluer le plongeon</h2>
+      <p id="selectedRequest" class="muted"></p>
+
+      <form id="gradeForm">
+
+        <label>
+          Note World Aquatics /10
+          <input
+            id="waInput"
+            type="number"
+            min="0"
+            max="10"
+            step="0.1"
+            placeholder="Facultative">
+        </label>
+
+        <h3>Critères EAH — Takeoff</h3>
+        <div id="criteriaD" class="criteria"></div>
+
+        <h3>Critères EAH — Trick</h3>
+        <div id="criteriaT" class="criteria"></div>
+
+        <h3>Critères EAH — Entry</h3>
+        <div id="criteriaE" class="criteria"></div>
+
+        <div class="grid">
+          <label>
+            Ville du plongeon
+            <input id="cityInput" maxlength="100">
+          </label>
+          <label>
+            Spot / piscine
+            <input id="spotInput" maxlength="160">
+          </label>
+        </div>
+
+        <label>
+          Points positifs
+          <textarea id="positiveInput" rows="3"></textarea>
+        </label>
+
+        <label>
+          Points à améliorer
+          <textarea id="improveInput" rows="3"></textarea>
+        </label>
+
+        <label>
+          Commentaire du coach EAH
+          <textarea id="commentInput" rows="4"></textarea>
+        </label>
+
+        <button id="saveGradeBtn" type="submit">
+          Enregistrer l'évaluation
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Clubs et coachs</h2>
+      <div id="clubsList"></div>
+    </section>
+
+  </section>
+
+  <div id="message" role="status"></div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+(() => {
+  'use strict';
+
+  // Clé publique du site, jamais service_role.
+  const URL =
+    'https://limyeqpdzjjwsdximehp.supabase.co';
+
+  const KEY =
+    'sb_publishable_K9iUm_0Qhea65P1Zt6rbXQ_BXQCzJ9w';
+
+  const db = window.supabase.createClient(
+    URL, KEY
+  );
+
+  const $ = id => document.getElementById(id);
+
+  let requests = [];
+  let clubs = [];
+  let selectedId = null;
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function safeUrl(value) {
+    try {
+      const u = new URL(String(value || ''));
+
+      return u.protocol === 'https:'
+        ? u.href
+        : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function message(text) {
+    $('message').textContent = text;
+  }
+
+  function dateFR(value) {
+    if (!value) return '—';
+
+    const d = new Date(value);
+
+    return isNaN(d.getTime())
+      ? '—'
+      : d.toLocaleString('fr-FR');
+  }
+
+  function score(value) {
+    return value == null
+      ? ''
+      : String(value).replace('.', ',') + '/10';
+  }
+
+  function makeCriteria() {
+    ['D', 'T', 'E'].forEach(prefix => {
+      const root = $('criteria' + prefix);
+
+      root.replaceChildren();
+
+      for (let i = 1; i <= 5; i++) {
+        const label = document.createElement(
+          'label'
+        );
+
+        const title = document.createElement(
+          'span'
+        );
+
+        title.textContent = prefix + i;
+
+        const select = document.createElement(
+          'select'
+        );
+
+        select.id = 'criterion' + prefix + i;
+
+        [
+          ['', 'Non renseigné'],
+          ['0', '0/2'],
+          ['1', '1/2'],
+          ['2', '2/2'],
+          ['N/A', 'N/A']
+        ].forEach(([value, text]) => {
+          const option = document.createElement(
+            'option'
+          );
+
+          option.value = value;
+          option.textContent = text;
+          select.append(option);
+        });
+
+        label.append(title, select);
+        root.append(label);
+      }
+    });
+  }
+
+  function profileUrl(r) {
+    if (!r.eah_id || !r.club_slug) return '';
+
+    return (
+      'https://eahconform.github.io/' +
+      'EAH-DIVING-CLUB-PRO/' +
+      '?club=' + encodeURIComponent(r.club_slug) +
+      '&id=' + encodeURIComponent(r.eah_id) +
+      '#profil'
+    );
+  }
+
+  function requestHTML(r) {
+    const status = String(r.status || '');
+
+    const cls =
+      status === 'GRADED'
+        ? 'graded'
+        : status === 'IN_REVIEW'
+        ? 'review'
+        : 'pending';
+
+    const name = [
+      r.first_name,
+      r.last_name
+    ].filter(Boolean).join(' ') || 'Demandeur';
+
+    const video = safeUrl(r.video_url);
+    const report = safeUrl(r.report_url);
+    const profile = profileUrl(r);
+
+    return `
+      <article class="request">
+        <div class="request-head">
+          <div>
+            <strong>${escapeHtml(name)}</strong>
+            <p class="muted">
+              ${escapeHtml(r.request_code)} •
+              ${escapeHtml(r.dive_code)} •
+              ${escapeHtml(dateFR(r.created_at))}
+            </p>
+            <p class="muted">
+              ${escapeHtml(r.club_slug || 'Sans club')}
+              ${r.dive_city
+                ? ' • ' + escapeHtml(r.dive_city)
+                : ''}
+              ${r.spot_name
+                ? ' • ' + escapeHtml(r.spot_name)
+                : ''}
+            </p>
+          </div>
+
+          <span class="status ${cls}">
+            ${escapeHtml(status)}
+          </span>
+        </div>
+
+        <div class="notes">
+          ${
+            r.eah_score == null
+              ? ''
+              : '<strong>EAH ' +
+                escapeHtml(score(r.eah_score)) +
+                '</strong>'
+          }
+          ${
+            r.wa_score == null
+              ? ''
+              : '<strong>WA ' +
+                escapeHtml(score(r.wa_score)) +
+                '</strong>'
+          }
+        </div>
+
+        <p class="toolbar">
+          ${video
+            ? `<a href="${escapeHtml(video)}"
+                target="_blank" rel="noopener noreferrer">
+                Vidéo
+              </a>`
+            : ''}
+          ${report
+            ? `<a href="${escapeHtml(report)}"
+                target="_blank" rel="noopener noreferrer">
+                Grade Report
+              </a>`
+            : ''}
+          ${profile
+            ? `<a href="${escapeHtml(profile)}"
+                target="_blank" rel="noopener noreferrer">
+                Profil du plongeur
+              </a>`
+            : ''}
+        </p>
+
+        ${
+          status === 'PENDING'
+            ? `<button class="grade-btn"
+                data-id="${escapeHtml(r.id)}">
+                Évaluer ce plongeon
+              </button>`
+            : ''
+        }
+      </article>
+    `;
+  }
+
+  function renderClubs() {
+    $('clubsList').innerHTML = clubs.map(c => {
+      const coaches = Array.isArray(c.coaches)
+        ? c.coaches
+        : [];
+
+      return `
+        <details class="details">
+          <summary>
+            <strong>${escapeHtml(c.name)}</strong>
+            — ${coaches.length} coach(s) / responsable(s)
+          </summary>
+
+          ${coaches.length
+            ? coaches.map(m => `
+                <div class="request">
+                  <strong>
+                    ${escapeHtml(m.name)}
+                  </strong>
+                  <p class="muted">
+                    ${escapeHtml(m.role)}
+                    ${
+                      m.email
+                        ? ' • ' + escapeHtml(m.email)
+                        : ''
+                    }
+                  </p>
+                </div>
+              `).join('')
+            : '<p>Aucun coach enregistré.</p>'}
+        </details>
+      `;
+    }).join('');
+  }
+
+  async function loadDashboard() {
+    const { data, error } = await db.rpc(
+      'eah_admin_v17_dashboard'
+    );
+
+    if (error) throw error;
+
+    if (!data?.ok) {
+      throw Error('Accès administrateur refusé.');
+    }
+
+    requests = Array.isArray(data.requests)
+      ? data.requests
+      : [];
+
+    clubs = Array.isArray(data.clubs)
+      ? data.clubs
+      : [];
+
+    $('pendingCount').textContent =
+      requests.filter(
+        r => r.status === 'PENDING'
+      ).length;
+
+    $('gradedCount').textContent =
+      requests.filter(
+        r => r.status === 'GRADED'
+      ).length;
+
+    $('clubCount').textContent = clubs.length;
+
+    $('requestList').innerHTML =
+      requests.length
+        ? requests.map(requestHTML).join('')
+        : '<p>Aucune demande EAH.</p>';
+
+    renderClubs();
+  }
+
+  async function enterAdmin() {
+    try {
+      await loadDashboard();
+
+      $('loginBox').classList.add('hidden');
+      $('dashboard').classList.remove('hidden');
+
+      message('Espace administrateur connecté.');
+
+    } catch (e) {
+      $('dashboard').classList.add('hidden');
+      $('loginBox').classList.remove('hidden');
+
+      message(e.message);
+    }
+  }
+
+  $('loginForm').addEventListener(
+    'submit',
+    async event => {
+      event.preventDefault();
+
+      message('Connexion…');
+
+      const { error } =
+        await db.auth.signInWithPassword({
+          email: $('adminEmail').value.trim(),
+          password: $('adminPassword').value
+        });
+
+      if (error) {
+        message(error.message);
+        return;
+      }
+
+      await enterAdmin();
+    }
+  );
+
+  $('logoutBtn').addEventListener(
+    'click',
+    async () => {
+      await db.auth.signOut();
+
+      $('dashboard').classList.add('hidden');
+      $('loginBox').classList.remove('hidden');
+
+      message('Déconnexion effectuée.');
+    }
+  );
+
+  $('refreshBtn').addEventListener(
+    'click',
+    async () => {
+      try {
+        await loadDashboard();
+        message('Données actualisées.');
+      } catch (e) {
+        message(e.message);
+      }
+    }
+  );
+
+  $('requestList').addEventListener(
+    'click',
+    event => {
+      const button = event.target.closest(
+        '.grade-btn'
+      );
+
+      if (!button) return;
+
+      selectedId = button.dataset.id;
+
+      const r = requests.find(
+        item => item.id === selectedId
+      );
+
+      if (!r) return;
+
+      $('selectedRequest').textContent =
+        r.request_code + ' — ' +
+        [r.first_name, r.last_name]
+          .filter(Boolean).join(' ');
+
+      $('waInput').value = '';
+      $('cityInput').value = r.dive_city || '';
+      $('spotInput').value = r.spot_name || '';
+
+      $('positiveInput').value = '';
+      $('improveInput').value = '';
+      $('commentInput').value = '';
+
+      makeCriteria();
+
+      $('gradeBox').classList.remove('hidden');
+
+      $('gradeBox').scrollIntoView({
+        behavior: 'smooth'
+      });
+    }
+  );
+
+  $('gradeForm').addEventListener(
+    'submit',
+    async event => {
+      event.preventDefault();
+
+      if (!selectedId) return;
+
+      const criteria = {};
+
+      ['D', 'T', 'E'].forEach(prefix => {
+        for (let i = 1; i <= 5; i++) {
+          const key = prefix + i;
+          const raw = $('criterion' + key).value;
+
+          if (raw !== '') {
+            criteria[key] =
+              raw === 'N/A' ? null : Number(raw);
+          }
+        }
+      });
+
+      const rawWA = $('waInput').value.trim();
+
+      const wa = rawWA === ''
+        ? null
+        : Number(rawWA);
+
+      const button = $('saveGradeBtn');
+      button.disabled = true;
+
+      try {
+        const { data, error } = await db.rpc(
+          'eah_admin_v17_grade',
+          {
+            p_request_id: selectedId,
+            p_wa: wa,
+            p_criteria: criteria,
+            p_city: $('cityInput').value.trim(),
+            p_spot: $('spotInput').value.trim(),
+            p_positive: $('positiveInput').value.trim(),
+            p_improve: $('improveInput').value.trim(),
+            p_comment: $('commentInput').value.trim()
+          }
+        );
+
+        if (error) throw error;
+
+        if (!data?.ok) {
+          throw Error('Enregistrement non confirmé.');
+        }
+
+        $('gradeBox').classList.add('hidden');
+
+        message(
+          'Évaluation enregistrée. ' +
+          'Génération du Grade Report en attente.'
+        );
+
+        await loadDashboard();
+
+      } catch (e) {
+        message(e.message);
+
+      } finally {
+        button.disabled = false;
+      }
+    }
+  );
+
+  makeCriteria();
+
+  (async () => {
+    const { data } = await db.auth.getUser();
+
+    if (data?.user) {
+      await enterAdmin();
+    }
+  })();
+})();
+</script>
+</body>
+</html>
