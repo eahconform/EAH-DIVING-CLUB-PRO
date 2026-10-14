@@ -568,14 +568,43 @@ a:hover { text-decoration: underline; }
             : ''}
         </p>
 
+        
+${
+  status === 'PENDING'
+    ? `
+      <div class="toolbar">
+
         ${
-          status === 'PENDING'
-            ? `<button class="grade-btn"
-                data-id="${escapeHtml(r.id)}">
-                Évaluer ce plongeon
-              </button>`
-            : ''
+          video
+            ? `
+              <a
+                class="button"
+                href="${escapeHtml(video)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ▶ Voir la vidéo
+              </a>
+            `
+            : `
+              <span class="muted">
+                Vidéo indisponible
+              </span>
+            `
         }
+
+        <button
+          class="grade-btn"
+          data-id="${escapeHtml(r.id)}"
+        >
+          Évaluer ce plongeon
+        </button>
+
+      </div>
+    `
+    : ''
+}
+
       </article>
     `;
   }
@@ -594,25 +623,59 @@ a:hover { text-decoration: underline; }
           </summary>
 
           ${coaches.length
-            ? coaches.map(m => `
-                <div class="request">
-                  <strong>
-                    ${escapeHtml(m.name)}
-                  </strong>
-                  <p class="muted">
-                    ${escapeHtml(m.role)}
-                    ${
-                      m.email
-                        ? ' • ' + escapeHtml(m.email)
-                        : ''
-                    }
-                  </p>
-                </div>
-              `).join('')
-            : '<p>Aucun coach enregistré.</p>'}
-        </details>
-      `;
-    }).join('');
+            ? 
+coaches.map(m => `
+  <details class="details">
+
+    <summary>
+      <strong>${escapeHtml(m.name)}</strong>
+      — ${escapeHtml(m.role)}
+    </summary>
+
+    <div class="request">
+
+      ${
+        safeUrl(m.photo_url)
+          ? `
+            <img
+              src="${escapeHtml(safeUrl(m.photo_url))}"
+              alt=""
+              style="
+                width:95px;
+                height:95px;
+                border-radius:16px;
+                object-fit:cover;
+                margin-bottom:12px;
+              "
+            >
+          `
+          : ''
+      }
+
+      <p>
+        <strong>
+          ${escapeHtml(m.name)}
+        </strong>
+      </p>
+
+      <p class="muted">
+        Rôle : ${escapeHtml(m.role)}
+      </p>
+
+      <p class="muted">
+        E-mail :
+        ${escapeHtml(m.email || 'Non renseigné')}
+      </p>
+
+      <p class="muted">
+        Club : ${escapeHtml(c.name)}
+      </p>
+
+    </div>
+
+  </details>
+`).join('')
+
   }
 
   async function loadDashboard() {
