@@ -4326,19 +4326,31 @@
 
           </div>
 
-          <strong class="history-main-score">
+          
+<strong class="history-main-score eah16-notes">
 
-            ${escapeHtml(
-              type
-            )}
+  ${
+    numberOrNull(eahScore) !== null
+      ? `
+        <span>
+          EAH ${escapeHtml(fmtNumber(eahScore))}/10
+        </span>
+      `
+      : ''
+  }
 
-            ${escapeHtml(
-              fmtNumber(
-                mainScore
-              )
-            )}/10
+  ${
+    numberOrNull(waScore) !== null
+      ? `
+        <span class="wa">
+          WA ${escapeHtml(fmtNumber(waScore))}/10
+        </span>
+      `
+      : ''
+  }
 
-          </strong>
+</strong>
+
 
         </div>
 
