@@ -188,6 +188,84 @@
     href="styles.css?v=20261008-1"
   >
 
+<style id="EAH-ACCUEIL-V16">
+
+  /* Accueil visible sans fondu */
+
+  #accueil.page.active {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Photo principale lumineuse immédiatement */
+
+  #accueil .hero-background-image {
+    opacity: 1 !important;
+    visibility: visible !important;
+
+    filter:
+      brightness(1.08)
+      saturate(1.06)
+      contrast(1.02)
+      !important;
+
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Voile moins sombre et sans transition */
+
+  #accueil .hero-overlay {
+    background: linear-gradient(
+      90deg,
+      rgba(2, 13, 24, .42) 0%,
+      rgba(2, 13, 24, .23) 48%,
+      rgba(2, 13, 24, .15) 100%
+    ) !important;
+
+    opacity: 1 !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Notes dans l'historique */
+
+  #profileView .eah16-notes {
+    display: grid !important;
+    justify-items: end;
+    gap: 5px;
+    color: #ffffff;
+    line-height: 1.3;
+    text-align: right;
+    white-space: normal;
+  }
+
+  #profileView .eah16-notes span {
+    display: block;
+    white-space: nowrap;
+    font-weight: 800;
+  }
+
+  #profileView .eah16-notes .wa {
+    color: #30cfff;
+  }
+
+  #profileView .history-card-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+  }
+
+  @media (max-width: 550px) {
+    #profileView .eah16-notes {
+      font-size: .95rem;
+    }
+  }
+
+</style>
+
 
   <!-- ============================================================
        CONFIGURATION
