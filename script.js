@@ -9725,7 +9725,7 @@ spot_name: String(
       await requireSupabase()
         .rpc(
 
-          'eah_submit_public_grading_v17',
+          'eah_v19_submit_verified',
 
           {
 
@@ -9742,7 +9742,12 @@ spot_name: String(
       throw error;
 
     }
-
+if (!data || data.ok !== true) {
+  throw new Error(
+    data?.message ||
+    'La demande n’a pas été acceptée.'
+  );
+}
 
     setMessage(
 
