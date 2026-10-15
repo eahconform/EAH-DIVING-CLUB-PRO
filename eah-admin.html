@@ -225,38 +225,43 @@ a:hover { text-decoration: underline; }
 
 <main class="container">
 
-  <section id="loginBox" class="card">
-    <h2>Connexion administrateur</h2>
+  
+<section id="loginBox" class="card">
 
-    <form id="loginForm">
-      <label>
-        Adresse e-mail
-        <input
-          id="adminEmail"
-          type="email"
-          autocomplete="username"
-          required>
-      </label>
+  <h2>Accès administrateur EAH</h2>
 
-      <label>
-        Mot de passe
-        <input
-          id="adminPassword"
-          type="password"
-          autocomplete="current-password"
-          required>
-      </label>
+  <p class="sub">
+    Connectez votre appareil une première fois.
+    Ensuite, votre carte NFC ouvrira directement
+    l'administration tant que la session reste active.
+  </p>
 
-      <button type="submit">
-        Me connecter
-      </button>
-    </form>
+  <form id="loginForm">
 
-    <p class="muted">
-      Le scan NFC ouvre cette page, mais ne
-      donne pas automatiquement accès aux données.
-    </p>
-  </section>
+    <label>
+      Adresse e-mail administrateur
+
+      <input
+        id="adminEmail"
+        type="email"
+        autocomplete="email"
+        required
+      >
+    </label>
+
+    <button type="submit">
+      Recevoir mon lien de connexion
+    </button>
+
+  </form>
+
+  <p class="muted">
+    Aucun mot de passe à saisir.
+    Un lien sécurisé sera envoyé par e-mail.
+  </p>
+
+</section>
+
 
   <section id="dashboard" class="hidden">
 
@@ -734,27 +739,43 @@ coaches.map(m => `
     }
   }
 
-  $('loginForm').addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
+  
+$('loginForm').addEventListener(
+  'submit',
+  async event => {
+    event.preventDefault();
 
-      message('Connexion…');
+    const email = $('adminEmail').value.trim();
 
-      const { error } =
-        await db.auth.signInWithPassword({
-          email: $('adminEmail').value.trim(),
-          password: $('adminPassword').value
-        });
-
-      if (error) {
-        message(error.message);
-        return;
-      }
-
-      await enterAdmin();
+    if (!email) {
+      message('Renseignez votre adresse e-mail.');
+      return;
     }
-  );
+
+    message('Envoi du lien sécurisé…');
+
+    const { error } =
+      await db.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo:
+            location.origin + location.pathname
+        }
+      });
+
+    if (error) {
+      message(error.message);
+      return;
+    }
+
+    message(
+      'Consultez votre boîte e-mail et ouvrez ' +
+      'le lien reçu pour accéder à votre espace.'
+    );
+  }
+);
+
 
   $('logoutBtn').addEventListener(
     'click',
