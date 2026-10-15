@@ -226,41 +226,42 @@ a:hover { text-decoration: underline; }
 <main class="container">
 
   
+
 <section id="loginBox" class="card">
 
-  <h2>Accès administrateur EAH</h2>
+  <h2>MON ESPACE ADMINISTRATEUR EAH</h2>
 
-  <p class="sub">
-    Connectez votre appareil une première fois.
-    Ensuite, votre carte NFC ouvrira directement
-    l'administration tant que la session reste active.
+  <p>
+    Administrateur principal EAH Diving
   </p>
 
-  <form id="loginForm">
+  <p class="sub">
+    Votre carte NFC ouvre automatiquement
+    votre espace lorsque ce téléphone
+    est déjà connecté.
+  </p>
 
-    <label>
-      Adresse e-mail administrateur
+  <button
+    type="button"
+    id="adminActivateBtn">
+    Activer mon téléphone
+  </button>
 
-      <input
-        id="adminEmail"
-        type="email"
-        autocomplete="email"
-        required
-      >
-    </label>
-
-    <button type="submit">
-      Recevoir mon lien de connexion
-    </button>
-
-  </form>
-
-  <p class="muted">
-    Aucun mot de passe à saisir.
-    Un lien sécurisé sera envoyé par e-mail.
+  <p
+    id="adminLoginStatus"
+    role="status"
+    aria-live="polite"
+    style="
+      color:#30cfff;
+      margin-top:16px;
+      line-height:1.6;
+    ">
+    Première activation uniquement.
+    Aucun identifiant à saisir.
   </p>
 
 </section>
+
 
 
   <section id="dashboard" class="hidden">
@@ -740,41 +741,112 @@ coaches.map(m => `
   }
 
   
-$('loginForm').addEventListener(
-  'submit',
-  async event => {
-    event.preventDefault();
+/*
+ * EAH DIVING — NFC ADMIN
+ * Activation sans saisie d'identifiants.
+ * Une session existante ouvre directement
+ * le tableau de bord.
+ */
 
-    const email = $('adminEmail').value.trim();
+const EAH_ADMIN_EMAIL = 'goin.eah@gmail.com';
 
-    if (!email) {
-      message('Renseignez votre adresse e-mail.');
-      return;
+$('adminActivateBtn').addEventListener(
+  'click',
+  async () => {
+
+    const btn = $('adminActivateBtn');
+    const status = $('adminLoginStatus');
+
+    btn.disabled = true;
+
+    status.textContent =
+      'Vérification de votre téléphone…';
+
+    try {
+
+      // 1. Vérifier si une session est déjà active.
+
+      const {
+        data: userData,
+        error: userError
+      } = await db.auth.getUser();
+
+      const user = userError
+        ? null
+        : userData?.user;
+
+      if (
+        user &&
+        user.email?.toLowerCase() ===
+          EAH_ADMIN_EMAIL
+      ) {
+
+        status.textContent =
+          'Session reconnue. Ouverture…';
+
+        await enterAdmin();
+
+        return;
+      }
+
+      // 2. Demander une première activation
+      // sans aucun champ e-mail.
+
+      status.textContent =
+        'Demande d’activation envoyée à Supabase…';
+
+      const redirect =
+        window.location.origin +
+        '/EAH-DIVING-CLUB-PRO/eah-admin.html';
+
+      const { error } =
+        await db.auth.signInWithOtp({
+          email: EAH_ADMIN_EMAIL,
+
+          options: {
+            shouldCreateUser: false,
+            emailRedirectTo: redirect
+          }
+        });
+
+      // 3. Afficher l'erreur réelle si l'API
+      // refuse l'envoi.
+
+      if (error) {
+        throw error;
+      }
+
+      // La demande est acceptée par Supabase.
+      // La livraison du mail reste à vérifier.
+
+      status.textContent =
+        'Demande acceptée par Supabase. ' +
+        'Vérifiez votre boîte Gmail et les spams. ' +
+        'Ouvrez le lien reçu sur ce téléphone ' +
+        'dans Chrome.';
+
+    } catch (error) {
+
+      console.error(
+        'EAH ADMIN ACTIVATION :',
+        error
+      );
+
+      status.textContent =
+        'Échec de l’activation : ' +
+        (
+          error?.message ||
+          'Erreur inconnue'
+        );
+
+    } finally {
+
+      btn.disabled = false;
+
     }
-
-    message('Envoi du lien sécurisé…');
-
-    const { error } =
-      await db.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo:
-            location.origin + location.pathname
-        }
-      });
-
-    if (error) {
-      message(error.message);
-      return;
-    }
-
-    message(
-      'Consultez votre boîte e-mail et ouvrez ' +
-      'le lien reçu pour accéder à votre espace.'
-    );
   }
 );
+
 
 
   $('logoutBtn').addEventListener(
