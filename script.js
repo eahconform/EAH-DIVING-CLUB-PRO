@@ -7289,11 +7289,23 @@ function renderPopulationResults(
                       'true';
 
 
-                  return `
+                  
+return `
 
-                    <div
-                      class="history-item"
-                    >
+  <div
+    class="history-item"
+    data-eah-social-eah="${
+      gradingPublic
+        ? esc(grading.eah_id || '')
+        : ''
+    }"
+    data-eah-social-code="${
+      esc(grading.dive_code || '')
+    }"
+    data-eah-social-at="${
+      esc(grading.evaluated_at || '')
+    }"
+>
 
                       <span>
 
