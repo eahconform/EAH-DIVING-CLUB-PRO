@@ -1091,129 +1091,332 @@
      POPULATION
   ========================================================== */
 
-  async function populationUI() {
-    const root = $("#populationResults");
+  
+/* ==========================================================
+   POPULATION — FOLLOWERS ET LIKES
+   CORRECTION V3
+========================================================== */
 
-    if (!root) return;
+async function populationUI() {
+  const root = document.getElementById(
+    "populationResults"
+  );
 
-    const profiles = $$(
-      ".eah-population-person-card.is-public",
-      root
+  if (!root) return;
+
+  // PROFILS PUBLICS
+  const cards = [
+    ...root.querySelectorAll(
+      ".eah-population-person-card.is-public"
+    )
+  ];
+
+  for (const card of cards) {
+    if (card.querySelector(
+      "[data-eah-social-follow]"
+    )) {
+      continue;
+    }
+
+    const link = card.querySelector(
+      'a[href*="id="]'
     );
 
-    for (const card of profiles) {
-      if (card.dataset.eahSocialDone) {
-        continue;
-      }
+    if (!link) continue;
 
-      const link = card.querySelector(
-        'a[href*="id="]'
-      );
+    let id = "";
 
-      if (!link) continue;
-
-      const id = new URL(
+    try {
+      id = new URL(
         link.href
-      ).searchParams.get("id");
+      ).searchParams.get("id") || "";
+    } catch (_) {
+      continue;
+    }
 
-      if (!id) continue;
+    if (!id) continue;
 
-      card.dataset.eahSocialDone = "1";
-
+    try {
       const data = await getPublic(id);
 
       if (!data?.public || !card.isConnected) {
         continue;
       }
 
-      const target = $(
-        ".eah-population-person-info",
-        card
-      ) || card;
-
-      target.append(
-        followButton(id, data)
-      );
-    }
-
-    // Les lignes de gradings sont identifiées
-    // dans script.js par leurs attributs data.
-
-    const gradings = $$(
-      ".history-item[data-eah-social-eah]",
-      root
-    );
-
-    for (const row of gradings) {
-      if (row.dataset.eahSocialDone) {
+      // Ne pas ajouter deux fois.
+      if (card.querySelector(
+        "[data-eah-social-follow]"
+      )) {
         continue;
       }
 
-      const id = row.dataset.eahSocialEah;
+      const target = card.querySelector(
+        ".eah-population-person-info"
+      ) || card;
 
-      if (!id) continue;
+      const holder = document.createElement("div");
+      holder.className = "eahs-row";
+      holder.dataset.eahSocialFollow = "1";
 
-      row.dataset.eahSocialDone = "1";
+      const follow = followButton(id, data);
+      holder.append(follow);
 
-      const data = await getPublic(id);
-
-      const grading = data?.gradings?.find(
-        g =>
-          g.code === row.dataset.eahSocialCode &&
-          Math.abs(
-            Date.parse(g.at) -
-            Date.parse(row.dataset.eahSocialAt)
-          ) < 2500
+      // Total des likes des gradings publics.
+      const total = (
+        data.gradings || []
+      ).reduce(
+        (sum, g) => sum + Number(g.likes || 0),
+        0
       );
 
-      if (grading && row.isConnected) {
-        row.append(
-          likeButton(id, grading)
-        );
-      }
+      const likes = document.createElement("span");
+      likes.className = "eahs-muted";
+      likes.textContent =
+        "♥ " + total + " likes sur ses gradings";
+
+      holder.append(likes);
+      target.append(holder);
+
+    } catch (error) {
+      console.warn(
+        "Follow Population :",
+        error
+      );
     }
   }
+
+  // GRADINGS PUBLICS
+  const rows = [
+    ...root.querySelectorAll(
+      ".history-item[data-eah-social-eah]"
+    )
+  ];
+
+  for (const row of rows) {
+    if (row.querySelector(
+      "[data-eah-social-like]"
+    )) {
+      continue;
+    }
+
+    const id = row.dataset.eahSocialEah;
+    const code = row.dataset.eahSocialCode;
+    const date = row.dataset.eahSocialAt;
+
+    if (!id || !code) continue;
+
+    try {
+      const data = await getPublic(id);
+
+      if (!data?.public || !row.isConnected) {
+        continue;
+      }
+
+      const matches = (
+        data.gradings || []
+      ).filter(g =>
+        String(g.code).toUpperCase() ===
+        String(code).toUpperCase()
+      );
+
+      // Correspondance exacte par identifiant,
+      // sinon par code et date.
+      let grading = matches.find(
+        g =>
+          row.dataset.eahSocialId &&
+          g.id === row.dataset.eahSocialId
+      );
+
+      if (!grading && date) {
+        grading = matches.find(g =>
+          Number.isFinite(Date.parse(g.at)) &&
+          Number.isFinite(Date.parse(date)) &&
+          Math.abs(
+            Date.parse(g.at) -
+            Date.parse(date)
+          ) < 120000
+        );
+      }
+
+      // Une seule évaluation avec ce code :
+      // correspondance non ambiguë.
+      if (!grading && matches.length === 1) {
+        grading = matches[0];
+      }
+
+      if (!grading || row.querySelector(
+        "[data-eah-social-like]"
+      )) {
+        continue;
+      }
+
+      row.append(
+        likeButton(id, grading)
+      );
+
+    } catch (error) {
+      console.warn(
+        "Like Population :",
+        error
+      );
+    }
+  }
+}
+
+/* ==========================================================
+   LIKES DANS L'HISTORIQUE PERSONNEL
+========================================================== */
+
+async function showOwnHistoryLikes() {
+  rememberAccount();
+
+  // Les statistiques personnelles sont affichées
+  // uniquement pour le plongeur connecté.
+  if (account?.type !== "diver") return;
+
+  const st = stateRef();
+
+  if (
+    !st?.profile?.eahId ||
+    st.profile.eahId.toUpperCase() !==
+      account.id.toUpperCase()
+  ) {
+    return;
+  }
+
+  const data = await getMe();
+
+  if (!data?.ok) return;
+
+  const gradeCounts = new Map(
+    (data.grades || []).map(g => [
+      String(g.id),
+      Number(g.likes || 0)
+    ])
+  );
+
+  const history = st.profileHistory?.evaluations || [];
+
+  const rows = [
+    ...document.querySelectorAll(
+      "#profileHistory .profile-history-item"
+    )
+  ];
+
+  rows.forEach((row, index) => {
+    const evaluation = history[index];
+
+    const id =
+      evaluation?.id ||
+      evaluation?.evaluation_id;
+
+    if (!id) return;
+
+    const likes = gradeCounts.get(
+      String(id)
+    );
+
+    if (likes === undefined) return;
+
+    let counter = row.querySelector(
+      "[data-eah-own-likes]"
+    );
+
+    if (!counter) {
+      counter = document.createElement("div");
+      counter.dataset.eahOwnLikes = "1";
+      counter.className = "eahs-mini";
+      row.append(counter);
+    }
+
+    counter.textContent =
+      "♥ " + likes + " likes";
+  });
+}
+
 
   /* ==========================================================
      ACTUALISATION
   ========================================================== */
 
-  async function scan() {
-    if (scanning) return;
+  
+/* ==========================================================
+   ACTUALISATION FIABLE DES INTERFACES
+   CORRECTION V3
+========================================================== */
 
-    scanning = true;
+let scanning = false;
+let pendingScan = false;
+let frameQueued = false;
 
-    try {
-      coachCardUI();
-      coachAuthUI();
-      diverUI();
-      showReturnButton();
+async function scan() {
+  if (scanning) {
+    pendingScan = true;
+    return;
+  }
 
-      await Promise.all([
-        publicProfileUI(),
-        populationUI()
-      ]);
+  scanning = true;
+  pendingScan = false;
 
-    } catch (error) {
-      console.warn(
-        "EAH Social V2 :",
-        error.message
-      );
-    } finally {
-      scanning = false;
+  try {
+    // Espaces personnels
+    coachCardUI();
+    coachAuthUI();
+    diverUI();
+
+    // Bouton pour revenir à l'espace personnel
+    showReturnButton();
+
+    // Ne pas bloquer tous les éléments si
+    // une seule requête échoue.
+    const results = await Promise.allSettled([
+      populationUI(),
+      publicProfileUI(),
+      showOwnHistoryLikes()
+    ]);
+
+    results.forEach(result => {
+      if (result.status === "rejected") {
+        console.warn(
+          "EAH Social V3 :",
+          result.reason
+        );
+      }
+    });
+
+  } catch (error) {
+    console.warn(
+      "EAH Social V3 :",
+      error
+    );
+
+  } finally {
+    scanning = false;
+
+    // Repasser sur la page si des cartes ou
+    // profils ont été ajoutés durant le chargement.
+    if (pendingScan) {
+      scheduleScan();
     }
   }
+}
 
-  function scheduleScan() {
-    if (queued) return;
 
-    queued = true;
+function scheduleScan() {
+  pendingScan = true;
 
-    requestAnimationFrame(() => {
-      queued = false;
-      scan();
-    });
+  if (scanning || frameQueued) {
+    return;
   }
+
+  frameQueued = true;
+
+  requestAnimationFrame(() => {
+    frameQueued = false;
+    scan();
+  });
+}
+
 
   function start() {
     installCSS();
