@@ -1,834 +1,1076 @@
 
 /* ============================================================
    EAH DIVING PRO CLUB
-   SOCIAL V1 — LIKES / FOLLOW / NOTIFICATIONS
+   SOCIAL V2 — CORRECTIF NFC, FOLLOW, LIKE, NOTIFICATIONS
 
-   Fonctionne avec :
-   - Population
-   - Profils publics
-   - Espace plongeur connecté par PIN
+   Compatible :
+   - Espace coach par carte NFC
    - Espace coach Supabase Auth
+   - Espace plongeur avec code personnel
+   - Population et profils publics
 
-   Sécurité et compteurs gérés par Supabase.
+   Navigation sans déconnexion dans le même onglet.
+   Serveur : public.eah_social_v2
 ============================================================ */
 
 (() => {
   "use strict";
 
-  const CSS = `
-    .eah-social-bar,
-    .eah-social-tabs {
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
+  const STORE = sessionStorage;
+
+  const COACH_KEY = "EAH_SOCIAL_COACH_TOKEN";
+  const DIVER_KEY = "EAH_SOCIAL_DIVER_ACTOR";
+  const ACTIVE_KEY = "EAH_SOCIAL_ACTIVE_ACCOUNT";
+
+  const $ = (s, root = document) =>
+    root.querySelector(s);
+
+  const $$ = (s, root = document) =>
+    [...root.querySelectorAll(s)];
+
+  const stateRef = () => {
+    try {
+      return typeof state !== "undefined"
+        ? state
+        : null;
+    } catch (_) {
+      return null;
     }
+  };
 
-    .eah-social-bar {
-      margin:14px 0;
-    }
-
-    .eah-social-card {
-      padding:20px;
-      margin:16px 0;
-      background:rgba(3,23,43,.93);
-      border:1px solid rgba(48,207,255,.3);
-      border-radius:20px;
-      color:#eef8ff;
-    }
-
-    .eah-social-card h3 {
-      margin:0 0 12px;
-      font-size:20px;
-    }
-
-    .eah-social-button {
-      cursor:pointer;
-      border:1px solid rgba(48,207,255,.5);
-      color:#ecf8ff;
-      background:#083357;
-      border-radius:12px;
-      padding:9px 13px;
-      font:inherit;
-      font-weight:650;
-    }
-
-    .eah-social-button.primary,
-    .eah-social-tab-active {
-      background:#0b6bff;
-      border-color:#0b6bff;
-    }
-
-    .eah-social-button:disabled {
-      opacity:.45;
-      cursor:wait;
-    }
-
-    .eah-social-counter {
-      font-weight:700;
-      color:#c9eafa;
-    }
-
-    .eah-social-red {
-      color:#ff6585;
-    }
-
-    .eah-social-list {
-      margin-top:14px;
-      display:grid;
-      gap:10px;
-    }
-
-    .eah-social-item {
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(143,205,255,.14);
-      border-radius:13px;
-      padding:12px;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      flex-wrap:wrap;
-    }
-
-    .eah-social-item a {
-      color:#6edfff;
-    }
-
-    .eah-social-profile,
-    .eah-social-pop {
-      margin-top:14px;
-    }
-
-    .eah-social-grade {
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      margin-top:8px;
-    }
-
-    @media(max-width:600px) {
-      .eah-social-card {
-        padding:14px;
-        border-radius:16px;
-      }
-
-      .eah-social-button {
-        padding:8px 11px;
-      }
-    }
-  `;
-
-  const cache = new Map();
-
-  let meData = null;
-  let mePromise = null;
-  let loading = false;
-
-  /* ==========================================================
-     CONNEXION EXISTANTE
-  ========================================================== */
-
-  function sb() {
+  function db() {
     if (typeof requireSupabase !== "function") {
-      throw new Error("Supabase non chargé.");
+      throw new Error("Supabase indisponible.");
     }
 
     return requireSupabase();
   }
 
-  function appState() {
-    try {
-      return typeof state === "undefined"
-        ? null
-        : state;
-    } catch (_) {
-      return null;
+  let account = null;
+  let accountKey = "";
+
+  let myCache = null;
+  let myCacheTime = 0;
+  let myPromise = null;
+
+  const publicCache = new Map();
+
+  let scanning = false;
+  let queued = false;
+
+  /* ==========================================================
+     DESIGN
+  ========================================================== */
+
+  function installCSS() {
+    const style = document.createElement("style");
+
+    style.id = "eahSocialV2CSS";
+
+    style.textContent = `
+      .eahs-box {
+        color: #f5faff;
+        background: rgba(4,26,47,.95);
+        border: 1px solid rgba(48,207,255,.3);
+        border-radius: 19px;
+        padding: 18px;
+        margin: 16px 0;
+      }
+
+      .eahs-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .eahs-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 14px 0;
+      }
+
+      .eahs-btn {
+        background: #0b6bff;
+        color: white;
+        border: 1px solid rgba(48,207,255,.45);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 750;
+        cursor: pointer;
+      }
+
+      .eahs-btn.alt {
+        background: #0a324e;
+      }
+
+      .eahs-btn:disabled {
+        opacity: .5;
+      }
+
+      .eahs-tabs {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin: 15px 0;
+      }
+
+      .eahs-tabs .active {
+        background: #0b6bff;
+      }
+
+      .eahs-list {
+        display: grid;
+        gap: 9px;
+        max-height: 370px;
+        overflow: auto;
+      }
+
+      .eahs-list[hidden] {
+        display: none !important;
+      }
+
+      .eahs-entry {
+        padding: 12px;
+        border: 1px solid rgba(143,205,255,.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .eahs-entry a {
+        color: #4cdbff;
+      }
+
+      .eahs-muted {
+        color: #a9c7dc;
+        font-size: 14px;
+      }
+
+      .eahs-mini {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+
+      .eahs-float {
+        position: fixed;
+        bottom: 75px;
+        right: 14px;
+        z-index: 2147482000;
+        box-shadow: 0 10px 25px rgba(0,0,0,.4);
+      }
+
+      #eahCoachCardApp.eahs-hidden,
+      #eahDiverOnlyApp.eahs-hidden {
+        display: none !important;
+      }
+
+      @media(max-width:600px) {
+        .eahs-box {
+          padding: 13px;
+          border-radius: 16px;
+        }
+
+        .eahs-btn {
+          padding: 9px 11px;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  /* ==========================================================
+     IDENTITE DU COMPTE CONNECTE
+  ========================================================== */
+
+  function rememberAccount() {
+    const coach = $("#eahCoachCardApp");
+
+    // Le token n'est mémorisé qu'après ouverture
+    // effective de l'espace coach attribué.
+
+    if (
+      coach &&
+      !coach.classList.contains("eahs-hidden") &&
+      $("#coachCardContent .coach-stat-grid", coach)
+    ) {
+      const token = new URLSearchParams(
+        location.search
+      ).get("coachToken");
+
+      if (token && token.length > 10) {
+        STORE.setItem(COACH_KEY, token);
+        STORE.setItem(ACTIVE_KEY, "coach");
+      }
+    }
+
+    // Identité du plongeur vérifiée par son PIN.
+    // Ne pas reprendre state.profile lorsque le
+    // plongeur consulte un profil public différent.
+
+    const diver = $("#eahDiverOnlyApp");
+    const st = stateRef();
+
+    if (
+      diver &&
+      !diver.classList.contains("eahs-hidden") &&
+      st?.diverPinHash &&
+      st?.profile?.eahId
+    ) {
+      STORE.setItem(
+        DIVER_KEY,
+        JSON.stringify({
+          id: st.profile.eahId,
+          hash: st.diverPinHash
+        })
+      );
+
+      STORE.setItem(ACTIVE_KEY, "diver");
+    }
+
+    if (
+      st?.user?.id &&
+      !$("#eahCoachCardApp:not(.eahs-hidden)") &&
+      !$("#eahDiverOnlyApp:not(.eahs-hidden)")
+    ) {
+      // Ne pas écraser une session NFC encore active.
+      if (!STORE.getItem(ACTIVE_KEY)) {
+        STORE.setItem(ACTIVE_KEY, "auth");
+      }
+    }
+
+    account = currentAccount();
+
+    const newKey = account?.key || "";
+
+    if (newKey !== accountKey) {
+      accountKey = newKey;
+      myCache = null;
+      myCacheTime = 0;
+      publicCache.clear();
     }
   }
 
-  function actorArgs() {
-    const st = appState();
+  function currentAccount() {
+    const mode = STORE.getItem(ACTIVE_KEY);
 
-    const pin = st?.diverPinHash || "";
+    if (mode === "diver") {
+      try {
+        const d = JSON.parse(
+          STORE.getItem(DIVER_KEY) || "null"
+        );
 
-    const id =
-      st?.profile?.eahId ||
-      st?.profile?.eah_id ||
-      "";
+        if (d?.id && d?.hash) {
+          return {
+            type: "diver",
+            id: d.id,
+            hash: d.hash,
+            key: "D:" + d.id
+          };
+        }
+      } catch (_) {}
+    }
 
-    if (pin && id) {
+    if (mode === "coach") {
+      const token = STORE.getItem(COACH_KEY);
+
+      if (token) {
+        return {
+          type: "coach",
+          token,
+          key: "C:" + token.slice(-12)
+        };
+      }
+    }
+
+    const st = stateRef();
+
+    if (st?.user?.id) {
       return {
-        p_actor_eah_id: id,
-        p_pin_hash: pin
+        type: "auth",
+        key: "U:" + st.user.id
       };
     }
 
-    try {
-      const stored = JSON.parse(
-        sessionStorage.getItem(
-          "EAH_DIVER_PIN_SESSION"
-        ) || "null"
-      );
-
-      if (stored?.pinHash && stored?.eahId) {
-        return {
-          p_actor_eah_id: stored.eahId,
-          p_pin_hash: stored.pinHash
-        };
-      }
-    } catch (_) {}
-
-    return {};
+    return null;
   }
 
-  async function rpc(action, extra = {}) {
-    const { data, error } = await sb().rpc(
-      "eah_social_v1",
-      {
-        p_action: action,
-        ...actorArgs(),
-        ...extra
+  /* ==========================================================
+     REQUETES SUPABASE
+  ========================================================== */
+
+  async function request(action, values = {}) {
+    rememberAccount();
+
+    const args = {
+      p_action: action,
+      ...values
+    };
+
+    if (action !== "PUBLIC") {
+      if (!account) {
+        throw new Error(
+          "Connecte-toi à ton profil EAH pour interagir."
+        );
       }
+
+      if (account.type === "diver") {
+        args.p_actor_eah_id = account.id;
+        args.p_pin_hash = account.hash;
+      }
+
+      if (account.type === "coach") {
+        args.p_coach_token = account.token;
+      }
+    }
+
+    const { data, error } = await db().rpc(
+      "eah_social_v2",
+      args
     );
 
     if (error) throw error;
 
     if (data?.ok === false) {
       throw new Error(
-        data.error || "Action impossible."
+        data.error || "Action refusée."
       );
     }
 
     return data;
   }
 
-  /* ==========================================================
-     STATISTIQUES PUBLIQUES
-  ========================================================== */
+  async function getMe(force = false) {
+    rememberAccount();
 
-  async function publicData(eahId, force = false) {
-    if (!eahId) return null;
-
-    const key = String(eahId).toUpperCase();
-    const old = cache.get(key);
+    if (!account) return null;
 
     if (
       !force &&
+      myCache &&
+      Date.now() - myCacheTime < 15000
+    ) {
+      return myCache;
+    }
+
+    if (myPromise) return myPromise;
+
+    myPromise = request("ME")
+      .then(data => {
+        myCache = data;
+        myCacheTime = Date.now();
+        return data;
+      })
+      .finally(() => {
+        myPromise = null;
+      });
+
+    return myPromise;
+  }
+
+  async function getPublic(eahId) {
+    if (!eahId) return null;
+
+    const key = String(eahId).toUpperCase();
+    const old = publicCache.get(key);
+
+    if (
       old &&
-      Date.now() - old.at < 20000
+      Date.now() - old.time < 10000
     ) {
       return old.data;
     }
 
-    const data = await rpc("PUBLIC", {
-      p_target_eah_id: key
+    const data = await request("PUBLIC", {
+      p_target_eah_id: eahId
     });
 
-    cache.set(key, {
+    publicCache.set(key, {
       data,
-      at: Date.now()
+      time: Date.now()
     });
 
     return data;
   }
 
   /* ==========================================================
-     ELEMENTS D'INTERFACE
+     OUTILS HTML
   ========================================================== */
 
-  function element(tag, className = "", text = "") {
-    const el = document.createElement(tag);
+  function el(tag, className = "", text) {
+    const n = document.createElement(tag);
 
-    if (className) el.className = className;
+    if (className) n.className = className;
 
-    if (text) el.textContent = text;
+    if (text !== undefined) {
+      n.textContent = String(text);
+    }
 
-    return el;
+    return n;
   }
 
-  function button(label, callback, primary = false) {
-    const btn = element(
+  function button(text, callback, secondary = false) {
+    const b = el(
       "button",
-      "eah-social-button" +
-        (primary ? " primary" : ""),
-      label
+      "eahs-btn" + (secondary ? " alt" : ""),
+      text
     );
 
-    btn.type = "button";
+    b.type = "button";
 
-    btn.addEventListener("click", async () => {
-      btn.disabled = true;
+    b.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      b.disabled = true;
 
       try {
-        await callback(btn);
+        await callback(b);
       } catch (error) {
         alert(error.message || String(error));
       } finally {
-        btn.disabled = false;
+        b.disabled = false;
       }
     });
 
-    return btn;
+    return b;
   }
 
-  function loginMessage() {
-    alert(
-      "Connecte-toi dans Espace Club avec ton " +
-      "compte coach ou ton profil plongeur et " +
-      "ton code personnel pour aimer ou suivre."
+  function profileLink(id) {
+    const url = new URL(
+      location.pathname,
+      location.origin
     );
-  }
 
-  function profileLink(eahId) {
-    const url = new window.URL(location.href);
-
-    url.searchParams.set("id", eahId);
+    url.searchParams.set("id", id);
     url.hash = "profil";
 
-    return url.href;
+    return url.toString();
   }
 
   /* ==========================================================
-     FOLLOW / UNFOLLOW
+     LIKES
   ========================================================== */
 
-  async function toggleFollow(eahId, btn, count) {
-    try {
-      const result = await rpc("FOLLOW", {
-        p_target_eah_id: eahId
-      });
+  function likeButton(eahId, grading) {
+    const row = el("div", "eahs-mini");
 
-      btn.textContent = result.following
-        ? "✓ Abonné"
-        : "＋ Suivre";
+    row.dataset.eahSocialLike = "1";
 
-      if (count) {
-        count.textContent =
-          "👥 " + result.followers + " followers";
-      }
-
-      cache.delete(
-        String(eahId).toUpperCase()
-      );
-
-      meData = null;
-
-    } catch (error) {
-      if (/Connectez-vous/.test(error.message)) {
-        loginMessage();
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  /* ==========================================================
-     LIKE / UNLIKE
-  ========================================================== */
-
-  async function toggleLike(
-    eahId,
-    evaluationId,
-    btn,
-    count
-  ) {
-    try {
-      const result = await rpc("LIKE", {
-        p_evaluation_id: evaluationId
-      });
-
-      btn.textContent = result.liked
-        ? "♥ Aimé"
-        : "♡ J’aime";
-
-      count.textContent =
-        "♥ " + result.likes;
-
-      cache.delete(
-        String(eahId).toUpperCase()
-      );
-
-      meData = null;
-
-    } catch (error) {
-      if (/Connectez-vous/.test(error.message)) {
-        loginMessage();
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  function followUI(eahId, stats) {
-    const bar = element(
-      "div",
-      "eah-social-bar"
+    const count = el(
+      "strong",
+      "",
+      "♥ " + (grading.likes || 0)
     );
 
-    const count = element(
-      "span",
-      "eah-social-counter",
-      "👥 " + stats.followers + " followers"
-    );
-
-    const btn = button(
-      "＋ Suivre",
-      b => toggleFollow(eahId, b, count),
-      true
-    );
-
-    const st = appState();
+    row.append(count);
 
     if (
-      st?.profile?.eahId === eahId &&
-      st?.diverPinHash
+      currentAccount()?.id?.toUpperCase() !==
+      String(eahId).toUpperCase()
     ) {
-      btn.hidden = true;
-    }
-
-    bar.append(count, btn);
-
-    return bar;
-  }
-
-  function likeUI(eahId, grading) {
-    const bar = element(
-      "div",
-      "eah-social-grade"
-    );
-
-    const count = element(
-      "span",
-      "eah-social-red",
-      "♥ " + grading.likes
-    );
-
-    const btn = button(
-      "♡ J’aime",
-      b => toggleLike(
-        eahId,
-        grading.id,
-        b,
-        count
-      )
-    );
-
-    const st = appState();
-
-    if (
-      st?.profile?.eahId === eahId &&
-      st?.diverPinHash
-    ) {
-      btn.hidden = true;
-    }
-
-    bar.append(count, btn);
-
-    return bar;
-  }
-
-  /* ==========================================================
-     UTILISATEUR CONNECTE
-  ========================================================== */
-
-  function personalContext() {
-    const st = appState();
-
-    if (
-      st?.diverPinHash &&
-      st?.profile?.eahId
-    ) {
-      return "diver";
-    }
-
-    const coach = document.getElementById(
-      "coachPrivate"
-    );
-
-    if (
-      st?.user &&
-      coach &&
-      !coach.classList.contains("hidden")
-    ) {
-      return "coach";
-    }
-
-    return null;
-  }
-
-  async function loadMe(force = false) {
-    if (!force && meData) {
-      return meData;
-    }
-
-    if (mePromise) {
-      return mePromise;
-    }
-
-    mePromise = rpc("ME")
-      .then(data => {
-        meData = data;
-        return data;
-      })
-      .finally(() => {
-        mePromise = null;
-      });
-
-    return mePromise;
-  }
-
-  /* ==========================================================
-     LISTES FOLLOW / FOLLOWERS / NOTIFICATIONS
-  ========================================================== */
-
-  function listRow(text, href = null, right = "") {
-    const row = element(
-      "div",
-      "eah-social-item"
-    );
-
-    const name = href
-      ? element("a")
-      : element("span", "", text);
-
-    if (href) {
-      name.href = href;
-      name.textContent = text;
-    }
-
-    row.append(name);
-
-    if (right) {
       row.append(
-        element(
-          "small",
-          "eah-social-counter",
-          right
-        )
+        button("♡ J'aime", async b => {
+          const result = await request("LIKE", {
+            p_evaluation_id: grading.id
+          });
+
+          count.textContent =
+            "♥ " + result.likes;
+
+          b.textContent = result.liked
+            ? "♥ Aimé"
+            : "♡ J'aime";
+
+          publicCache.delete(
+            String(eahId).toUpperCase()
+          );
+
+          myCache = null;
+        }, true)
       );
     }
 
     return row;
   }
 
-  function buildPersonal(data, kind) {
-    const card = element(
-      "section",
-      "eah-social-card"
-    );
+  /* ==========================================================
+     FOLLOW
+  ========================================================== */
 
-    card.dataset.eahSocialPersonal = kind;
+  function followButton(eahId, stats) {
+    const row = el("div", "eahs-mini");
 
-    const head = element(
-      "h3",
+    row.dataset.eahSocialFollow = "1";
+
+    const count = el(
+      "strong",
       "",
-      "Mon activité EAH Diving"
+      "👥 " + (stats.followers || 0) +
+      " followers"
     );
 
-    const count = element(
-      "div",
-      "eah-social-bar"
+    row.append(count);
+
+    if (
+      currentAccount()?.id?.toUpperCase() !==
+      String(eahId).toUpperCase()
+    ) {
+      row.append(
+        button("＋ Suivre", async b => {
+          const result = await request("FOLLOW", {
+            p_target_eah_id: eahId
+          });
+
+          count.textContent =
+            "👥 " + result.followers + " followers";
+
+          b.textContent = result.following
+            ? "✓ Abonné"
+            : "＋ Suivre";
+
+          publicCache.delete(
+            String(eahId).toUpperCase()
+          );
+
+          myCache = null;
+        })
+      );
+    }
+
+    return row;
+  }
+
+  /* ==========================================================
+     NOTIFICATIONS ET LISTES
+  ========================================================== */
+
+  function entry(text, id = null, detail = "") {
+    const row = el("div", "eahs-entry");
+
+    if (id) {
+      const link = el("a", "", text);
+      link.href = profileLink(id);
+      row.append(link);
+    } else {
+      row.append(el("span", "", text));
+    }
+
+    if (detail) {
+      row.append(
+        el("small", "eahs-muted", detail)
+      );
+    }
+
+    return row;
+  }
+
+  function personalPanel(type) {
+    const root = el("section", "eahs-box");
+
+    root.dataset.eahSocialPanel = type;
+
+    const header = el("div", "eahs-head");
+    header.append(
+      el("h3", "", "Mon activité EAH")
     );
 
-    const followingCount =
-      (data.following || []).length;
-
-    const followerCount =
-      data.followers_count || 0;
-
-    count.append(
-      element(
-        "strong",
-        "eah-social-counter",
-        "👥 " + followerCount + " followers"
-      ),
-      element(
-        "strong",
-        "eah-social-counter",
-        "✓ " + followingCount + " profils suivis"
-      )
+    const bell = button(
+      "🔔 Notifications",
+      () => openTab("notifications"),
+      true
     );
 
-    const tabs = element(
-      "div",
-      "eah-social-tabs"
-    );
+    header.append(bell);
 
-    const content = element(
-      "div",
-      "eah-social-list"
-    );
+    const counters = el("div", "eahs-row");
+    const tabs = el("div", "eahs-tabs");
+    const list = el("div", "eahs-list");
 
-    const collections = {
-      following: () =>
-        (data.following || []).map(p =>
-          listRow(
-            p.name,
-            profileLink(p.eah_id),
-            p.followers + " followers"
-          )
+    list.hidden = true;
+
+    const definitions = {
+      following: "Je follow",
+      followers: "Mes Followers",
+      notifications: "Notifications"
+    };
+
+    const tabButtons = {};
+
+    for (const [key, title] of Object.entries(
+      definitions
+    )) {
+      const b = button(
+        title,
+        () => openTab(key),
+        true
+      );
+
+      tabs.append(b);
+      tabButtons[key] = b;
+    }
+
+    root.append(header, counters, tabs, list);
+
+    async function refresh(force = false) {
+      const data = await getMe(force);
+
+      if (!data) return null;
+
+      const followers =
+        Number(data.followers_count || 0);
+
+      const following =
+        (data.following || []).length;
+
+      const unread =
+        (data.notifications || [])
+          .filter(n => !n.read).length;
+
+      counters.replaceChildren(
+        el(
+          "strong",
+          "",
+          "👥 " + followers + " Mes Followers"
         ),
+        el(
+          "strong",
+          "",
+          "✓ " + following + " Je follow"
+        )
+      );
 
-      followers: () =>
-        (data.followers || []).map(p =>
-          listRow(
-            p.name,
-            p.eah_id
-              ? profileLink(p.eah_id)
-              : null
-          )
-        ),
+      bell.textContent =
+        "🔔 Notifications" +
+        (unread ? " (" + unread + ")" : "");
 
-      notifications: () =>
-        (data.notifications || []).map(n => {
+      return data;
+    }
+
+    async function openTab(key) {
+      const data = await refresh(true);
+
+      if (!data) return;
+
+      list.hidden = false;
+      list.replaceChildren();
+
+      for (const [name, b] of Object.entries(
+        tabButtons
+      )) {
+        b.classList.toggle(
+          "active",
+          name === key
+        );
+      }
+
+      for (const item of data[key] || []) {
+        if (key === "notifications") {
+          const message =
+            item.actor +
+            (
+              item.kind === "FOLLOW"
+                ? " suit ton profil"
+                : " a aimé un grading"
+            );
+
           const date = new Date(
-            n.at
+            item.at
           ).toLocaleString("fr-FR");
 
-          const message = n.kind === "FOLLOW"
-            ? n.actor + " suit ton profil"
-            : n.actor + " a aimé un grading";
-
-          const row = listRow(
+          const row = entry(
             message,
             null,
             date
           );
 
-          if (!n.read) {
+          if (!item.read) {
             row.append(
               button(
                 "Marquer comme lu",
-                async () => {
-                  await rpc("READ", {
-                    p_notification_id: n.id
+                async b => {
+                  await request("READ", {
+                    p_notification_id: item.id
                   });
 
-                  n.read = true;
-                  show("notifications");
-                }
+                  b.remove();
+                  item.read = true;
+                },
+                true
               )
             );
           }
 
-          return row;
-        })
-    };
+          list.append(row);
 
-    const tabDefinitions = [
-      ["following", "Je follow"],
-      ["followers", "Mes Followers"],
-      ["notifications", "Notifications"]
-    ];
-
-    const buttons = new Map();
-
-    tabDefinitions.forEach(([key, label]) => {
-      const unread = key === "notifications"
-        ? (data.notifications || [])
-            .filter(n => !n.read).length
-        : 0;
-
-      const btn = button(
-        label + (unread ? " (" + unread + ")" : ""),
-        () => show(key)
-      );
-
-      tabs.append(btn);
-      buttons.set(key, btn);
-    });
-
-    function show(tab) {
-      for (const [key, btn] of buttons) {
-        btn.classList.toggle(
-          "eah-social-tab-active",
-          key === tab
-        );
+        } else {
+          list.append(
+            entry(
+              item.name,
+              item.eah_id || null,
+              key === "following"
+                ? (item.followers || 0) +
+                  " followers"
+                : ""
+            )
+          );
+        }
       }
 
-      const rows = collections[tab]();
+      if (!list.children.length) {
+        list.append(
+          el(
+            "p",
+            "eahs-muted",
+            "Aucune activité pour le moment."
+          )
+        );
+      }
+    }
 
-      content.replaceChildren(
-        ...(rows.length
-          ? rows
-          : [listRow("Aucune activité pour le moment")])
+    refresh().catch(error => {
+      counters.append(
+        el(
+          "p",
+          "eahs-muted",
+          error.message
+        )
+      );
+    });
+
+    return root;
+  }
+
+  /* ==========================================================
+     NAVIGATION : PROFIL <-> SITE
+  ========================================================== */
+
+  function returnToSite() {
+    const coach = $("#eahCoachCardApp");
+    const diver = $("#eahDiverOnlyApp");
+
+    if (coach) {
+      coach.classList.add("eahs-hidden");
+
+      document.documentElement.classList.remove(
+        "eah-coach-card-mode"
+      );
+
+      document.body.classList.remove(
+        "eah-coach-card-mode"
       );
     }
 
-    card.append(
-      head,
-      count,
-      tabs,
-      content
-    );
+    if (diver) {
+      diver.classList.add("eahs-hidden");
+    }
 
-    show("notifications");
+    if (typeof showPage === "function") {
+      showPage("population");
+    } else {
+      location.hash = "population";
+    }
 
-    return card;
+    showReturnButton();
   }
 
-  async function insertPersonal(root, kind) {
+  function returnToAccount() {
+    rememberAccount();
+
+    const coach = $("#eahCoachCardApp");
+    const diver = $("#eahDiverOnlyApp");
+
+    if (account?.type === "coach") {
+      if (coach) {
+        coach.classList.remove("eahs-hidden");
+
+        document.documentElement.classList.add(
+          "eah-coach-card-mode"
+        );
+
+        document.body.classList.add(
+          "eah-coach-card-mode"
+        );
+      } else {
+        location.href =
+          location.pathname +
+          "?coachToken=" +
+          encodeURIComponent(account.token) +
+          "#club";
+
+        return;
+      }
+
+    } else if (
+      account?.type === "diver" &&
+      diver
+    ) {
+      diver.classList.remove("eahs-hidden");
+
+    } else if (typeof showPage === "function") {
+      showPage(
+        account?.type === "diver"
+          ? "profil"
+          : "club"
+      );
+    }
+
+    showReturnButton();
+  }
+
+  function showReturnButton() {
+    rememberAccount();
+
+    let control = $("#eahSocialReturn");
+
+    if (!account) {
+      control?.remove();
+      return;
+    }
+
+    if (!control) {
+      control = button(
+        "👤 Mon espace EAH",
+        returnToAccount
+      );
+
+      control.id = "eahSocialReturn";
+      control.classList.add("eahs-float");
+
+      document.body.append(control);
+    }
+
+    control.hidden = Boolean(
+      $("#eahCoachCardApp:not(.eahs-hidden)") ||
+      $("#eahDiverOnlyApp:not(.eahs-hidden)")
+    );
+  }
+
+  /* ==========================================================
+     ESPACE COACH NFC
+  ========================================================== */
+
+  function coachCardUI() {
+    const app = $("#eahCoachCardApp");
+
+    const host = $(
+      "#coachCardContent",
+      app || document
+    );
+
     if (
-      !root ||
-      root.querySelector(
-        '[data-eah-social-personal="' + kind + '"]'
-      ) ||
-      loading
+      !host ||
+      !$(".coach-stat-grid", host)
     ) {
       return;
     }
 
-    loading = true;
+    rememberAccount();
 
-    try {
-      const data = await loadMe();
+    if (
+      !host.querySelector(
+        '[data-eah-social-panel="coach"]'
+      )
+    ) {
+      const panel = personalPanel("coach");
 
-      if (
-        !root.isConnected ||
-        root.querySelector(
-          '[data-eah-social-personal="' + kind + '"]'
-        )
-      ) {
-        return;
-      }
-
-      const block = buildPersonal(
-        data,
-        kind
+      const header = $(
+        ".coach-card-header",
+        host
       );
 
-      if (kind === "diver") {
-        root.prepend(block);
+      if (header) {
+        header.after(panel);
       } else {
-        const top = root.querySelector(
-          ".dashboard-topbar"
-        );
-
-        if (top) {
-          top.after(block);
-        } else {
-          root.prepend(block);
-        }
+        host.prepend(panel);
       }
+    }
 
-      if (kind === "diver") {
-        showOwnGradeLikes(
-          root,
-          data.grades || []
-        );
-      }
-
-    } catch (error) {
-      console.debug(
-        "EAH Social personnel :",
-        error.message
+    if (!$("#eahSocialBrowseCoach", host)) {
+      const b = button(
+        "🌐 Explorer le site",
+        returnToSite
       );
-    } finally {
-      loading = false;
+
+      b.id = "eahSocialBrowseCoach";
+      b.style.margin = "12px 0";
+
+      const header = $(
+        ".coach-card-header",
+        host
+      );
+
+      if (header) {
+        header.after(b);
+      } else {
+        host.prepend(b);
+      }
     }
   }
 
   /* ==========================================================
-     LIKES DANS L'HISTORIQUE PERSONNEL
+     ESPACE COACH AVEC MOT DE PASSE
   ========================================================== */
 
-  function showOwnGradeLikes(root, grades) {
-    const rows = [
-      ...root.querySelectorAll(
-        "#profileHistory .profile-history-item"
+  function coachAuthUI() {
+    const host = $("#coachPrivate");
+
+    if (
+      !host ||
+      host.classList.contains("hidden") ||
+      !stateRef()?.user
+    ) {
+      return;
+    }
+
+    if (
+      host.querySelector(
+        '[data-eah-social-panel="auth"]'
       )
-    ];
+    ) {
+      return;
+    }
 
-    const evaluations =
-      appState()?.profileHistory?.evaluations || [];
+    const panel = personalPanel("auth");
+    const top = $(".dashboard-topbar", host);
 
-    rows.forEach((row, index) => {
-      if (
-        row.querySelector(
-          "[data-eah-social-own-grade]"
-        )
-      ) {
-        return;
-      }
-
-      const grading = grades.find(
-        g => g.id === evaluations[index]?.id
-      );
-
-      if (!grading) return;
-
-      const count = element(
-        "div",
-        "eah-social-grade",
-        "♥ " + grading.likes + " likes"
-      );
-
-      count.dataset.eahSocialOwnGrade = "1";
-
-      row.append(count);
-    });
+    if (top) {
+      top.after(panel);
+    } else {
+      host.prepend(panel);
+    }
   }
 
   /* ==========================================================
-     PROFIL PUBLIC
+     ESPACE PLONGEUR PERSONNEL
   ========================================================== */
 
-  async function addPublicProfile() {
-    const root = document.getElementById(
-      "profileView"
+  function diverUI() {
+    const app = $("#eahDiverOnlyApp");
+
+    if (!app) return;
+
+    rememberAccount();
+
+    if (account?.type !== "diver") {
+      return;
+    }
+
+    const host = $(
+      ".eah-diver-only-shell",
+      app
     );
 
-    const hero = root?.querySelector(
-      ".eah-fast-profile-top"
+    if (!host) return;
+
+    const brand = $(
+      ".eah-diver-brand",
+      host
+    );
+
+    if (
+      !host.querySelector(
+        '[data-eah-social-panel="diver"]'
+      )
+    ) {
+      const panel = personalPanel("diver");
+
+      if (brand) {
+        brand.after(panel);
+      } else {
+        host.prepend(panel);
+      }
+    }
+
+    if (!$("#eahSocialBrowseDiver", host)) {
+      const b = button(
+        "🌐 Explorer le site",
+        returnToSite
+      );
+
+      b.id = "eahSocialBrowseDiver";
+      b.style.margin = "12px 0";
+
+      if (brand) {
+        brand.after(b);
+      } else {
+        host.prepend(b);
+      }
+    }
+  }
+
+  /* ==========================================================
+     PROFIL PUBLIC + COMPTEURS DES GRADINGS
+  ========================================================== */
+
+  async function publicProfileUI() {
+    const host = $("#profileView");
+    const hero = $(
+      ".eah-fast-profile-top",
+      host || document
     );
 
     if (!hero) return;
 
-    const id = appState()?.profile?.eahId;
+    const st = stateRef();
+
+    const id =
+      st?.profile?.eahId ||
+      st?.profile?.eah_id;
 
     if (!id) return;
 
-    const data = await publicData(id);
+    const data = await getPublic(id);
 
-    if (!data?.public || !hero.isConnected) {
-      return;
-    }
+    // Aucune information sociale pour un profil privé.
+    if (!data?.public) return;
+
+    const target = $(
+      ".eah-fast-profile-text",
+      hero
+    ) || hero;
+
+    const key = "public-" + id;
 
     if (
-      !hero.querySelector(
-        "[data-eah-social-profile]"
+      !target.querySelector(
+        '[data-eah-social-public="' + key + '"]'
       )
     ) {
-      const wrapper = element(
-        "div",
-        "eah-social-profile"
+      const block = el("div", "eahs-row");
+      block.dataset.eahSocialPublic = key;
+
+      block.append(
+        followButton(id, data)
       );
 
-      wrapper.dataset.eahSocialProfile = "1";
-
-      wrapper.append(
-        followUI(id, data)
-      );
-
-      hero.querySelector(
-        ".eah-fast-profile-text"
-      )?.append(wrapper);
+      target.append(block);
     }
 
-    const rows = [
-      ...root.querySelectorAll(
-        "#profileHistory .profile-history-item"
-      )
-    ];
+    const rows = $$(
+      "#profileHistory .profile-history-item",
+      host
+    );
 
     const evaluations =
-      appState()?.profileHistory?.evaluations || [];
+      st?.profileHistory?.evaluations || [];
 
     rows.forEach((row, index) => {
       if (
-        row.querySelector(".eah-social-grade")
+        row.querySelector(
+          "[data-eah-social-like]"
+        )
       ) {
         return;
       }
@@ -839,231 +1081,209 @@
 
       if (grading) {
         row.append(
-          likeUI(id, grading)
+          likeButton(id, grading)
         );
       }
     });
   }
 
   /* ==========================================================
-     POPULATION PUBLIQUE
+     POPULATION
   ========================================================== */
 
-  function getIdFromCard(card) {
-    const link = card.querySelector(
-      'a[href*="id="]'
-    );
-
-    if (!link) return "";
-
-    try {
-      return new window.URL(
-        link.href
-      ).searchParams.get("id") || "";
-    } catch (_) {
-      return "";
-    }
-  }
-
-  async function decoratePopulation() {
-    const root = document.getElementById(
-      "populationResults"
-    );
+  async function populationUI() {
+    const root = $("#populationResults");
 
     if (!root) return;
 
-    const cards = [
-      ...root.querySelectorAll(
-        ".eah-population-person-card.is-public" +
-        ":not([data-eah-social-added])"
-      )
-    ];
+    const profiles = $$(
+      ".eah-population-person-card.is-public",
+      root
+    );
 
-    for (const card of cards) {
-      const id = getIdFromCard(card);
+    for (const card of profiles) {
+      if (card.dataset.eahSocialDone) {
+        continue;
+      }
+
+      const link = card.querySelector(
+        'a[href*="id="]'
+      );
+
+      if (!link) continue;
+
+      const id = new URL(
+        link.href
+      ).searchParams.get("id");
 
       if (!id) continue;
 
-      card.dataset.eahSocialAdded = "1";
+      card.dataset.eahSocialDone = "1";
 
-      try {
-        const data = await publicData(id);
+      const data = await getPublic(id);
 
-        if (!data?.public || !card.isConnected) {
-          continue;
-        }
-
-        const container = card.querySelector(
-          ".eah-population-person-info"
-        ) || card;
-
-        const wrapper = element(
-          "div",
-          "eah-social-pop"
-        );
-
-        wrapper.append(
-          followUI(id, data)
-        );
-
-        const totalLikes = (
-          data.gradings || []
-        ).reduce(
-          (sum, g) => sum + Number(g.likes || 0),
-          0
-        );
-
-        wrapper.append(
-          element(
-            "small",
-            "eah-social-counter",
-            "♥ " + totalLikes + " likes sur ses gradings"
-          )
-        );
-
-        container.append(wrapper);
-
-      } catch (error) {
-        console.debug(error.message);
+      if (!data?.public || !card.isConnected) {
+        continue;
       }
+
+      const target = $(
+        ".eah-population-person-info",
+        card
+      ) || card;
+
+      target.append(
+        followButton(id, data)
+      );
     }
 
-    /* Gradings de Population */
+    // Les lignes de gradings sont identifiées
+    // dans script.js par leurs attributs data.
 
-    const gradingRows = [
-      ...root.querySelectorAll(
-        ".history-item[data-eah-social-eah]" +
-        ":not([data-eah-social-added])"
-      )
-    ];
+    const gradings = $$(
+      ".history-item[data-eah-social-eah]",
+      root
+    );
 
-    for (const row of gradingRows) {
+    for (const row of gradings) {
+      if (row.dataset.eahSocialDone) {
+        continue;
+      }
+
       const id = row.dataset.eahSocialEah;
 
       if (!id) continue;
 
-      row.dataset.eahSocialAdded = "1";
+      row.dataset.eahSocialDone = "1";
 
-      try {
-        const data = await publicData(id);
+      const data = await getPublic(id);
 
-        const grading = (
-          data?.gradings || []
-        ).find(g =>
+      const grading = data?.gradings?.find(
+        g =>
           g.code === row.dataset.eahSocialCode &&
           Math.abs(
             Date.parse(g.at) -
             Date.parse(row.dataset.eahSocialAt)
-          ) < 2000
+          ) < 2500
+      );
+
+      if (grading && row.isConnected) {
+        row.append(
+          likeButton(id, grading)
         );
-
-        if (grading && row.isConnected) {
-          row.append(
-            likeUI(id, grading)
-          );
-        }
-
-      } catch (error) {
-        console.debug(error.message);
       }
     }
   }
 
   /* ==========================================================
-     ACTUALISATION DES ESPACES
+     ACTUALISATION
   ========================================================== */
 
-  let pending = false;
+  async function scan() {
+    if (scanning) return;
 
-  function queueScan() {
-    if (pending) return;
+    scanning = true;
 
-    pending = true;
+    try {
+      coachCardUI();
+      coachAuthUI();
+      diverUI();
+      showReturnButton();
 
-    requestAnimationFrame(async () => {
-      pending = false;
+      await Promise.all([
+        publicProfileUI(),
+        populationUI()
+      ]);
 
-      await decoratePopulation();
-
-      const profile = document.getElementById(
-        "profileView"
+    } catch (error) {
+      console.warn(
+        "EAH Social V2 :",
+        error.message
       );
+    } finally {
+      scanning = false;
+    }
+  }
 
-      if (
-        profile?.isConnected &&
-        !profile.classList.contains("hidden")
-      ) {
-        await addPublicProfile();
+  function scheduleScan() {
+    if (queued) return;
 
-        if (personalContext() === "diver") {
-          await insertPersonal(
-            profile,
-            "diver"
-          );
+    queued = true;
 
-          if (meData?.grades) {
-            showOwnGradeLikes(
-              profile,
-              meData.grades
-            );
-          }
-        }
-      }
-
-      const coach = document.getElementById(
-        "coachPrivate"
-      );
-
-      if (personalContext() === "coach") {
-        await insertPersonal(
-          coach,
-          "coach"
-        );
-      }
+    requestAnimationFrame(() => {
+      queued = false;
+      scan();
     });
   }
 
-  function init() {
-    const style = element("style");
-    style.textContent = CSS;
-
-    document.head.append(style);
+  function start() {
+    installCSS();
 
     new MutationObserver(
-      queueScan
+      scheduleScan
     ).observe(document.body, {
       childList: true,
       subtree: true
     });
 
-    queueScan();
+    scheduleScan();
 
-    window.addEventListener("pageshow", () => {
-      meData = null;
-      cache.clear();
-      queueScan();
-    });
+    window.addEventListener(
+      "hashchange",
+      scheduleScan
+    );
+
+    window.addEventListener(
+      "pageshow",
+      scheduleScan
+    );
+
+    // Effacer l'identité sociale lors de la
+    // déconnexion coach classique.
+    $("#logoutCoachButton")?.addEventListener(
+      "click",
+      () => {
+        STORE.removeItem(COACH_KEY);
+        STORE.removeItem(ACTIVE_KEY);
+        account = null;
+        myCache = null;
+      }
+    );
 
     window.EAHSocialRefresh = () => {
-      meData = null;
-      cache.clear();
+      publicCache.clear();
+      myCache = null;
+      myCacheTime = 0;
 
-      document.querySelectorAll(
-        "[data-eah-social-personal]"
-      ).forEach(el => el.remove());
+      $$(
+        "[data-eah-social-panel]"
+      ).forEach(x => x.remove());
 
-      queueScan();
+      $$(
+        "[data-eah-social-public]"
+      ).forEach(x => x.remove());
+
+      $$(
+        "[data-eah-social-like]"
+      ).forEach(x => x.remove());
+
+      $$(
+        "[data-eah-social-done]"
+      ).forEach(x => {
+        delete x.dataset.eahSocialDone;
+      });
+
+      scheduleScan();
     };
   }
 
   if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
-      init,
+      start,
       { once: true }
     );
   } else {
-    init();
+    start();
   }
 
 })();
