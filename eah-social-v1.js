@@ -777,9 +777,13 @@
     }
 
     if (typeof showPage === "function") {
-      showPage("population");
+      
+showPage("accueil");
+
     } else {
-      location.hash = "population";
+      
+location.hash = "accueil";
+
     }
 
     showReturnButton();
@@ -813,8 +817,18 @@
       }
 
     } else if (
-      account?.type === "diver" &&
-      diver
+      
+diver &&
+(
+  account?.type === "diver" ||
+  (
+    !account &&
+    new URLSearchParams(
+      location.search
+    ).has("token")
+  )
+)
+
     ) {
       diver.classList.remove("eahs-hidden");
 
@@ -834,10 +848,19 @@
 
     let control = $("#eahSocialReturn");
 
-    if (!account) {
-      control?.remove();
-      return;
-    }
+    
+const nfcProfile = Boolean(
+  new URLSearchParams(
+    location.search
+  ).get("token") &&
+  document.getElementById("eahDiverOnlyApp")
+);
+
+if (!account && !nfcProfile) {
+  control?.remove();
+  return;
+}
+
 
     if (!control) {
       control = button(
@@ -956,59 +979,73 @@
      ESPACE PLONGEUR PERSONNEL
   ========================================================== */
 
-  function diverUI() {
-    const app = $("#eahDiverOnlyApp");
+  
+/* ============================================================
+   ESPACE PLONGEUR — RETOUR AU SITE
+   FONCTIONNE AUSSI AVEC CARTE NFC
+============================================================ */
 
-    if (!app) return;
+function diverUI() {
+  const app = document.getElementById(
+    "eahDiverOnlyApp"
+  );
 
-    rememberAccount();
+  if (!app) return;
 
-    if (account?.type !== "diver") {
-      return;
-    }
+  const host = app.querySelector(
+    ".eah-diver-only-shell"
+  );
 
-    const host = $(
-      ".eah-diver-only-shell",
-      app
+  if (!host) return;
+
+  const brand = host.querySelector(
+    ".eah-diver-brand"
+  );
+
+  // Le retour au site doit fonctionner
+  // même quand le profil est ouvert par NFC.
+
+  if (!document.getElementById(
+    "eahSocialBrowseDiver"
+  )) {
+    const back = button(
+      "← Retour à l'accueil",
+      returnToSite
     );
 
-    if (!host) return;
+    back.id = "eahSocialBrowseDiver";
+    back.style.margin = "12px 0";
 
-    const brand = $(
-      ".eah-diver-brand",
-      host
-    );
-
-    if (
-      !host.querySelector(
-        '[data-eah-social-panel="diver"]'
-      )
-    ) {
-      const panel = personalPanel("diver");
-
-      if (brand) {
-        brand.after(panel);
-      } else {
-        host.prepend(panel);
-      }
-    }
-
-    if (!$("#eahSocialBrowseDiver", host)) {
-      const b = button(
-        "🌐 Explorer le site",
-        returnToSite
-      );
-
-      b.id = "eahSocialBrowseDiver";
-      b.style.margin = "12px 0";
-
-      if (brand) {
-        brand.after(b);
-      } else {
-        host.prepend(b);
-      }
+    if (brand) {
+      brand.after(back);
+    } else {
+      host.prepend(back);
     }
   }
+
+  rememberAccount();
+
+  // Pour les notifications personnelles et les
+  // actions sociales, une connexion vérifiée
+  // reste nécessaire.
+
+  if (account?.type !== "diver") {
+    return;
+  }
+
+  if (!host.querySelector(
+    '[data-eah-social-panel="diver"]'
+  )) {
+    const panel = personalPanel("diver");
+
+    if (brand) {
+      brand.after(panel);
+    } else {
+      host.prepend(panel);
+    }
+  }
+}
+
 
   /* ==========================================================
      PROFIL PUBLIC + COMPTEURS DES GRADINGS
@@ -1345,9 +1382,10 @@ async function showOwnHistoryLikes() {
    CORRECTION V3
 ========================================================== */
 
-let scanning = false;
+
 let pendingScan = false;
 let frameQueued = false;
+
 
 async function scan() {
   if (scanning) {
