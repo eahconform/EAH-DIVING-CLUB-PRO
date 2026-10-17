@@ -53,7 +53,9 @@
     let url;
 
     try {
-      url = new URL(String(raw || "").trim());
+      
+url = new window.URL(String(raw || "").trim());
+
     } catch (_) {
       return null;
     }
