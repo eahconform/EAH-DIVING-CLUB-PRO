@@ -35,15 +35,24 @@
     de: "Fotos und Videos der Disziplin"
   };
 
-  const sections = new Map();
+  
+const sections = new Map();
+const customTitles = new Map();
 
-  function languageHeading() {
-    const lang = (
-      document.documentElement.lang || "fr"
-    ).toLowerCase().slice(0, 2);
+function languageHeading(discipline) {
+  const custom = customTitles.get(discipline);
 
-    return HEADINGS[lang] || HEADINGS.fr;
+  if (custom) {
+    return custom;
   }
+
+  const lang = (
+    document.documentElement.lang || "fr"
+  ).toLowerCase().slice(0, 2);
+
+  return HEADINGS[lang] || HEADINGS.fr;
+}
+
 
   /* ==========================================================
      DETECTION ET SECURISATION DES LIENS
@@ -345,7 +354,9 @@ url = new window.URL(String(raw || "").trim());
 
       const heading = document.createElement("h2");
       heading.className = "eah-media-title";
-      heading.textContent = languageHeading();
+      
+heading.textContent = languageHeading(id);
+
 
       const grid = document.createElement("div");
       grid.className = "eah-media-grid";
@@ -354,8 +365,19 @@ url = new window.URL(String(raw || "").trim());
       container.append(panel);
       section.append(container);
 
-      // Ajout sous le texte explicatif.
-      page.append(section);
+   
+// Afficher les photos et vidéos AVANT
+// le commentaire explicatif.
+
+const explanation = page.querySelector(
+  ".section:not(.page-hero)"
+);
+
+page.insertBefore(
+  section,
+  explanation || null
+);
+
 
       sections.set(id, {
         page,
@@ -567,6 +589,68 @@ url = new window.URL(String(raw || "").trim());
     }
   }
 
+/* ============================================================
+   CHARGEMENT DES TITRES PERSONNALISES
+============================================================ */
+
+async function loadDisciplineTitles() {
+  try {
+    const endpoint =
+      URL +
+      "/rest/v1/eah_discipline_sections" +
+      "?select=discipline,title";
+
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        apikey: KEY,
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "Titres Supabase HTTP " + response.status
+      );
+    }
+
+    const rows = await response.json();
+
+    if (!Array.isArray(rows)) {
+      throw new Error(
+        "Réponse des titres invalide."
+      );
+    }
+
+    customTitles.clear();
+
+    rows.forEach(row => {
+      if (
+        DISCIPLINES.includes(row.discipline) &&
+        typeof row.title === "string" &&
+        row.title.trim()
+      ) {
+        customTitles.set(
+          row.discipline,
+          row.title.trim()
+        );
+      }
+    });
+
+    sections.forEach((slot, discipline) => {
+      slot.heading.textContent =
+        languageHeading(discipline);
+    });
+
+  } catch (error) {
+    console.warn(
+      "Chargement des titres EAH :",
+      error
+    );
+  }
+}
+
   /* ==========================================================
      INITIALISATION
   ========================================================== */
@@ -575,14 +659,19 @@ url = new window.URL(String(raw || "").trim());
     addStyles();
     createSlots();
 
-    if (!sections.size) return;
+    
+if (!sections.size) return;
 
-    refresh();
+loadDisciplineTitles();
+refresh();
+
 
     // Adaptation du titre à la langue choisie.
     new MutationObserver(() => {
       for (const slot of sections.values()) {
-        const title = languageHeading();
+        
+const title = languageHeading(slot.page.id);
+
 
         if (slot.heading.textContent !== title) {
           slot.heading.textContent = title;
@@ -593,11 +682,14 @@ url = new window.URL(String(raw || "").trim());
       attributeFilter: ["lang"]
     });
 
-    window.addEventListener("pageshow", event => {
-      if (event.persisted) {
-        refresh();
-      }
-    });
+    
+window.addEventListener("pageshow", event => {
+  if (event.persisted) {
+    loadDisciplineTitles();
+    refresh();
+  }
+});
+
 
     window.EAHRefreshDisciplineMedia = refresh;
   }
