@@ -8671,6 +8671,56 @@ if (
 const individuel =
   CLUB_SLUG === "eah-individuels-demo";
 
+/* ============================================================
+   EAH — VÉRIFICATION DE SESSION PARTICULIER
+============================================================ */
+
+if (individuel) {
+  const { data: authData } =
+    await sb.auth.getUser();
+
+  const authUser = authData?.user;
+
+  const validSession = Boolean(
+    authUser?.email_confirmed_at &&
+    authUser.email?.toLowerCase() === recoveryEmail
+  );
+
+  if (!validSession) {
+    const { error: emailError } =
+      await sb.auth.signInWithOtp({
+        email: recoveryEmail,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.href
+        }
+      });
+
+    if (emailError) {
+      throw emailError;
+    }
+
+    setMessage(
+      "setupProfileMsg",
+      '<div class="notice success">' +
+      'Un lien sécurisé de connexion a été demandé ' +
+      'à votre adresse e-mail. ' +
+      'Ouvrez cet e-mail sur votre téléphone, ' +
+      'puis revenez ici pour activer votre profil.' +
+      '</div>'
+    );
+
+    setLoadingButton(
+      button,
+      false,
+      "Activation…",
+      "Activer mon profil"
+    );
+
+    return;
+  }
+}
+
 const activationArgs = {
   p_eah_id: CARD_EAH_ID,
   p_token: CARD_TOKEN,
@@ -8712,21 +8762,57 @@ if (activationData?.ok === false) {
 // Une fois le profil particulier activé,
 // revenir aux e-mails de connexion habituels.
 
-if (individuel) {
-  const { error: metadataError } =
-    await sb.auth.updateUser({
-      data: {
-        eah_mail_context: null
-      }
-    });
 
-  if (metadataError) {
+/* ============================================================
+   EAH — CONFIRMATION DU PROFIL ACTIVÉ
+============================================================ */
+
+if (individuel) {
+  try {
+    const { error: markError } =
+      await sb.auth.updateUser({
+        data: {
+          eah_mail_context: "individual_activated",
+          eah_id: CARD_EAH_ID
+        }
+      });
+
+    if (markError) throw markError;
+
+    const { error: mailError } =
+      await sb.auth.signInWithOtp({
+        email: recoveryEmail,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: window.location.href
+        }
+      });
+
+    if (mailError) throw mailError;
+
+    // Restaurer le contexte normal des e-mails.
+    const { error: clearError } =
+      await sb.auth.updateUser({
+        data: {
+          eah_mail_context: null
+        }
+      });
+
+    if (clearError) {
+      console.warn(
+        "Contexte e-mail non réinitialisé :",
+        clearError
+      );
+    }
+
+  } catch (emailError) {
     console.warn(
-      "Nettoyage du marqueur e-mail :",
-      metadataError
+      "EAH : e-mail de confirmation non envoyé :",
+      emailError
     );
   }
 }
+
 
 // Les particuliers définissent leur visibilité
 // dans la fonction sécurisée V20.
