@@ -488,7 +488,11 @@ b.onclick = (event) => {
     `;
   }
 
-  function showProfileItems(items) {
+  function showProfileItems(
+  items,
+  isIndividual = false,
+  discipline = ""
+) {
     const profile =
   $('#eahDiverProfileHost') ||
   $('#profileView');
@@ -507,14 +511,14 @@ b.onclick = (event) => {
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
 
         <section>
-          <h2>Informations de mon club</h2>
+          <h2>${isIndividual ? 'Informations EAH' : 'Informations de mon club'}</h2>
           ${info.length
             ? info.map(publicationCard).join('')
             : '<p>Aucune information pour le moment.</p>'}
         </section>
 
         <section>
-          <h2>Conseils de mon coach</h2>
+          <h2>${isIndividual ? 'Conseils / Tutos EAH' : 'Conseils de mon coach'}</h2>
           ${advice.length
             ? advice.map(publicationCard).join('')
             : '<p>Aucun conseil pour le moment.</p>'}
