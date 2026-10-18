@@ -600,11 +600,12 @@
 
     list.hidden = true;
 
-    const definitions = {
-      following: "Je follow",
-      followers: "Mes Followers",
-      notifications: "Notifications"
-    };
+    
+const definitions = {
+  following: "Je follow",
+  followers: "Mes Followers"
+};
+
 
     const tabButtons = {};
 
@@ -621,7 +622,21 @@
       tabButtons[key] = b;
     }
 
-    root.append(header, counters, tabs, list);
+    
+const listTitle = el(
+  "h4",
+  "",
+  "🔔 Mes notifications"
+);
+
+root.append(
+  header,
+  counters,
+  tabs,
+  listTitle,
+  list
+);
+
 
     async function refresh(force = false) {
       const data = await getMe(force);
@@ -662,6 +677,14 @@
       const data = await refresh(true);
 
       if (!data) return;
+       
+listTitle.textContent =
+  key === "following"
+    ? "✓ Profils que je follow"
+    : key === "followers"
+      ? "👥 Mes Followers"
+      : "🔔 Mes notifications";
+
 
       list.hidden = false;
       list.replaceChildren();
@@ -739,15 +762,20 @@
       }
     }
 
-    refresh().catch(error => {
-      counters.append(
-        el(
-          "p",
-          "eahs-muted",
-          error.message
-        )
-      );
-    });
+    
+openTab("notifications").catch(error => {
+  list.hidden = false;
+
+  list.replaceChildren(
+    el(
+      "p",
+      "eahs-muted",
+      "Impossible de charger les notifications : " +
+      error.message
+    )
+  );
+});
+
 
     return root;
   }
