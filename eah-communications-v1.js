@@ -568,8 +568,6 @@ window.EAH_COMM_LOAD = async function(credentials) {
   eahCommLoading = true;
 
   try {
-
-    const { data, error } = await db.rpc(
       
 const isIndividual =
   credentials.club === "eah-individuels-demo";
