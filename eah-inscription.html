@@ -444,21 +444,63 @@ src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
      ENVOI DU LIEN D'ACTIVATION
   ========================================================== */
 
-  async function sendActivationEmail() {
-    if (!activationUrl || !activationEmail) {
-      throw new Error('Lien NFC non disponible.');
-    }
+  
+/* ============================================================
+   EAH DIVING — E-MAIL DE BIENVENUE
+   Après validation du paiement simulé
+============================================================ */
 
-    const { error } = await db.auth.signInWithOtp({
-      email: activationEmail,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: activationUrl
+async function sendActivationEmail() {
+  if (!activationUrl || !activationEmail) {
+    throw new Error(
+      "Le lien NFC n'a pas encore été généré."
+    );
+  }
+
+  const user = await confirmedUser();
+
+  if (
+    !user ||
+    user.email.toLowerCase() !==
+      activationEmail.toLowerCase()
+  ) {
+    throw new Error(
+      "Adresse e-mail vérifiée obligatoire."
+    );
+  }
+
+  // Marqueur permettant de choisir le modèle
+  // de bienvenue EAH, sans modifier les autres
+  // e-mails de connexion.
+  const { error: metadataError } =
+    await db.auth.updateUser({
+      data: {
+        eah_mail_context: "individual_activation"
       }
     });
 
-    if (error) throw error;
+  if (metadataError) {
+    throw metadataError;
   }
+
+  // Envoi d'un lien de connexion sécurisé.
+  // Après vérification, il redirige vers
+  // l'URL NFC individuelle du plongeur.
+  const { error } = await db.auth.signInWithOtp({
+    email: activationEmail,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: activationUrl
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+}
+
 
   /* ==========================================================
      VÉRIFICATION E-MAIL
