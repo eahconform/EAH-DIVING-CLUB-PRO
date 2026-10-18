@@ -570,14 +570,28 @@ window.EAH_COMM_LOAD = async function(credentials) {
   try {
 
     const { data, error } = await db.rpc(
-      'eah_comm_private_feed_v1',
-      {
+      
+const isIndividual =
+  credentials.club === "eah-individuels-demo";
+
+const { data, error } = await db.rpc(
+  isIndividual
+    ? "eah_individual_content_feed"
+    : "eah_comm_private_feed_v1",
+
+  isIndividual
+    ? {
+        p_eah_id: credentials.eahId,
+        p_token: credentials.token || ""
+      }
+    : {
         p_club_slug: credentials.club,
         p_eah_id: credentials.eahId,
-        p_token: credentials.token || '',
-        p_pin_hash: credentials.pinHash || ''
+        p_token: credentials.token || "",
+        p_pin_hash: credentials.pinHash || ""
       }
-    );
+);
+
 
     if (error) {
       throw error;
@@ -593,7 +607,11 @@ window.EAH_COMM_LOAD = async function(credentials) {
     $('#eahCommLoadError')?.remove();
 
     // Affiche les publications réellement reçues.
-    showProfileItems(data.items || []);
+    showProfileItems(
+  data.items || [],
+  isIndividual,
+  data.discipline || ""
+);
 
   } catch (err) {
 
