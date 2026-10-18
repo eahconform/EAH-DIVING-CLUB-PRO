@@ -1079,6 +1079,227 @@ function diverUI() {
      PROFIL PUBLIC + COMPTEURS DES GRADINGS
   ========================================================== */
 
+/* ============================================================
+   EAH DIVING — CORRECTIF ESPACE PERSONNEL V4
+
+   - Rétablit Explorer le site
+   - Affiche Mon activité EAH
+   - Compatible ouverture NFC et connexion PIN
+   - Protège les notifications privées
+============================================================ */
+
+function ensureDiverPersonalUI() {
+
+  const app = document.getElementById(
+    "eahDiverOnlyApp"
+  );
+
+  const shell = app?.querySelector(
+    ".eah-diver-only-shell"
+  );
+
+  const view = document.getElementById(
+    "profileView"
+  );
+
+  const st = stateRef();
+
+  const id = String(
+    st?.profile?.eahId ||
+    st?.profile?.eah_id ||
+    ""
+  ).trim().toUpperCase();
+
+  const params = new URLSearchParams(
+    location.search
+  );
+
+  const cardId = String(
+    params.get("id") || ""
+  ).trim().toUpperCase();
+
+  const cardMatches = Boolean(
+    id &&
+    cardId === id &&
+    params.get("token")
+  );
+
+  const privateShell = Boolean(
+    shell?.querySelector(
+      ".eah-diver-brand"
+    )?.textContent?.includes(
+      "ESPACE PERSONNEL"
+    )
+  );
+
+  const visibleMain = Boolean(
+    view &&
+    !view.classList.contains("hidden") &&
+    view.querySelector(".eah-fast-profile")
+  );
+
+  if (
+    !privateShell &&
+    !(visibleMain && cardMatches) &&
+    !(visibleMain && st?.diverPinHash)
+  ) {
+    return;
+  }
+
+  const host = shell || view;
+
+  if (!host) return;
+
+  /* BOUTON EXPLORER LE SITE */
+
+  let explore = document.getElementById(
+    "eahSocialBrowseDiver"
+  );
+
+  if (!explore || !host.contains(explore)) {
+
+    explore?.remove();
+
+    explore = button(
+      "🌐 Explorer le site",
+      returnToSite
+    );
+
+    explore.id = "eahSocialBrowseDiver";
+    explore.style.margin = "14px 0";
+
+    const brand = host.querySelector(
+      ".eah-diver-brand"
+    );
+
+    if (brand) {
+      brand.after(explore);
+    } else {
+      host.prepend(explore);
+    }
+  }
+
+  /* RÉCUPÉRER LA SESSION PIN VÉRIFIÉE */
+
+  try {
+
+    const pin = JSON.parse(
+      sessionStorage.getItem(
+        "EAH_DIVER_PIN_SESSION"
+      ) || "null"
+    );
+
+    if (
+      id &&
+      pin?.pinHash &&
+      String(
+        pin.eahId || ""
+      ).toUpperCase() === id
+    ) {
+
+      STORE.setItem(
+        DIVER_KEY,
+        JSON.stringify({
+          id: pin.eahId,
+          hash: pin.pinHash
+        })
+      );
+
+      STORE.setItem(
+        ACTIVE_KEY,
+        "diver"
+      );
+    }
+
+  } catch (error) {
+    console.warn(
+      "Session EAH :",
+      error
+    );
+  }
+
+  rememberAccount();
+
+  const verified = Boolean(
+    (
+      account?.type === "diver" &&
+      String(
+        account.id || ""
+      ).toUpperCase() === id
+    ) ||
+    account?.type === "auth"
+  );
+
+  const status = verified
+    ? "verified"
+    : "locked";
+
+  const existing = host.querySelector(
+    '[data-eah-social-panel="diver"]'
+  );
+
+  if (
+    existing &&
+    (
+      existing.dataset.eahUiMode === status ||
+      (
+        verified &&
+        !existing.dataset.eahUiMode
+      )
+    )
+  ) {
+    return;
+  }
+
+  existing?.remove();
+
+  let panel;
+
+  if (verified) {
+
+    // Utilise le module social existant,
+    // avec les vraies notifications Supabase.
+    panel = personalPanel("diver");
+
+  } else {
+
+    // Le lien NFC seul ne donne pas accès
+    // aux notifications privées.
+    panel = el(
+      "section",
+      "eahs-box"
+    );
+
+    panel.dataset.eahSocialPanel = "diver";
+
+    panel.append(
+      el(
+        "h3",
+        "",
+        "Mon activité EAH"
+      ),
+
+      el(
+        "p",
+        "eahs-muted",
+        "🔔 Notifications • Je follow • Mes Followers"
+      ),
+
+      el(
+        "p",
+        "eahs-muted",
+        "Connecte-toi avec ton code personnel " +
+        "pour consulter tes notifications privées, " +
+        "tes followers et les profils que tu suis."
+      )
+    );
+  }
+
+  panel.dataset.eahUiMode = status;
+
+  explore.after(panel);
+}
+
   async function publicProfileUI() {
     const host = $("#profileView");
     const hero = $(
@@ -1425,10 +1646,15 @@ async function scan() {
   pendingScan = false;
 
   try {
-    // Espaces personnels
-    coachCardUI();
-    coachAuthUI();
-    diverUI();
+    
+// Espaces personnels
+coachCardUI();
+coachAuthUI();
+diverUI();
+
+// Correctif affichage personnel NFC / PIN
+ensureDiverPersonalUI();
+
 
     // Bouton pour revenir à l'espace personnel
     showReturnButton();
