@@ -4731,6 +4731,114 @@ document.addEventListener('DOMContentLoaded', () => {
 <script defer src="eah-discipline-videos.js?v=20261017-4"></script>
 
 
+<script>
+(() => {
+  async function diagnosticEAH() {
+    let panel = document.getElementById(
+      "eahSocialDiagnostic"
+    );
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "eahSocialDiagnostic";
+      panel.style.cssText = `
+        position:fixed;
+        bottom:15px;
+        right:15px;
+        z-index:2147483647;
+        background:#061e33;
+        color:white;
+        border:2px solid #30cfff;
+        padding:15px;
+        border-radius:14px;
+        font:14px Arial,sans-serif;
+        width:min(340px,90vw);
+        box-shadow:0 8px 30px #0009;
+      `;
+      document.body.appendChild(panel);
+    }
+
+    panel.textContent = "Diagnostic EAH en cours...";
+
+    const moduleOK =
+      typeof window.EAHSocialRefresh === "function";
+
+    const cards = document.querySelectorAll(
+      ".eah-population-person-card.is-public"
+    ).length;
+
+    const profile = Boolean(
+      document.getElementById("profileView")
+    );
+
+    let supabase = "NON TESTÉ";
+
+    try {
+      const client = requireSupabase();
+
+      const { data, error } = await client.rpc(
+        "eah_social_v2",
+        {
+          p_action: "PUBLIC",
+          p_target_eah_id: "EAH-4D25603F03"
+        }
+      );
+
+      supabase = error
+        ? "ERREUR : " + error.message
+        : data?.public
+          ? "OK — " +
+            (data.gradings?.length || 0) +
+            " gradings"
+          : "PROFIL INTROUVABLE";
+
+    } catch (error) {
+      supabase = "ERREUR : " + error.message;
+    }
+
+    panel.replaceChildren();
+
+    const lines = [
+      "DIAGNOSTIC EAH SOCIAL",
+      "Module social : " +
+        (moduleOK ? "CHARGÉ" : "NON CHARGÉ"),
+      "Profils détectés : " + cards,
+      "Zone profil : " +
+        (profile ? "OUI" : "NON"),
+      "Supabase : " + supabase
+    ];
+
+    lines.forEach(line => {
+      const item = document.createElement("div");
+      item.textContent = line;
+      item.style.marginBottom = "7px";
+      panel.appendChild(item);
+    });
+
+    const button = document.createElement("button");
+    button.textContent = "Relancer le diagnostic";
+    button.style.cssText = `
+      background:#0b6bff;
+      color:white;
+      padding:9px;
+      border:0;
+      border-radius:8px;
+    `;
+    button.onclick = diagnosticEAH;
+    panel.appendChild(button);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      diagnosticEAH
+    );
+  } else {
+    diagnosticEAH();
+  }
+})();
+</script>
+
 
 
 </body>
