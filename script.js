@@ -8667,105 +8667,66 @@ if (
       requireSupabase();
 
 
-    const activation =
-      await sb.rpc(
+    
+const individuel =
+  CLUB_SLUG === "eah-individuels-demo";
 
-        
-'eah_activate_diver_with_email_v1',
+const activationArgs = {
+  p_eah_id: CARD_EAH_ID,
+  p_token: CARD_TOKEN,
+  p_first_name: firstName,
+  p_last_name: lastName,
+  p_recovery_email: recoveryEmail,
+  p_photo_url: val("setupPhotoUrl").trim() || null,
+  p_birth_date: val("setupBirthDate") || null,
+  p_sex: val("setupSex") || null,
+  p_group_name: val("setupGroup").trim() || null,
+  p_pin: pin
+};
 
+const {
+  data: activationData,
+  error: activationError
+} = await sb.rpc(
+  individuel
+    ? "eah_v20_activate_individual"
+    : "eah_activate_diver_with_email_v1",
+  individuel
+    ? {
+        ...activationArgs,
+        p_visibility: visibility
+      }
+    : activationArgs
+);
 
-        {
+if (activationError) {
+  throw activationError;
+}
 
-          p_eah_id:
-            CARD_EAH_ID,
+if (activationData?.ok === false) {
+  throw new Error(
+    activationData.error || "Activation impossible."
+  );
+}
 
-          p_token:
-            CARD_TOKEN,
-
-          p_first_name:
-            firstName,
-
-          p_last_name:
-            lastName,
-
-p_recovery_email:
-  recoveryEmail,
-
-          p_photo_url:
-            val(
-              'setupPhotoUrl'
-            )
-            .trim()
-            ||
-            null,
-
-          p_birth_date:
-            val(
-              'setupBirthDate'
-            )
-            ||
-            null,
-
-          p_sex:
-            val(
-              'setupSex'
-            )
-            ||
-            null,
-
-          p_group_name:
-            val(
-              'setupGroup'
-            )
-            .trim()
-            ||
-            null,
-
-          p_pin:
-            pin
-
-        }
-
-      );
-
-
-    if (
-      activation.error
-    ) {
-
-      throw activation.error;
-
+// Les particuliers définissent leur visibilité
+// dans la fonction sécurisée V20.
+// On conserve le parcours existant des clubs.
+if (!individuel) {
+  const visibilityResult = await sb.rpc(
+    "eah_set_diver_visibility",
+    {
+      p_eah_id: CARD_EAH_ID,
+      p_token: CARD_TOKEN,
+      p_visibility: visibility
     }
+  );
 
+  if (visibilityResult.error) {
+    throw visibilityResult.error;
+  }
+}
 
-    const visibilityResult =
-      await sb.rpc(
-
-        'eah_set_diver_visibility',
-
-        {
-
-          p_eah_id:
-            CARD_EAH_ID,
-
-          p_token:
-            CARD_TOKEN,
-
-          p_visibility:
-            visibility
-
-        }
-
-      );
-
-
-    if (
-      visibilityResult.error
-    ) {
-
-      throw visibilityResult.error;
-
-    }
 
 
     setMessage(
