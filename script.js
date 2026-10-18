@@ -8709,6 +8709,25 @@ if (activationData?.ok === false) {
   );
 }
 
+// Une fois le profil particulier activé,
+// revenir aux e-mails de connexion habituels.
+
+if (individuel) {
+  const { error: metadataError } =
+    await sb.auth.updateUser({
+      data: {
+        eah_mail_context: null
+      }
+    });
+
+  if (metadataError) {
+    console.warn(
+      "Nettoyage du marqueur e-mail :",
+      metadataError
+    );
+  }
+}
+
 // Les particuliers définissent leur visibilité
 // dans la fonction sécurisée V20.
 // On conserve le parcours existant des clubs.
