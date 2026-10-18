@@ -6403,9 +6403,7 @@ async function loadPopulation() {
               name ||
               null,
 
-            p_club_slug:
-              CLUB_SLUG ||
-              null
+            p_club_slug: null
 
           }
 
