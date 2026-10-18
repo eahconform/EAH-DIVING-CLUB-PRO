@@ -306,435 +306,331 @@ small, .info {
 src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 </script>
 
+
 <script>
 (() => {
-  'use strict';
+  "use strict";
 
   const $ = id => document.getElementById(id);
 
-  const db = window.supabase.createClient(
-    'https://limyeqpdzjjwsdximehp.supabase.co',
-    'sb_publishable_K9iUm_0Qhea65P1Zt6rbXQ_BXQCzJ9w'
+  const sb = window.supabase.createClient(
+    "https://limyeqpdzjjwsdximehp.supabase.co",
+    "sb_publishable_K9iUm_0Qhea65P1Zt6rbXQ_BXQCzJ9w"
   );
 
-  const form = $('form');
-  const DRAFT = 'EAH_PARTICULIER_INSCRIPTION_V21';
+  const form = $("form");
+  const params = new URLSearchParams(location.search);
+  const checkout = params.get("checkout");
 
-  let activationUrl = '';
-  let activationEmail = '';
-
-  const selectedOffer = () =>
+  const offer = () =>
     document.querySelector(
       'input[name="offer"]:checked'
-    )?.value || 'STANDARD';
+    )?.value || "STANDARD";
 
-  const promoCode = () =>
-    $('promo').value.trim().toUpperCase();
-
-  /* ==========================================================
-     PRIX SIMULÉ
-  ========================================================== */
+  const promo = () =>
+    $("promo").value.trim().toUpperCase();
 
   function updatePrice() {
-    const base = selectedOffer() === 'BADGE' ? 40 : 30;
-    const reduction = promoCode() === 'LOULOU13' ? 10 : 0;
+    const price =
+      (offer() === "BADGE" ? 40 : 30) -
+      (promo() === "LOULOU13" ? 10 : 0);
 
-    $('total').textContent = (base - reduction) + ' €';
+    $("total").textContent = price + " €";
 
-    $('promoState').textContent = reduction
-      ? 'Code LOULOU13 : −10 €'
-      : '';
+    $("promoState").textContent =
+      promo() === "LOULOU13"
+        ? "Code LOULOU13 : −10 €"
+        : "";
   }
 
-  /* ==========================================================
-     CONSERVER LE FORMULAIRE PENDANT LA VÉRIFICATION
-  ========================================================== */
-
-  function saveDraft() {
-    try {
-      localStorage.setItem(DRAFT, JSON.stringify({
-        at: Date.now(),
-        first: $('first').value,
-        last: $('last').value,
-        email: $('email').value,
-        promo: $('promo').value,
-        offer: selectedOffer()
-      }));
-    } catch (_) {}
+  function showMessage(message, error = false) {
+    $("message").textContent = message;
+    $("message").classList.toggle("error", error);
   }
 
-  function restoreDraft() {
-    try {
-      const draft = JSON.parse(
-        localStorage.getItem(DRAFT) || 'null'
-      );
+  function waiting(title, details) {
+    form.hidden = true;
+    $("success").hidden = false;
 
-      if (
-        !draft ||
-        Date.now() - draft.at > 30 * 60 * 1000
-      ) {
-        localStorage.removeItem(DRAFT);
+    $("success").querySelector("h2").textContent =
+      title;
 
-        if (
-          new URLSearchParams(location.search)
-            .get('offer') === 'BADGE'
-        ) {
-          const option = document.querySelector(
-            'input[name="offer"][value="BADGE"]'
-          );
+    $("receipt").textContent = details;
+    $("inviteState").textContent = "";
 
-          if (option) option.checked = true;
-        }
+    $("nfcLink").hidden = true;
+    $("resendInvite").hidden = true;
 
-        return;
-      }
-
-      for (const id of [
-        'first', 'last', 'email', 'promo'
-      ]) {
-        if (typeof draft[id] === 'string') {
-          $(id).value = draft[id];
-        }
-      }
-
-      const offer = document.querySelector(
-        'input[name="offer"][value="' +
-        (draft.offer === 'BADGE' ? 'BADGE' : 'STANDARD') +
-        '"]'
-      );
-
-      if (offer) offer.checked = true;
-
-    } catch (_) {}
+    showMessage("");
   }
 
-  /* ==========================================================
-     AUTHENTIFICATION
-  ========================================================== */
+  /* =============================================
+     UN SEUL E-MAIL APRÈS PAIEMENT FICTIF
+  ============================================= */
 
-  async function confirmedUser() {
-    const { data, error } = await db.auth.getUser();
-
-    return !error && data?.user?.email_confirmed_at
-      ? data.user
-      : null;
-  }
-
-  async function updateVerifiedEmail() {
-    const user = await confirmedUser();
-
-    if (user) {
-      $('email').value = user.email;
-      $('email').readOnly = true;
-
-      $('authState').textContent =
-        '✓ Adresse vérifiée : ' + user.email;
-
-    } else {
-      $('email').readOnly = false;
-
-      $('authState').textContent =
-        'Adresse non encore vérifiée';
-    }
-
-    return user;
-  }
-
-  /* ==========================================================
-     ENVOI DU LIEN D'ACTIVATION
-  ========================================================== */
-
-  
-/* ============================================================
-   EAH DIVING — E-MAIL DE BIENVENUE
-   Après validation du paiement simulé
-============================================================ */
-
-async function sendActivationEmail() {
-  if (!activationUrl || !activationEmail) {
-    throw new Error(
-      "Le lien NFC n'a pas encore été généré."
-    );
-  }
-
-  const user = await confirmedUser();
-
-  if (
-    !user ||
-    user.email.toLowerCase() !==
-      activationEmail.toLowerCase()
+  async function sendOneConfirmation(
+    email,
+    checkoutToken
   ) {
-    throw new Error(
-      "Adresse e-mail vérifiée obligatoire."
+    const redirect = new URL(
+      "eah-inscription.html",
+      location.href
     );
-  }
 
-  // Marqueur permettant de choisir le modèle
-  // de bienvenue EAH, sans modifier les autres
-  // e-mails de connexion.
-  const { error: metadataError } =
-    await db.auth.updateUser({
-      data: {
-        eah_mail_context: "individual_activation"
+    redirect.search = "";
+    redirect.searchParams.set(
+      "checkout",
+      checkoutToken
+    );
+    redirect.hash = "";
+
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: redirect.href,
+        data: {
+          eah_mail_context: "individual_checkout"
+        }
       }
     });
 
-  if (metadataError) {
-    throw metadataError;
+    if (error) throw error;
   }
 
-  // Envoi d'un lien de connexion sécurisé.
-  // Après vérification, il redirige vers
-  // l'URL NFC individuelle du plongeur.
-  const { error } = await db.auth.signInWithOtp({
-    email: activationEmail,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: activationUrl
-    }
-  });
+  /* =============================================
+     APRÈS CLIC SUR L'E-MAIL
+  ============================================= */
 
-  if (error) {
-    throw error;
-  }
+  async function finishCheckout() {
+    waiting(
+      "Confirmation de votre inscription EAH",
+      "Vérification de votre adresse e-mail..."
+    );
 
-  return true;
-}
+    let user = null;
 
-
-  /* ==========================================================
-     VÉRIFICATION E-MAIL
-  ========================================================== */
-
-  $('verifyBtn').addEventListener(
-    'click',
-    async () => {
-      const email = $('email').value.trim();
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        $('message').textContent =
-          'Saisissez une adresse e-mail valide.';
-        return;
-      }
-
-      saveDraft();
-      $('verifyBtn').disabled = true;
-
-      $('message').textContent =
-        'Demande d’envoi en cours…';
-
-      try {
-        const { error } = await db.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: true,
-            emailRedirectTo:
-              location.origin +
-              location.pathname +
-              location.search
-          }
-        });
-
-        if (error) throw error;
-
-        $('message').textContent =
-          'Demande envoyée à Supabase. ' +
-          'Vérifiez votre boîte e-mail et les spams, ' +
-          'puis ouvrez le lien reçu.';
-
-      } catch (error) {
-        $('message').textContent =
-          'Envoi impossible : ' + error.message;
-
-      } finally {
-        $('verifyBtn').disabled = false;
-      }
-    }
-  );
-
-  /* ==========================================================
-     RENVOI DU LIEN NFC
-  ========================================================== */
-
-  $('resendInvite').addEventListener(
-    'click',
-    async () => {
-      $('resendInvite').disabled = true;
-
-      try {
-        await sendActivationEmail();
-
-        $('inviteState').textContent =
-          'Nouvel e-mail d’activation demandé.';
-
-      } catch (error) {
-        $('inviteState').textContent =
-          'Envoi impossible : ' + error.message;
-
-      } finally {
-        $('resendInvite').disabled = false;
-      }
-    }
-  );
-
-  /* ==========================================================
-     VALIDATION DU PAIEMENT SIMULÉ
-  ========================================================== */
-
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-
-    saveDraft();
-    $('payBtn').disabled = true;
-
-    try {
-      const user = await confirmedUser();
+    // Attendre la restauration de la session
+    // Supabase après le lien de confirmation.
+    for (let i = 0; i < 15; i++) {
+      const result = await sb.auth.getUser();
 
       if (
-        !user ||
-        user.email.toLowerCase() !==
-          $('email').value.trim().toLowerCase()
+        !result.error &&
+        result.data?.user?.email_confirmed_at
       ) {
+        user = result.data.user;
+        break;
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 500)
+      );
+    }
+
+    if (!user) {
+      throw new Error(
+        "Adresse e-mail non confirmée. " +
+        "Ouvrez le lien sécurisé reçu par e-mail."
+      );
+    }
+
+    // Création du profil uniquement après
+    // confirmation de l'adresse e-mail.
+    const { data, error } = await sb.rpc(
+      "eah_v22_complete_demo_checkout",
+      {
+        p_checkout: checkout
+      }
+    );
+
+    if (error) throw error;
+
+    if (!data?.ok || !data?.profile_url) {
+      throw new Error(
+        data?.message ||
+        "Impossible de préparer votre profil."
+      );
+    }
+
+    // Lien NFC individuel généré par Supabase.
+    const personal = new URL(data.profile_url);
+
+    if (
+      personal.origin !== location.origin ||
+      !personal.pathname.startsWith(
+        "/EAH-DIVING-CLUB-PRO/"
+      )
+    ) {
+      throw new Error(
+        "Destination du profil invalide."
+      );
+    }
+
+    $("receipt").textContent =
+      "Adresse vérifiée — Identifiant " +
+      data.eah_id;
+
+    $("inviteState").textContent =
+      "Ouverture de votre première activation...";
+
+    location.replace(personal.href);
+  }
+
+  /* =============================================
+     SUPPRIMER LE PREMIER ENVOI SÉPARÉ
+  ============================================= */
+
+  $("verifyBtn").hidden = true;
+
+  $("verifyBtn").previousElementSibling.textContent =
+    "Votre adresse e-mail sera vérifiée " +
+    "après le paiement simulé. " +
+    "Vous recevrez un seul e-mail de bienvenue.";
+
+  $("authState").textContent =
+    "La vérification sera effectuée par e-mail.";
+
+  $("resendInvite").hidden = true;
+
+  /* =============================================
+     VALIDATION DU RÈGLEMENT SIMULÉ
+  ============================================= */
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    $("payBtn").disabled = true;
+
+    try {
+      const email =
+        $("email").value.trim().toLowerCase();
+
+      const first =
+        $("first").value.trim();
+
+      const last =
+        $("last").value.trim();
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new Error(
-          'Vérifiez votre e-mail avant de ' +
-          'confirmer la simulation.'
+          "Saisissez une adresse e-mail valide."
         );
       }
 
-      $('message').textContent =
-        'Validation du paiement fictif…';
+      if (first.length < 2 || last.length < 2) {
+        throw new Error(
+          "Prénom et nom obligatoires."
+        );
+      }
 
-      const { data, error } = await db.rpc(
-        'eah_v19_create_demo',
+      showMessage(
+        "Validation du règlement fictif..."
+      );
+
+      // Enregistrer temporairement la demande.
+      // Aucun compte EAH n'est encore activé.
+      const { data, error } = await sb.rpc(
+        "eah_v22_begin_demo_checkout",
         {
-          p_first_name: $('first').value.trim(),
-          p_last_name: $('last').value.trim(),
-          p_offer: selectedOffer(),
-          p_promo: promoCode()
+          p_email: email,
+          p_first_name: first,
+          p_last_name: last,
+          p_offer: offer(),
+          p_promo: promo()
         }
       );
 
       if (error) throw error;
 
-      if (
-        !data?.ok &&
-        data?.status !== 'PROFILE_EXISTS'
-      ) {
+      if (!data?.ok || !data.checkout) {
         throw new Error(
           data?.message ||
-          'Création du compte impossible.'
+          "Simulation impossible."
         );
       }
 
-      /* GÉNÉRATION DU LIEN NFC */
-
-      const {
-        data: invitation,
-        error: inviteError
-      } = await db.rpc(
-        'eah_v20_individual_invitation'
+      // Un seul envoi à cette étape.
+      await sendOneConfirmation(
+        email,
+        data.checkout
       );
 
-      if (inviteError) throw inviteError;
-
-      if (
-        !invitation?.ok ||
-        !invitation.profile_url
-      ) {
-        throw new Error(
-          invitation?.message ||
-          'Lien NFC non généré.'
-        );
-      }
-
-      activationUrl = invitation.profile_url;
-      activationEmail = user.email;
-
-      $('receipt').textContent =
-        'Identifiant EAH : ' + invitation.eah_id +
-        ' • Total simulé : ' +
-        invitation.amount_eur + ' €' +
-        ' • Crédits : ' +
-        invitation.credits +
-        ' (test uniquement)';
-
-      $('nfcLink').href = activationUrl;
-      $('nfcLink').hidden = false;
-      $('resendInvite').hidden = false;
-
-      form.hidden = true;
-      $('success').hidden = false;
-
-      $('message').textContent = '';
-
-      try {
-        localStorage.removeItem(DRAFT);
-      } catch (_) {}
-
-      $('inviteState').textContent =
-        'Envoi de votre lien d’activation…';
-
-      try {
-        await sendActivationEmail();
-
-        $('inviteState').textContent =
-          'Un e-mail d’activation a été demandé. ' +
-          'Le lien vous redirigera vers votre profil NFC.';
-
-      } catch (mailError) {
-        $('inviteState').textContent =
-          'Votre compte et votre lien NFC sont créés, ' +
-          'mais l’e-mail n’a pas été confirmé : ' +
-          mailError.message +
-          '. Vous pouvez utiliser le bouton ' +
-          'd’activation ci-dessus.';
-      }
+      waiting(
+        "Merci d'avoir choisi EAH Diving !",
+        "Paiement fictif validé. " +
+        "Un e-mail personnalisé de confirmation " +
+        "a été demandé à " + email + ". " +
+        "Cliquez sur le bouton de cet e-mail " +
+        "pour vérifier votre adresse et " +
+        "configurer votre profil personnel."
+      );
 
     } catch (error) {
-      $('message').textContent =
-        error.message || 'Erreur de création.';
+      form.hidden = false;
+      $("success").hidden = true;
+
+      showMessage(
+        error.message || "Une erreur est survenue.",
+        true
+      );
 
     } finally {
-      $('payBtn').disabled = false;
+      $("payBtn").disabled = false;
     }
   });
 
-  /* ==========================================================
+  /* =============================================
      INITIALISATION
-  ========================================================== */
+  ============================================= */
 
   document.querySelectorAll(
     'input[name="offer"]'
   ).forEach(input =>
-    input.addEventListener('change', () => {
-      updatePrice();
-      saveDraft();
-    })
+    input.addEventListener(
+      "change",
+      updatePrice
+    )
   );
 
-  $('promo').addEventListener('input', () => {
-    updatePrice();
-    saveDraft();
-  });
+  $("promo").addEventListener(
+    "input",
+    updatePrice
+  );
 
-  form.addEventListener('input', saveDraft);
+  if (params.get("offer") === "BADGE") {
+    const radio = document.querySelector(
+      'input[name="offer"][value="BADGE"]'
+    );
 
-  restoreDraft();
+    if (radio) radio.checked = true;
+  }
+
   updatePrice();
 
-  updateVerifiedEmail().catch(error => {
-    $('message').textContent =
-      'Connexion Supabase : ' + error.message;
-  });
+  // Retour depuis l'e-mail de confirmation.
+  if (checkout) {
+    finishCheckout().catch(error => {
+      form.hidden = true;
+      $("success").hidden = false;
 
-  db.auth.onAuthStateChange(() => {
-    setTimeout(() => {
-      updateVerifiedEmail().catch(console.warn);
-    }, 0);
-  });
+      $("success").querySelector("h2").textContent =
+        "Activation non terminée";
+
+      $("receipt").textContent = error.message;
+
+      $("inviteState").textContent =
+        "Réouvrez le lien reçu. " +
+        "S'il est expiré, recommencez la simulation.";
+
+      showMessage(error.message, true);
+    });
+  }
 
 })();
 </script>
+
+
 
 
 </body>
