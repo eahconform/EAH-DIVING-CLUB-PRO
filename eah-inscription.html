@@ -267,20 +267,37 @@ small, .info {
 
   <p id="message" aria-live="polite"></p>
 
-  <div class="success" id="success" hidden>
-    <h2>✓ PAIEMENT VALIDÉ — SIMULATION</h2>
+  
+<div class="success" id="success" hidden>
+  <h2>Compte EAH créé — simulation validée</h2>
 
-    <p>
-      Aucun paiement réel n'a été effectué.
-    </p>
+  <p>
+    Aucun paiement réel n'a été effectué.
+  </p>
 
-    <p id="receipt"></p>
+  <p id="receipt"></p>
 
-    <a class="btn"
-       href="index.html#faire-grader">
-      Faire grader mon plongeon
-    </a>
-  </div>
+  <p id="inviteState" class="info"></p>
+
+  <a
+    class="btn"
+    id="nfcLink"
+    href="#"
+    hidden
+  >
+    Activer mon profil EAH Diving
+  </a>
+
+  <button
+    type="button"
+    class="secondary"
+    id="resendInvite"
+    hidden
+  >
+    Renvoyer mon lien d'activation par e-mail
+  </button>
+</div>
+
 
 </div>
 </main>
@@ -391,43 +408,161 @@ src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
     }
   );
 
-  form.addEventListener(
-    'submit',
-    async event => {
-      event.preventDefault();
+  
+let activationUrl = "";
+let activationEmail = "";
 
-      const user =
-        await confirmedUser();
+async function envoyerActivation() {
+  if (!activationUrl || !activationEmail) {
+    throw new Error("Lien d'activation indisponible.");
+  }
 
-      if (
-        !user ||
-        user.email.toLowerCase() !==
-          $('email').value.trim().toLowerCase()
-      ) {
-        $('message').textContent =
-          'Vérifiez d’abord votre adresse e-mail.';
-        return;
+  const { error } = await db.auth.signInWithOtp({
+    email: activationEmail,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: activationUrl
+    }
+  });
+
+  if (error) throw error;
+}
+
+$("resendInvite").addEventListener(
+  "click",
+  async () => {
+    const b = $("resendInvite");
+    b.disabled = true;
+
+    try {
+      await envoyerActivation();
+
+      $("inviteState").textContent =
+        "Un nouvel e-mail de connexion a été demandé. " +
+        "Ouvrez son lien pour accéder à votre profil.";
+
+    } catch (error) {
+      $("inviteState").textContent =
+        "Envoi non confirmé : " + error.message;
+    } finally {
+      b.disabled = false;
+    }
+  }
+);
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const user = await confirmedUser();
+
+  if (
+    !user ||
+    user.email.toLowerCase() !==
+      $("email").value.trim().toLowerCase()
+  ) {
+    $("message").textContent =
+      "Vérifiez d'abord votre adresse e-mail.";
+    return;
+  }
+
+  $("payBtn").disabled = true;
+  $("message").textContent =
+    "Validation de la simulation…";
+
+  try {
+    const { data, error } = await db.rpc(
+      "eah_v19_create_demo",
+      {
+        p_first_name: $("first").value.trim(),
+        p_last_name: $("last").value.trim(),
+        p_offer: selectedOffer(),
+        p_promo: promoCode()
       }
+    );
 
-      $('payBtn').disabled = true;
-      $('message').textContent =
-        'Création du profil de test…';
+    if (error) throw error;
 
-      try {
-        const { data, error } =
-          await db.rpc(
-            'eah_v19_create_demo',
-            {
-              p_first_name:
-                $('first').value.trim(),
+    // Permet de retrouver un compte de test
+    // déjà créé, sans en créer un deuxième.
+    if (
+      !data?.ok &&
+      data?.status !== "PROFILE_EXISTS"
+    ) {
+      throw new Error(
+        data?.message || "Création impossible."
+      );
+    }
 
-              p_last_name:
-                $('last').value.trim(),
+    const {
+      data: invitation,
+      error: invitationError
+    } = await db.rpc(
+      "eah_v20_individual_invitation"
+    );
 
-              p_offer: selectedOffer(),
-              p_promo: promoCode()
-            }
-          );
+    if (invitationError) {
+      throw invitationError;
+    }
+
+    if (
+      !invitation?.ok ||
+      !invitation?.profile_url
+    ) {
+      throw new Error(
+        invitation?.message ||
+        "Impossible de générer le lien NFC."
+      );
+    }
+
+    activationUrl = invitation.profile_url;
+    activationEmail = user.email;
+
+    form.hidden = true;
+    $("success").hidden = false;
+
+    $("receipt").textContent =
+      "Identifiant : " + invitation.eah_id +
+      " — Montant simulé : " +
+      invitation.amount_eur + " €" +
+      " — Crédits : " + invitation.credits;
+
+    const link = $("nfcLink");
+    link.href = activationUrl;
+    link.hidden = false;
+
+    $("resendInvite").hidden = false;
+
+    $("message").textContent = "";
+
+    $("inviteState").textContent =
+      "Préparation de votre e-mail d'activation…";
+
+    try {
+      await envoyerActivation();
+
+      $("inviteState").textContent =
+        "Un e-mail de connexion a été demandé. " +
+        "Son lien doit vous rediriger vers " +
+        "l'activation de votre profil EAH.";
+
+    } catch (mailError) {
+      $("inviteState").textContent =
+        "Le compte et le lien NFC ont été créés, " +
+        "mais l'envoi du message n'est pas confirmé : " +
+        mailError.message +
+        ". Utilisez le bouton d'activation " +
+        "ou réessayez l'envoi.";
+    }
+
+  } catch (error) {
+    $("message").textContent =
+      error.message || "Création impossible.";
+
+  } finally {
+    $("payBtn").disabled = false;
+  }
+});
+
 
         if (error) throw error;
 
