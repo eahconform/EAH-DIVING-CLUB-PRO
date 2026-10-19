@@ -1771,6 +1771,498 @@ function scheduleScan() {
     };
   }
 
+/* ============================================================
+   EAH DIVING PRO CLUB
+   NFC SESSION V5 — SOCIAL + NAVIGATION
+
+   - Identification via jeton NFC vérifié par Supabase
+   - Likes et follows associés au bon plongeur
+   - Notifications et followers personnels
+   - Indicateur de connexion
+   - Déconnexion
+   - Retour au site avec chargement Actualités / Spots
+   - Masquage des anciens blocs sous les formulaires
+============================================================ */
+
+const CARD_SESSION_KEY = "EAH_SOCIAL_VERIFIED_NFC";
+
+/* ============================================================
+   1. IDENTITÉ NFC
+============================================================ */
+
+const originalCurrentAccount = currentAccount;
+
+currentAccount = function () {
+
+  if (STORE.getItem(ACTIVE_KEY) === "card") {
+
+    try {
+      const card = JSON.parse(
+        STORE.getItem(CARD_SESSION_KEY) || "null"
+      );
+
+      if (card?.id && card?.token?.length >= 48) {
+        return {
+          type: "card",
+          id: card.id,
+          token: card.token,
+          name: card.name || card.id,
+          key: "N:" + card.id
+        };
+      }
+
+    } catch (_) {}
+  }
+
+  return originalCurrentAccount();
+};
+
+const originalRememberAccount = rememberAccount;
+
+rememberAccount = function () {
+
+  originalRememberAccount();
+
+  const profile = stateRef()?.profile;
+  const app = $("#eahDiverOnlyApp");
+
+  const qs = new URLSearchParams(location.search);
+
+  const id = String(
+    qs.get("id") || ""
+  ).trim().toUpperCase();
+
+  const profileId = String(
+    profile?.eahId || profile?.eah_id || ""
+  ).trim().toUpperCase();
+
+  const token = String(
+    qs.get("token") || ""
+  ).trim();
+
+  if (
+    !window.__EAH_LOGGING_OUT &&
+    id &&
+    profileId === id &&
+    token.length >= 48 &&
+    app &&
+    !app.classList.contains("eahs-hidden")
+  ) {
+
+    const name = [
+      profile?.firstName || profile?.first_name,
+      profile?.lastName || profile?.last_name
+    ].filter(Boolean).join(" ");
+
+    const card = JSON.stringify({
+      id,
+      token,
+      name: name || id
+    });
+
+    if (STORE.getItem(CARD_SESSION_KEY) !== card) {
+      STORE.setItem(CARD_SESSION_KEY, card);
+    }
+
+    STORE.setItem(ACTIVE_KEY, "card");
+  }
+
+  account = currentAccount();
+
+  if (account?.key !== accountKey) {
+    accountKey = account?.key || "";
+    myCache = null;
+    myCacheTime = 0;
+    publicCache.clear();
+  }
+};
+
+/* ============================================================
+   2. ACTIONS SOCIALES AUTHENTIFIÉES
+============================================================ */
+
+const originalRequest = request;
+
+request = async function (action, values = {}) {
+
+  rememberAccount();
+
+  if (account?.type !== "card" || action === "PUBLIC") {
+    return originalRequest(action, values);
+  }
+
+  const { data, error } = await db().rpc(
+    "eah_social_card_v1",
+    {
+      p_action: action,
+      p_actor_eah_id: account.id,
+      p_card_token: account.token,
+      ...values
+    }
+  );
+
+  if (error) throw error;
+
+  if (data?.ok === false) {
+    throw new Error(
+      data.error || "Action sociale refusée."
+    );
+  }
+
+  return data;
+};
+
+/* ============================================================
+   3. ACTIVITÉ PERSONNELLE NFC
+============================================================ */
+
+const originalDiverUI = diverUI;
+
+diverUI = function () {
+
+  if (account?.type === "card") return;
+
+  return originalDiverUI();
+};
+
+const originalPersonalUI = ensureDiverPersonalUI;
+
+ensureDiverPersonalUI = function () {
+
+  rememberAccount();
+
+  if (account?.type !== "card") {
+    return originalPersonalUI();
+  }
+
+  const app = $("#eahDiverOnlyApp");
+
+  const host = app?.querySelector(
+    ".eah-diver-only-shell"
+  );
+
+  if (
+    !host ||
+    app.classList.contains("eahs-hidden")
+  ) {
+    return;
+  }
+
+  let browse = $("#eahSocialBrowseDiver");
+
+  if (
+    !browse ||
+    !host.contains(browse) ||
+    browse.dataset.eahNfcV5 !== "1"
+  ) {
+
+    browse?.remove();
+
+    browse = button(
+      "🌐 Explorer le site",
+      returnToSite
+    );
+
+    browse.id = "eahSocialBrowseDiver";
+    browse.dataset.eahNfcV5 = "1";
+    browse.style.margin = "12px 0";
+
+    const brand = host.querySelector(
+      ".eah-diver-brand"
+    );
+
+    if (brand) {
+      brand.after(browse);
+    } else {
+      host.prepend(browse);
+    }
+  }
+
+  const existing = host.querySelector(
+    '[data-eah-social-panel="diver"]'
+  );
+
+  if (existing?.dataset.eahUiMode === "card") {
+    return;
+  }
+
+  existing?.remove();
+
+  const panel = personalPanel("diver");
+
+  panel.dataset.eahUiMode = "card";
+
+  browse.after(panel);
+};
+
+/* ============================================================
+   4. EXPLORER LE SITE EN RESTANT CONNECTÉ
+============================================================ */
+
+const originalReturnToSite = returnToSite;
+
+returnToSite = function () {
+
+  rememberAccount();
+
+  if (account?.type === "card") {
+
+    const next = new URL(location.href);
+
+    // Retirer le jeton de l'URL affichée,
+    // mais conserver la session dans cet onglet.
+    next.searchParams.delete("token");
+
+    history.replaceState(
+      null,
+      "",
+      next.toString()
+    );
+  }
+
+  const result = originalReturnToSite();
+
+  const tasks = [];
+
+  if (typeof loadPublicData === "function") {
+    tasks.push(
+      Promise.resolve().then(
+        () => loadPublicData()
+      )
+    );
+  }
+
+  if (typeof loadPublicContentEAH === "function") {
+    tasks.push(
+      Promise.resolve().then(
+        () => loadPublicContentEAH()
+      )
+    );
+  }
+
+  Promise.allSettled(tasks).then(results => {
+
+    results.forEach(item => {
+
+      if (item.status === "rejected") {
+        console.warn(
+          "EAH — Chargement public :",
+          item.reason
+        );
+      }
+
+    });
+
+  });
+
+  return result;
+};
+
+/* ============================================================
+   5. RETOURNER À MON PROFIL
+============================================================ */
+
+const originalReturnToAccount = returnToAccount;
+
+returnToAccount = function () {
+
+  rememberAccount();
+
+  if (account?.type === "card") {
+
+    const app = $("#eahDiverOnlyApp");
+
+    if (app) {
+      app.classList.remove("eahs-hidden");
+    }
+
+    showReturnButton();
+
+    return;
+  }
+
+  return originalReturnToAccount();
+};
+
+/* ============================================================
+   6. INDICATEUR CONNECTÉ + DÉCONNEXION
+============================================================ */
+
+function updateNfcConnectedBanner() {
+
+  rememberAccount();
+
+  let bar = $("#eahConnectedBadge");
+
+  if (!account) {
+    bar?.remove();
+    return;
+  }
+
+  if (!bar) {
+
+    bar = document.createElement("div");
+    bar.id = "eahConnectedBadge";
+
+    bar.style.cssText = [
+      "position:fixed",
+      "z-index:2147481000",
+      "top:83px",
+      "right:12px",
+      "display:flex",
+      "align-items:center",
+      "gap:7px",
+      "flex-wrap:wrap",
+      "background:#06243c",
+      "color:white",
+      "border:1px solid #30cfff",
+      "border-radius:13px",
+      "padding:8px",
+      "box-shadow:0 8px 22px #0007",
+      "font:600 13px Arial,sans-serif",
+      "max-width:90vw"
+    ].join(";");
+
+    const label = document.createElement("span");
+
+    const signOut = document.createElement("button");
+
+    signOut.type = "button";
+    signOut.textContent = "Déconnexion";
+
+    signOut.style.cssText = [
+      "background:#153f62",
+      "color:white",
+      "border:1px solid #4d91bc",
+      "border-radius:8px",
+      "padding:7px",
+      "cursor:pointer",
+      "font:inherit"
+    ].join(";");
+
+    signOut.addEventListener(
+      "click",
+      async () => {
+
+        window.__EAH_LOGGING_OUT = true;
+
+        const previousType = account?.type;
+
+        for (const key of [
+          CARD_SESSION_KEY,
+          COACH_KEY,
+          DIVER_KEY,
+          ACTIVE_KEY,
+          "EAH_DIVER_PIN_SESSION"
+        ]) {
+          STORE.removeItem(key);
+        }
+
+        account = null;
+        myCache = null;
+        myCacheTime = 0;
+
+        const current = stateRef();
+
+        if (current) {
+          current.diverPinHash = "";
+          current.user = null;
+        }
+
+        const clean = new URL(location.href);
+
+        clean.searchParams.delete("token");
+        clean.searchParams.delete("coachToken");
+
+        history.replaceState(
+          null,
+          "",
+          clean.pathname + "#accueil"
+        );
+
+        if (previousType === "auth") {
+          try {
+            await db().auth.signOut();
+          } catch (error) {
+            console.warn(
+              "Supabase déconnexion :",
+              error
+            );
+          }
+        }
+
+        location.replace(
+          clean.pathname + "#accueil"
+        );
+      }
+    );
+
+    bar.append(label, signOut);
+
+    document.body.append(bar);
+  }
+
+  const text = bar.querySelector("span");
+
+  const display =
+    account.type === "card"
+      ? account.name
+      : account.type === "diver"
+        ? account.id
+        : account.type === "coach"
+          ? "Coach"
+          : "Compte EAH";
+
+  const label = "● Connecté : " + display;
+
+  if (text.textContent !== label) {
+    text.textContent = label;
+  }
+}
+
+/* ============================================================
+   7. NETTOYAGE ESPACE CLUB
+============================================================ */
+
+const originalInstallCSS = installCSS;
+
+installCSS = function () {
+
+  originalInstallCSS();
+
+  if (!$("#eahNfcUiFixStyle")) {
+
+    const style = document.createElement("style");
+
+    style.id = "eahNfcUiFixStyle";
+
+    style.textContent = `
+      html #eah-evaluations,
+      html #eah-actualites,
+      html #eah-spots,
+      html #eah-blazons,
+      html #eah-tarifs {
+        display: none !important;
+      }
+    `;
+
+    document.head.append(style);
+  }
+};
+
+/* ============================================================
+   8. ACTUALISATION DE LA SESSION
+============================================================ */
+
+const originalScan = scan;
+
+scan = async function () {
+
+  await originalScan();
+
+  updateNfcConnectedBanner();
+};
+
   if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
