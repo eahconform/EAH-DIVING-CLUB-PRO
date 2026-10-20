@@ -172,6 +172,42 @@ small, .info {
              required>
     </label>
 
+<div class="test">
+  <h2>Mes réseaux sociaux</h2>
+
+  <p class="info">
+    Facultatif — visibles uniquement
+    si mon profil EAH est public.
+  </p>
+
+  <label>
+    Instagram
+    <input
+      id="eahInstagram"
+      type="url"
+      placeholder="https://www.instagram.com/monprofil"
+    >
+  </label>
+
+  <label>
+    TikTok
+    <input
+      id="eahTikTok"
+      type="url"
+      placeholder="https://www.tiktok.com/@monprofil"
+    >
+  </label>
+
+  <label>
+    YouTube
+    <input
+      id="eahYoutube"
+      type="url"
+      placeholder="https://www.youtube.com/@machaine"
+    >
+  </label>
+</div>
+
     <div class="test">
       <strong>Vérification de l'e-mail</strong>
 
@@ -453,6 +489,36 @@ src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
       );
     }
 
+/* Réseaux associés après confirmation de l'e-mail */
+
+try {
+  const socialConfirm = await sb.rpc(
+    'eah_v30_social_checkout_confirm',
+    {
+      p_checkout: checkout
+    }
+  );
+
+  if (socialConfirm.error) {
+    throw socialConfirm.error;
+  }
+
+  if (socialConfirm.data?.ok !== true) {
+    throw Error(
+      socialConfirm.data?.error ||
+      'Réseaux non enregistrés'
+    );
+  }
+
+} catch(error) {
+  console.warn(
+    'EAH : synchronisation des réseaux :',
+    error
+  );
+
+  // Ne pas bloquer l'activation du profil.
+}
+
     // Lien NFC individuel généré par Supabase.
     const personal = new URL(data.profile_url);
 
@@ -549,6 +615,30 @@ src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
           "Simulation impossible."
         );
       }
+
+const socialSave = await sb.rpc(
+  'eah_v30_social_checkout_save',
+  {
+    p_checkout: data.checkout,
+    p_instagram:
+      $('eahInstagram').value.trim(),
+    p_tiktok:
+      $('eahTikTok').value.trim(),
+    p_youtube:
+      $('eahYoutube').value.trim()
+  }
+);
+
+if (socialSave.error) {
+  throw socialSave.error;
+}
+
+if (socialSave.data?.ok !== true) {
+  throw Error(
+    socialSave.data?.error ||
+    'Impossible de sauvegarder les réseaux.'
+  );
+}
 
       // Un seul envoi à cette étape.
       await sendOneConfirmation(
