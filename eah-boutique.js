@@ -33,18 +33,23 @@
     })[char]
   );
 
-  function url(value) {
-    try {
-      const result = new URL(
-        String(value || "").trim(),
-        location.href
-      );
-      return ["http:", "https:"].includes(result.protocol)
-        ? result.href : "";
-    } catch (_) {
-      return "";
-    }
+  
+function url(value) {
+  const raw = String(value ?? "").trim();
+
+  if (!raw) return "";
+
+  try {
+    const result = new URL(raw, location.href);
+
+    return ["http:", "https:"].includes(result.protocol)
+      ? result.href
+      : "";
+  } catch (_) {
+    return "";
   }
+}
+
 
   function cover(product) {
     const image = url((product.photos || [])[0]);
