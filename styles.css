@@ -6771,3 +6771,245 @@ section img:not(.profile-photo):not(.coach-photo):not(.avatar):not(.logo) {
   }
 
 }
+
+/* ==============================================
+   EAH DIVING - BOUTIQUE V1
+============================================== */
+
+.eah-shop-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+}
+
+.eah-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(250px, 1fr)
+  );
+  gap: 25px;
+  margin: 25px 0 50px;
+}
+
+.eah-shop-card {
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(5, 23, 42, .94);
+  border: 1px solid rgba(80, 170, 255, .25);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, .2);
+  color: #f5f9ff;
+}
+
+.eah-shop-photo {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: #08243e;
+  cursor: pointer;
+}
+
+.eah-shop-photo img,
+.eah-shop-placeholder {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eah-shop-placeholder {
+  color: #30cfff;
+  font-weight: 900;
+  font-size: 24px;
+}
+
+.eah-shop-card-body {
+  padding: 20px;
+}
+
+.eah-shop-card h3 {
+  margin: 0 0 12px;
+  color: white;
+}
+
+.eah-shop-card p {
+  margin: 9px 0;
+  color: #c3d8e8;
+  font-size: 14px;
+}
+
+.eah-shop-price {
+  display: block;
+  font-size: 24px;
+  color: #30cfff;
+  margin: 14px 0;
+}
+
+.eah-shop-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.eah-shop-button,
+.eah-shop-button-secondary {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+}
+
+.eah-shop-button {
+  background: #0b6bff;
+  color: white;
+}
+
+.eah-shop-button-secondary {
+  background: #143a59;
+  color: white;
+}
+
+.eah-shop-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.eah-shop-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 8, 20, .85);
+}
+
+.eah-shop-modal[hidden] {
+  display: none !important;
+}
+
+.eah-shop-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  color: white;
+  border-radius: 20px;
+  border: 1px solid #25628e;
+  background: #061e33;
+}
+
+.eah-shop-dialog h2 {
+  padding-right: 38px;
+  margin-bottom: 22px;
+}
+
+.eah-shop-close {
+  position: absolute;
+  top: 15px;
+  right: 17px;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+}
+
+.eah-shop-gallery {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(190px, 1fr)
+  );
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.eah-shop-gallery img {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  max-height: 320px;
+}
+
+.eah-shop-gallery video,
+.eah-shop-gallery iframe {
+  width: 100%;
+  min-height: 240px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.eah-shop-description {
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+
+.eah-shop-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.eah-shop-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #c3d8e8;
+}
+
+.eah-shop-form input,
+.eah-shop-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 13px;
+  color: white;
+  background: #092d4d;
+  border: 1px solid #326990;
+  border-radius: 9px;
+}
+
+.eah-shop-form .eah-shop-notice,
+.eah-shop-form > button {
+  grid-column: 1 / -1;
+}
+
+.eah-shop-notice {
+  font-size: 13px;
+  color: #9ab6cb;
+  line-height: 1.6;
+}
+
+.eah-shop-success {
+  font-size: 64px;
+  color: #18b978;
+}
+
+@media (max-width: 600px) {
+  .eah-shop-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eah-shop-form {
+    grid-template-columns: 1fr;
+  }
+
+  .eah-shop-dialog {
+    padding: 20px;
+  }
+
+  .eah-shop-gallery {
+    grid-template-columns: 1fr;
+  }
+}
