@@ -320,50 +320,69 @@
       </button>`);
   }
 
-  function loadProducts(force = false) {
-    if (loading || (!force && !page.classList.contains("active"))) return;
-    if (!force && Date.now() - lastLoad < 2000) return;
+  
+async function loadProducts(force = false) {
 
-    loading = true;
-    status.textContent = "Synchronisation de la boutique...";
+  if (loading) return;
 
-    const script = document.createElement("script");
-    let finished = false;
-    const timeout = setTimeout(
-      () => finish("Délai de connexion dépassé"),
-      15000
-    );
+  if (
+    !force &&
+    !page.classList.contains("active")
+  ) return;
 
-    function finish(error, data) {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timeout);
-      script.remove();
-      loading = false;
-      window.EAH_BOUTIQUE_CALLBACK = () => {};
+  loading = true;
 
-      if (error || !data?.ok || !Array.isArray(data.products)) {
-        console.warn("EAH Boutique :", error || data?.error || "Réponse invalide");
-        status.textContent =
-          "Impossible de charger les articles. Vérifie le déploiement Apps Script, puis clique sur Actualiser.";
-        return;
-      }
+  status.textContent =
+    "Chargement des articles...";
 
-      products = data.products
-        .filter(item => item && item.active !== false)
-        .map(normalize)
-        .filter(item => item.nom)
-        .sort((a, b) => a.ordre - b.ordre);
+  try {
 
-      lastLoad = Date.now();
-      render();
+    const { data, error } =
+      await requireSupabase().rpc(
+        "eah_shop_catalog_v1"
+      );
+
+    if (error) throw error;
+
+    if (!data?.ok) {
+      throw new Error(
+        data?.error || "Catalogue indisponible"
+      );
     }
 
-    window.EAH_BOUTIQUE_CALLBACK = data => finish(null, data);
-    script.onerror = () => finish("Impossible de joindre l'API");
-    script.src = API_URL + "?action=eah_boutique&t=" + Date.now();
-    document.head.appendChild(script);
+    products = (data.items || [])
+      .map(item => ({
+        id: item.id,
+        nom: item.name,
+        prix: item.price_eur,
+        stock: item.stock,
+        ordre: item.sort_order,
+        tailles: ["XS", "S", "M", "L", "XL"]
+          .filter(s => item.sizes?.[s] === true),
+        description: item.description,
+        photos: item.photos,
+        video: item.video_url
+      }))
+      .map(normalize)
+      .filter(item => item.nom);
+
+    lastLoad = Date.now();
+
+    render();
+
+  } catch (error) {
+
+    console.error("Boutique EAH :", error);
+
+    status.textContent =
+      "Erreur : " + error.message;
+
+  } finally {
+
+    loading = false;
   }
+}
+
 
   grid.addEventListener("click", event => {
     const button = event.target.closest("[data-shop-action]");
