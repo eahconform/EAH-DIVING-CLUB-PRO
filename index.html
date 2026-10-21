@@ -363,6 +363,11 @@ Actualités
 Tarifs
 </a>
 
+<!-- EAH DIVING : BOUTIQUE -->
+<a href="#boutique" data-page="boutique">
+Boutique
+</a>
+
 
 <div class="nav-dropdown">
 
@@ -2876,6 +2881,95 @@ et de la hauteur réalisée.
 </section>
 
 </section>
+
+<!-- =========================================
+     EAH DIVING - PAGE BOUTIQUE
+========================================= -->
+
+<section class="page" id="boutique">
+
+  <section class="page-hero compact">
+
+    <img
+      src="boutique-hero.jpg"
+      alt="Boutique officielle EAH Diving"
+      class="page-hero-image"
+      loading="eager"
+      decoding="async"
+    >
+
+    <div class="page-hero-overlay"></div>
+
+    <div class="container">
+
+      <span class="overline">
+        EAH DIVING
+      </span>
+
+      <h1>La boutique</h1>
+
+      <p>
+        Découvrez les articles et équipements
+        de l'univers EAH Diving.
+      </p>
+
+    </div>
+
+  </section>
+
+  <section class="section">
+
+    <div class="container">
+
+      <div class="eah-shop-heading">
+
+        <div>
+          <span class="overline">
+            COLLECTION EAH
+          </span>
+          <h2>Nos articles</h2>
+        </div>
+
+        <button
+          type="button"
+          class="button small"
+          id="eahShopRefresh"
+        >
+          Actualiser
+        </button>
+
+      </div>
+
+      <p id="eahShopStatus" role="status">
+        Chargement des articles...
+      </p>
+
+      <div
+        id="eahShopProducts"
+        class="eah-shop-grid"
+      ></div>
+
+    </div>
+
+  </section>
+
+</section>
+
+<!-- FENÊTRE DÉTAILS / ACHAT -->
+
+<div
+  id="eahShopModal"
+  class="eah-shop-modal"
+  hidden
+>
+  <div
+    class="eah-shop-dialog"
+    id="eahShopDialog"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Détails de l'article"
+  ></div>
+</div>
 
 </main>
 
