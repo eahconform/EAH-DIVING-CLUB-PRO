@@ -106,31 +106,33 @@
      CERTIFICATION EAH
   =============================================== */
 
-  function badge(target) {
-    if (
-      !target ||
-      target.parentElement?.querySelector(
-        ".eahp-badge"
-      )
-    ) {
-      return;
-    }
-
-    const mark = el(
-      "span",
-      "✓",
-      "eahp-badge"
-    );
-
-    mark.title = "Certifié EAH Diving";
-
-    mark.setAttribute(
-      "aria-label",
-      "Certifié EAH Diving"
-    );
-
-    target.after(mark);
+  
+function badge(target) {
+  if (!target || target.querySelector(".eahp-badge")) {
+    return;
   }
+
+  const mark = document.createElement("span");
+  mark.className = "eahp-badge";
+  mark.textContent = "✓";
+  mark.title = "Profil certifié EAH Diving";
+  mark.setAttribute(
+    "aria-label",
+    "Profil certifié EAH Diving"
+  );
+
+  // La pastille reste sur la même ligne que le nom.
+  mark.style.cssText =
+    "display:inline-flex;vertical-align:middle;" +
+    "align-items:center;justify-content:center;" +
+    "width:22px;height:22px;margin-left:9px;" +
+    "background:#087eff;color:white;" +
+    "border:2px solid white;border-radius:50%;" +
+    "font:bold 15px Arial;";
+
+  target.appendChild(mark);
+}
+
 
   async function individualInfo(eahId) {
     const id = String(eahId).toUpperCase();
@@ -313,7 +315,6 @@
         if (info?.public) {
           if (info.certified) {
             badge($("h3", card));
-            badge($("img", card));
           }
 
           networks(info, group);
@@ -405,7 +406,6 @@
         if (info?.public) {
           if (info.certified) {
             badge($("h1", hero));
-            badge($("img", hero));
           }
 
           networks(info, group);
