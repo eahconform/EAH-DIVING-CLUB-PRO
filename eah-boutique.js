@@ -11,7 +11,8 @@
   const API_URL =
     "https://script.google.com/macros/s/AKfycbxUEodF5UQr774_QPn6E4xbifBr0f7nRov3-FtywhsDuPSXNMbJC3z_kKKjxKVqddgqBQ/exec";
 
-  const REFRESH_MS = 15000;
+  
+const REFRESH_MS = 5000;
   const page = document.getElementById("boutique");
   const grid = document.getElementById("eahShopProducts");
   const status = document.getElementById("eahShopStatus");
