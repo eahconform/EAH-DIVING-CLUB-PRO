@@ -1,555 +1,344 @@
 
-/* EAH DIVING - BOUTIQUE V1 */
+/* EAH DIVING - BOUTIQUE V2 */
 
-(() => {
-  "use strict";
+const EAH_BOUTIQUE_ID =
+  '1eZMs98Z5sig9RJLP5UjaF-fUub2KwvQ2DP-C9GH84zE';
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbxUEodF5UQr774_QPn6E4xbifBr0f7nRov3-FtywhsDuPSXNMbJC3z_kKKjxKVqddgqBQ/exec";
+const EAH_BOUTIQUE_TAB = 'BOUTIQUE';
 
-  const page = document.getElementById("boutique");
-  const grid = document.getElementById("eahShopProducts");
-  const status = document.getElementById("eahShopStatus");
-  const refresh = document.getElementById("eahShopRefresh");
-  const overlay = document.getElementById("eahShopModal");
-  const dialog = document.getElementById("eahShopDialog");
+function EAH_BOUTIQUE_SHEET_() {
+  const sheet = SpreadsheetApp
+    .openById(EAH_BOUTIQUE_ID)
+    .getSheetByName(EAH_BOUTIQUE_TAB);
 
-  if (!page || !grid || !status || !overlay || !dialog) return;
+  if (!sheet) {
+    throw new Error('Feuille BOUTIQUE introuvable');
+  }
+  return sheet;
+}
 
-  const money = new Intl.NumberFormat("fr-FR", {
-    style: "currency", currency: "EUR"
-  });
+function EAH_BOUTIQUE_BOOL_(value) {
+  return value === true ||
+    ['TRUE', 'VRAI', 'OUI', '1']
+      .includes(String(value).toUpperCase());
+}
 
-  let products = [];
-  let loading = false;
-  let lastLoad = 0;
-  let activeProduct = null;
+function EAH_BOUTIQUE_NUM_(value) {
+  if (value === '' || value === null) return NaN;
 
-  const esc = value => String(value ?? "").replace(
-    /[&<>"']/g,
-    char => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;",
-      '"': "&quot;", "'": "&#39;"
-    })[char]
+  return Number(
+    String(value)
+      .replace(/[\s€]/g, '')
+      .replace(',', '.')
   );
+}
 
-  
-function url(value) {
-  const raw = String(value ?? "").trim();
+/* INSTALLATION : À EXÉCUTER UNE SEULE FOIS */
 
-  if (!raw) return "";
+function EAH_BOUTIQUE_INSTALLER() {
+  EAH_BOUTIQUE_SHEET_();
+
+  ScriptApp.getProjectTriggers()
+    .filter(t =>
+      t.getHandlerFunction() === 'EAH_BOUTIQUE_ON_EDIT'
+    )
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('EAH_BOUTIQUE_ON_EDIT')
+    .forSpreadsheet(EAH_BOUTIQUE_ID)
+    .onEdit()
+    .create();
+
+  EAH_BOUTIQUE_RECALCULER_(new Set());
+
+  Logger.log('Boutique : automatisation installée.');
+}
+
+/* DÉCLENCHÉ LORS DES MODIFICATIONS DU SHEET */
+
+function EAH_BOUTIQUE_ON_EDIT(e) {
+  if (
+    !e ||
+    !e.range ||
+    e.range.getSheet().getName() !== EAH_BOUTIQUE_TAB
+  ) return;
+
+  const range = e.range;
+
+  if (
+    range.getLastRow() < 2 ||
+    range.getColumn() > 16
+  ) return;
+
+  const changed = new Set();
+
+  for (
+    let n = Math.max(2, range.getRow());
+    n <= range.getLastRow();
+    n++
+  ) {
+    changed.add(n);
+  }
+
+  EAH_BOUTIQUE_RECALCULER_(changed);
+}
+
+/* ID UNIQUE / ORDRE / STATUT */
+
+function EAH_BOUTIQUE_RECALCULER_(changedRows) {
+  const changed = changedRows || new Set();
+  const lock = LockService.getScriptLock();
+
+  lock.waitLock(25000);
 
   try {
-    const result = new URL(raw, location.href);
+    const sheet = EAH_BOUTIQUE_SHEET_();
+    const count = sheet.getLastRow() - 1;
 
-    return ["http:", "https:"].includes(result.protocol)
-      ? result.href
-      : "";
-  } catch (_) {
-    return "";
+    if (count <= 0) return;
+
+    const source = sheet
+      .getRange(2, 1, count, 18)
+      .getValues();
+
+    const seen = new Set();
+    let next = 1;
+
+    for (const row of source) {
+      const id = String(row[0] || '').trim();
+      const match = id.match(/^EAH-BTQ-(\d+)$/);
+
+      if (match) {
+        next = Math.max(
+          next,
+          Number(match[1]) + 1
+        );
+      }
+    }
+
+    let order = 0;
+    let dirty = false;
+
+    const ids = [];
+    const ordres = [];
+    const sync = [];
+
+    source.forEach((row, index) => {
+      const sheetRow = index + 2;
+      const name = String(row[3] || '').trim();
+      const active = EAH_BOUTIQUE_BOOL_(row[1]);
+
+      let id = String(row[0] || '').trim();
+      let ordre = '';
+      let statut = '';
+      let syncedAt = row[17] || '';
+
+      if (active && name) {
+        if (!id || seen.has(id)) {
+          do {
+            id =
+              'EAH-BTQ-' +
+              String(next++).padStart(4, '0');
+          } while (seen.has(id));
+        }
+
+        seen.add(id);
+        ordre = ++order;
+
+        const prix = EAH_BOUTIQUE_NUM_(row[4]);
+        const stock = EAH_BOUTIQUE_NUM_(row[5]);
+
+        const valid =
+          Number.isFinite(prix) &&
+          prix >= 0 &&
+          Number.isInteger(stock) &&
+          stock >= 0;
+
+        const altered =
+          changed.has(sheetRow) ||
+          id !== String(row[0] || '').trim() ||
+          Number(row[2]) !== ordre;
+
+        if (!valid) {
+          statut = 'A_COMPLETER';
+          syncedAt = '';
+        } else if (
+          altered ||
+          row[16] !== 'SYNCHRONISE'
+        ) {
+          statut = 'EN_ATTENTE';
+          syncedAt = '';
+        } else {
+          statut = 'SYNCHRONISE';
+        }
+
+      } else if (name) {
+        if (id) seen.add(id);
+
+        statut = active
+          ? 'A_COMPLETER'
+          : 'INACTIF';
+
+        syncedAt = '';
+
+      } else {
+        if (id) seen.add(id);
+
+        statut = active
+          ? 'A_COMPLETER'
+          : '';
+
+        syncedAt = '';
+      }
+
+      ids.push([id]);
+      ordres.push([ordre]);
+      sync.push([statut, syncedAt]);
+
+      if (
+        id !== String(row[0] || '').trim() ||
+        String(ordre) !== String(row[2] ?? '') ||
+        statut !== String(row[16] || '') ||
+        String(syncedAt) !== String(row[17] || '')
+      ) {
+        dirty = true;
+      }
+    });
+
+    if (dirty) {
+      sheet.getRange(2, 1, count, 1)
+        .setValues(ids);
+
+      sheet.getRange(2, 3, count, 1)
+        .setValues(ordres);
+
+      sheet.getRange(2, 17, count, 2)
+        .setValues(sync);
+
+      SpreadsheetApp.flush();
+    }
+
+  } finally {
+    lock.releaseLock();
   }
 }
 
-
-  function cover(product) {
-    const image = url((product.photos || [])[0]);
-    return image
-      ? `<img src="${esc(image)}" alt="${esc(product.nom)}" loading="lazy">`
-      : `<div class="eah-shop-placeholder">EAH DIVING</div>`;
-  }
-
-  function findProduct(id) {
-    return products.find(
-      p => String(p.id) === String(id)
-    );
-  }
-
-  function render() {
-    grid.innerHTML = products.map(p => {
-      const soldOut = Number(p.stock) <= 0;
-      const sizes = (p.tailles || []).length
-        ? `Tailles : ${esc(p.tailles.join(" · "))}`
-        : "Taille unique / non applicable";
-
-      return `
-        <article class="eah-shop-card">
-
-          <button
-            type="button"
-            class="eah-shop-photo"
-            data-shop-action="details"
-            data-shop-id="${esc(p.id)}"
-          >
-            ${cover(p)}
-          </button>
-
-          <div class="eah-shop-card-body">
-            <h3>${esc(p.nom)}</h3>
-
-            <strong class="eah-shop-price">
-              ${money.format(Number(p.prix) || 0)}
-            </strong>
-
-            <p>${sizes}</p>
-
-            <p>
-              ${soldOut
-                ? "Rupture de stock"
-                : `Stock : ${Math.floor(p.stock)}`}
-            </p>
-
-            <div class="eah-shop-actions">
-
-              <button
-                type="button"
-                class="eah-shop-button-secondary"
-                data-shop-action="details"
-                data-shop-id="${esc(p.id)}"
-              >
-                Détails
-              </button>
-
-              <button
-                type="button"
-                class="eah-shop-button"
-                data-shop-action="buy"
-                data-shop-id="${esc(p.id)}"
-                ${soldOut ? "disabled" : ""}
-              >
-                ${soldOut ? "Indisponible" : "Acheter"}
-              </button>
-
-            </div>
-          </div>
-        </article>`;
-    }).join("");
-  }
-
-  function videoHTML(value) {
-    const safe = url(value);
-    if (!safe) return "";
-
-    const u = new URL(safe);
-    const host = u.hostname.toLowerCase();
-    let id = "";
-
-    if (host === "youtu.be") {
-      id = u.pathname.split("/")[1] || "";
-    } else if ([
-      "youtube.com",
-      "www.youtube.com",
-      "m.youtube.com",
-      "www.youtube-nocookie.com"
-    ].includes(host)) {
-      id = u.pathname.startsWith("/shorts/")
-        ? (u.pathname.split("/")[2] || "")
-        : u.pathname.startsWith("/embed/")
-          ? (u.pathname.split("/")[2] || "")
-          : (u.searchParams.get("v") || "");
-    }
-
-    if (/^[\w-]{11}$/.test(id)) {
-      return `
-        <iframe
-          src="https://www.youtube-nocookie.com/embed/${id}"
-          title="Vidéo de l'article"
-          loading="lazy"
-          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>`;
-    }
-
-    if (/\.(mp4|webm|ogg)(\?|$)/i.test(safe)) {
-      return `
-        <video
-          controls
-          playsinline
-          preload="metadata"
-          src="${esc(safe)}"
-        ></video>`;
-    }
-
-    return `
-      <a href="${esc(safe)}"
-         target="_blank"
-         rel="noopener noreferrer">
-        Voir la vidéo de l'article
-      </a>`;
-  }
-
-  function openDialog(html) {
-    dialog.innerHTML = html;
-    overlay.hidden = false;
-  }
-
-  function closeDialog() {
-    overlay.hidden = true;
-    dialog.innerHTML = "";
-    activeProduct = null;
-  }
-
-  function details(product) {
-    activeProduct = product.id;
-
-    const images = (product.photos || [])
-      .map(url)
-      .filter(Boolean);
-
-    const gallery = images.map(
-      img => `
-        <img src="${esc(img)}"
-             alt="${esc(product.nom)}"
-             loading="lazy">`
-    ).join("");
-
-    const video = videoHTML(product.video);
-    const soldOut = Number(product.stock) <= 0;
-
-    openDialog(`
-      <button type="button"
-              class="eah-shop-close"
-              data-shop-action="close"
-              aria-label="Fermer">×</button>
-
-      <h2>${esc(product.nom)}</h2>
-
-      <div class="eah-shop-gallery">
-        ${gallery || cover(product)}
-        ${video}
-      </div>
-
-      <strong class="eah-shop-price">
-        ${money.format(Number(product.prix) || 0)}
-      </strong>
-
-      <p class="eah-shop-description">
-        ${esc(product.description || "")}
-      </p>
-
-      <p>
-        Tailles :
-        ${esc(
-          (product.tailles || []).join(" · ")
-          || "Unique / sans taille"
-        )}
-      </p>
-
-      <p>
-        ${soldOut
-          ? "Rupture de stock"
-          : `Quantité disponible : ${Math.floor(product.stock)}`}
-      </p>
-
-      <button
-        type="button"
-        class="eah-shop-button"
-        data-shop-action="checkout"
-        ${soldOut ? "disabled" : ""}
-      >
-        ${soldOut ? "Indisponible" : "Acheter cet article"}
-      </button>
-    `);
-  }
-
-  function checkout(product) {
-    if (Number(product.stock) <= 0) return;
-
-    activeProduct = product.id;
-
-    const sizes = (product.tailles || []).length
-      ? `
-        <label>Taille
-          <select name="taille" required>
-            <option value="">Choisir une taille</option>
-            ${product.tailles.map(size => `
-              <option value="${esc(size)}">
-                ${esc(size)}
-              </option>`).join("")}
-          </select>
-        </label>`
-      : `<input type="hidden" name="taille" value="Unique">`;
-
-    openDialog(`
-      <button type="button"
-              class="eah-shop-close"
-              data-shop-action="close"
-              aria-label="Fermer">×</button>
-
-      <h2>Achat simulé</h2>
-
-      <p>
-        <strong>${esc(product.nom)}</strong>
-        — ${money.format(Number(product.prix) || 0)}
-      </p>
-
-      <form id="eahShopForm" class="eah-shop-form">
-
-        ${sizes}
-
-        <label>Quantité
-          <input type="number"
-                 name="quantite"
-                 min="1"
-                 max="${Math.floor(product.stock)}"
-                 value="1"
-                 required>
-        </label>
-
-        <label>Prénom
-          <input name="prenom"
-                 autocomplete="given-name" required>
-        </label>
-
-        <label>Nom
-          <input name="nom"
-                 autocomplete="family-name" required>
-        </label>
-
-        <label>E-mail
-          <input type="email"
-                 name="email"
-                 autocomplete="email" required>
-        </label>
-
-        <label>Téléphone
-          <input type="tel"
-                 name="telephone"
-                 autocomplete="tel" required>
-        </label>
-
-        <label>Adresse
-          <input name="adresse"
-                 autocomplete="street-address" required>
-        </label>
-
-        <label>Code postal
-          <input name="postal"
-                 autocomplete="postal-code" required>
-        </label>
-
-        <label>Ville
-          <input name="ville"
-                 autocomplete="address-level2" required>
-        </label>
-
-        <p class="eah-shop-notice">
-          Démonstration uniquement :
-          aucune carte bancaire ni aucun débit réel.
-          Vos informations ne sont pas envoyées
-          ni enregistrées.
-        </p>
-
-        <button class="eah-shop-button" type="submit">
-          Valider le paiement simulé
-        </button>
-
-      </form>
-    `);
-  }
-
-  function submitDemo(form) {
-    if (!form.reportValidity()) return;
-
-    const product = findProduct(activeProduct);
-
-    if (!product || Number(product.stock) <= 0) {
-      alert("Cet article n'est plus disponible.");
-      closeDialog();
-      return;
-    }
-
-    const data = new FormData(form);
-    const quantity = Number(data.get("quantite"));
-    const size = String(data.get("taille") || "");
-
-    if (
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > product.stock ||
-      (
-        (product.tailles || []).length &&
-        !product.tailles.includes(size)
-      )
-    ) {
-      alert("Vérifie la taille et la quantité.");
-      return;
-    }
-
-    const firstName = String(
-      data.get("prenom") || ""
-    ).trim();
-
-    const total = money.format(
-      (Number(product.prix) || 0) * quantity
-    );
-
-    openDialog(`
-      <button type="button"
-              class="eah-shop-close"
-              data-shop-action="close"
-              aria-label="Fermer">×</button>
-
-      <div class="eah-shop-success">✓</div>
-
-      <h2>Paiement simulé validé !</h2>
-
-      <p>Merci ${esc(firstName)}.</p>
-
-      <p>
-        ${quantity} × ${esc(product.nom)}
-        — <strong>${total}</strong>
-      </p>
-
-      <p class="eah-shop-notice">
-        Simulation terminée.
-        Aucune commande, aucun paiement
-        et aucune modification du stock
-        n'ont été effectués.
-      </p>
-
-      <button
-        type="button"
-        class="eah-shop-button"
-        data-shop-action="close"
-      >
-        Retour à la boutique
-      </button>
-    `);
-  }
-
-  function loadProducts() {
-    if (
-      loading ||
-      !page.classList.contains("active")
-    ) return;
-
-    loading = true;
-    status.textContent = "Actualisation des articles...";
-
-    const tag = document.createElement("script");
-    let finished = false;
-
-    const timeout = setTimeout(
-      () => complete("Délai de connexion dépassé"),
-      16000
-    );
-
-    function complete(error, response) {
-      if (finished) return;
-      finished = true;
-
-      clearTimeout(timeout);
-      tag.remove();
-      loading = false;
-      window.EAH_BOUTIQUE_CALLBACK = () => {};
+/* CATALOGUE PUBLIC SERVI AU SITE */
+
+function EAH_BOUTIQUE_PUBLIC_GET() {
+  try {
+    const sheet = EAH_BOUTIQUE_SHEET_();
+    const count = sheet.getLastRow() - 1;
+
+    const rows = count > 0
+      ? sheet.getRange(2, 1, count, 18).getValues()
+      : [];
+
+    const products = [];
+    const published = [];
+
+    rows.forEach((row, i) => {
+      if (
+        !EAH_BOUTIQUE_BOOL_(row[1]) ||
+        !String(row[3] || '').trim()
+      ) return;
+
+      const price = EAH_BOUTIQUE_NUM_(row[4]);
+      const stock = EAH_BOUTIQUE_NUM_(row[5]);
 
       if (
-        error ||
-        !response ||
-        !response.ok ||
-        !Array.isArray(response.products)
-      ) {
-        status.textContent =
-          "Catalogue indisponible. Clique sur Actualiser.";
-        return;
+        !Number.isFinite(price) ||
+        price < 0 ||
+        !Number.isInteger(stock) ||
+        stock < 0
+      ) return;
+
+      const sizes = ['XS', 'S', 'M', 'L', 'XL']
+        .filter((size, s) =>
+          EAH_BOUTIQUE_BOOL_(row[6 + s])
+        );
+
+      products.push({
+        id: String(
+          row[0] || 'EAH-BTQ-' + (i + 1)
+        ),
+
+        ordre: Number(row[2]) || (i + 1),
+
+        nom: String(row[3] || ''),
+        prix: price,
+        stock: stock,
+        tailles: sizes,
+
+        description: String(row[11] || ''),
+
+        photos: row.slice(12, 15)
+          .map(v => String(v || '').trim())
+          .filter(Boolean),
+
+        video: String(row[15] || '').trim()
+      });
+
+      if (row[16] !== 'SYNCHRONISE') {
+        published.push(i);
       }
+    });
 
-      products = response.products;
-      lastLoad = Date.now();
-      render();
+    products.sort(
+      (a, b) => a.ordre - b.ordre
+    );
 
-      status.textContent = products.length
-        ? `${products.length} article(s) dans la boutique`
-        : "Aucun article actif pour le moment.";
+    if (published.length) {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(20000);
+
+      try {
+        const current = sheet
+          .getRange(2, 17, count, 2)
+          .getValues();
+
+        const now = new Date();
+
+        for (const i of published) {
+          if (
+            current[i][0] === 'EN_ATTENTE' ||
+            current[i][0] === 'SYNCHRONISE'
+          ) {
+            current[i] = ['SYNCHRONISE', now];
+          }
+        }
+
+        sheet.getRange(2, 17, count, 2)
+          .setValues(current);
+
+      } finally {
+        lock.releaseLock();
+      }
     }
 
-    window.EAH_BOUTIQUE_CALLBACK = response =>
-      complete(null, response);
+    return EAH_BOUTIQUE_JSONP_({
+      ok: true,
+      products: products
+    });
 
-    tag.onerror = () => complete("Erreur réseau");
+  } catch (error) {
+    console.error(error);
 
-    tag.src =
-      `${API_URL}?action=eah_boutique&t=${Date.now()}`;
-
-    document.head.appendChild(tag);
+    return EAH_BOUTIQUE_JSONP_({
+      ok: false,
+      error: 'Catalogue inaccessible'
+    });
   }
+}
 
-  grid.addEventListener("click", event => {
-    const button = event.target.closest(
-      "[data-shop-action]"
+function EAH_BOUTIQUE_JSONP_(result) {
+  return ContentService
+    .createTextOutput(
+      'window.EAH_BOUTIQUE_CALLBACK(' +
+      JSON.stringify(result) +
+      ');'
+    )
+    .setMimeType(
+      ContentService.MimeType.JAVASCRIPT
     );
-
-    if (!button) return;
-
-    const product = findProduct(button.dataset.shopId);
-    if (!product) return;
-
-    if (button.dataset.shopAction === "buy") {
-      checkout(product);
-    } else {
-      details(product);
-    }
-  });
-
-  dialog.addEventListener("click", event => {
-    const button = event.target.closest(
-      "[data-shop-action]"
-    );
-
-    if (!button) return;
-
-    const action = button.dataset.shopAction;
-
-    if (action === "close") {
-      closeDialog();
-    }
-
-    if (action === "checkout") {
-      const product = findProduct(activeProduct);
-      if (product) checkout(product);
-    }
-  });
-
-  dialog.addEventListener("submit", event => {
-    if (event.target.id !== "eahShopForm") return;
-
-    event.preventDefault();
-    submitDemo(event.target);
-  });
-
-  overlay.addEventListener("click", event => {
-    if (event.target === overlay) closeDialog();
-  });
-
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && !overlay.hidden) {
-      closeDialog();
-    }
-  });
-
-  refresh?.addEventListener(
-    "click",
-    loadProducts
-  );
-
-  document.querySelectorAll(
-    '[data-page="boutique"]'
-  ).forEach(link => {
-    link.addEventListener(
-      "click",
-      () => setTimeout(loadProducts, 0)
-    );
-  });
-
-  setTimeout(loadProducts, 700);
-
-  setInterval(() => {
-    if (
-      page.classList.contains("active") &&
-      Date.now() - lastLoad > 25000
-    ) {
-      loadProducts();
-    }
-  }, 25000);
-
-})();
+}
