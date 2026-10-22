@@ -2628,11 +2628,25 @@ Générer le Grade Report
 
 <section class="page-hero discipline-hero">
 
-<img
-  src="olympique-desktop.jpg"
-  alt="Plongeon olympique"
-  class="page-hero-image"
->
+
+<picture class="eah-olympique-responsive">
+
+  <!-- Ordinateur : nouvelle photo -->
+  <source
+    media="(min-width: 901px)"
+    srcset="olympique-ordinateur-eah.jpg"
+  >
+
+  <!-- Mobile : ancienne photo conservée -->
+  <img
+    src="olympique-desktop.jpg"
+    alt="Plongeon olympique"
+    class="page-hero-image"
+    loading="eager"
+  >
+
+</picture>
+
 
 <div class="page-hero-overlay"></div>
 
@@ -5534,6 +5548,37 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- FIN PHOTO OLYMPIQUE ORDINATEUR -->
+
+<style>
+/* Plongeon olympique : image responsive */
+
+#olympique .page-hero > picture.eah-olympique-responsive {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+#olympique .eah-olympique-responsive > img {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+}
+
+/* Ordinateur : hauteur limitée à 400 px */
+@media (min-width: 901px) {
+  #olympique .eah-olympique-responsive > img {
+    width: auto !important;
+    max-width: 100% !important;
+    max-height: 400px !important;
+  }
+}
+</style>
 
 
 </body>
