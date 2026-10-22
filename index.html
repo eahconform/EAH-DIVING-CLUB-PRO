@@ -5597,6 +5597,83 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 </style>
 
+<style>
+/* ==========================================
+   EAH DIVING - OLYMPIQUE CORRECTION FINALE
+   ORDINATEUR UNIQUEMENT
+   PHOTO ENTIERE SANS RECADRAGE
+========================================== */
+
+@media (min-width: 901px) {
+
+  #olympique .page-hero.discipline-hero {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #061e33 !important;
+  }
+
+  /* Conteneur de la photographie */
+  #olympique .page-hero >
+  picture.eah-olympique-responsive {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Image entière : corrige la position absolue */
+  #olympique .page-hero >
+  picture.eah-olympique-responsive > img {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
+  /* Enlever le voile sur l'image */
+  #olympique .page-hero-overlay {
+    display: none !important;
+  }
+
+  /* Titre sous la photo */
+  #olympique .page-hero > .container {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 24px 28px 30px !important;
+    margin: 0 !important;
+    background: #061e33 !important;
+  }
+
+  #olympique .page-hero h1 {
+    margin: 0 0 12px !important;
+  }
+
+}
+</style>
+
 
 </body>
 </html>
