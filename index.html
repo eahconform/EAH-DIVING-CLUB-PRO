@@ -5745,5 +5745,59 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 </style>
 
+<style>
+/* =========================================
+   EAH DIVING - OLYMPIQUE MOBILE
+   TITRE EN BAS DE LA BANNIERE
+   ORDINATEUR INCHANGE
+========================================= */
+
+@media screen and (max-width: 900px) {
+
+  #olympique .page-hero.discipline-hero {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: stretch !important;
+  }
+
+  #olympique .page-hero > .container {
+    position: absolute !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 10 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+
+    margin: 0 !important;
+    padding: 0 18px 28px !important;
+
+    background: transparent !important;
+    transform: none !important;
+  }
+
+  #olympique .page-hero h1 {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    color: #ffffff !important;
+    font-size: clamp(30px, 8vw, 44px) !important;
+    line-height: 1.1 !important;
+    text-align: left !important;
+    transform: none !important;
+  }
+
+}
+</style>
+
 </body>
 </html>
