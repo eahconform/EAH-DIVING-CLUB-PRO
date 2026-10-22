@@ -5197,6 +5197,280 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- FIN CORRECTIF BANNIERES EAH DIVING -->
 
+<!-- ===================================================
+     EAH DIVING - CORRECTIF BANNIERES V2
+     22/10/2026
+
+     1. Olympique réduit sur ordinateur
+     2. Grading : image entière
+     3. Blazons : agrandis sur mobile
+     4. Espace Club : image entière
+     5. Faire grader : image entière
+
+     Ne modifie pas la boutique ni les données
+=================================================== -->
+
+<style>
+
+/* ===================================================
+   GRADING / ESPACE CLUB / FAIRE GRADER
+   BANNIERES ENTIERES
+=================================================== */
+
+:is(
+  #grading,
+  #club,
+  #faire-grader
+) .page-hero {
+
+  position: relative !important;
+  display: block !important;
+
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+
+  overflow: hidden !important;
+  background: #061e33 !important;
+
+}
+
+/* Images affichées entièrement */
+
+:is(
+  #grading,
+  #club,
+  #faire-grader
+) .page-hero > img.page-hero-image {
+
+  position: relative !important;
+  inset: auto !important;
+
+  display: block !important;
+
+  width: 100% !important;
+  height: auto !important;
+
+  min-height: 0 !important;
+  max-height: none !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  aspect-ratio: auto !important;
+  margin: 0 auto !important;
+
+}
+
+/* Suppression du voile sur ces 3 bannières */
+
+:is(
+  #grading,
+  #club,
+  #faire-grader
+) .page-hero .page-hero-overlay {
+
+  display: none !important;
+
+}
+
+/* Titres et descriptions sous les photos */
+
+:is(
+  #grading,
+  #club,
+  #faire-grader
+) .page-hero > .container {
+
+  position: relative !important;
+
+  z-index: 5 !important;
+
+  width: 100% !important;
+
+  padding-top: 20px !important;
+  padding-bottom: 32px !important;
+
+}
+
+/* Titres adaptatifs */
+
+:is(
+  #grading,
+  #club,
+  #faire-grader
+) .page-hero h1 {
+
+  max-width: 100% !important;
+
+  font-size: clamp(
+    2rem,
+    5vw,
+    5rem
+  ) !important;
+
+  line-height: 1.05 !important;
+
+}
+
+/* ===================================================
+   PLONGEON OLYMPIQUE
+   ORDINATEUR UNIQUEMENT
+
+   On réduit l'image sans la couper.
+=================================================== */
+
+@media (min-width: 901px) {
+
+  #olympique .page-hero {
+
+    background: #061e33 !important;
+
+  }
+
+  #olympique .page-hero > img.page-hero-image {
+
+    position: relative !important;
+
+    width: auto !important;
+    height: auto !important;
+
+    max-width: 100% !important;
+
+    max-height: 400px !important;
+
+    object-fit: contain !important;
+
+    object-position: center !important;
+
+    margin-left: auto !important;
+    margin-right: auto !important;
+
+  }
+
+}
+
+/* ===================================================
+   BLAZONS MOBILE
+
+   Image plus grande.
+   Défilement horizontal pour voir les 11 blazons.
+
+   Sur ordinateur : aucun changement.
+=================================================== */
+
+@media (max-width: 700px) {
+
+  #blazons .page-hero {
+
+    width: 100% !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    -webkit-overflow-scrolling: touch;
+
+    overscroll-behavior-x: contain;
+
+    background: #061e33 !important;
+
+  }
+
+  #blazons .page-hero > img.page-hero-image {
+
+    position: relative !important;
+    inset: auto !important;
+
+    display: block !important;
+
+    width: 170vw !important;
+    min-width: 170vw !important;
+    max-width: none !important;
+
+    height: auto !important;
+    max-height: none !important;
+
+    object-fit: contain !important;
+
+    margin: 0 !important;
+
+  }
+
+  #blazons .page-hero > .container {
+
+    position: sticky !important;
+    left: 0 !important;
+
+    width: 100% !important;
+
+  }
+
+}
+
+/* ===================================================
+   GRADING / ESPACE CLUB / FAIRE GRADER
+   AJUSTEMENT TELEPHONE
+=================================================== */
+
+@media (max-width: 700px) {
+
+  :is(
+    #grading,
+    #club,
+    #faire-grader
+  ) .page-hero {
+
+    min-height: 0 !important;
+    height: auto !important;
+
+  }
+
+  :is(
+    #grading,
+    #club,
+    #faire-grader
+  ) .page-hero > img.page-hero-image {
+
+    width: 100% !important;
+    height: auto !important;
+
+    max-height: none !important;
+
+    object-fit: contain !important;
+
+  }
+
+  :is(
+    #grading,
+    #club,
+    #faire-grader
+  ) .page-hero > .container {
+
+    padding-top: 18px !important;
+    padding-bottom: 26px !important;
+
+  }
+
+  :is(
+    #grading,
+    #club,
+    #faire-grader
+  ) .page-hero h1 {
+
+    font-size: clamp(
+      1.8rem,
+      6vw,
+      3.2rem
+    ) !important;
+
+  }
+
+}
+
+</style>
+
+<!-- FIN CORRECTIF BANNIERES V2 -->
+
 
 </body>
 </html>
