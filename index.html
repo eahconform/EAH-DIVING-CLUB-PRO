@@ -5550,32 +5550,49 @@ document.addEventListener('DOMContentLoaded', () => {
 <!-- FIN PHOTO OLYMPIQUE ORDINATEUR -->
 
 <style>
-/* Plongeon olympique : image responsive */
+/* =========================
+   BANNIERE PLONGEON OLYMPIQUE
+   Desktop = image entière
+   Mobile = image actuelle
+========================= */
+
+#olympique .page-hero {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
 
 #olympique .page-hero > picture.eah-olympique-responsive {
-  position: relative !important;
   display: block !important;
   width: 100% !important;
-  height: auto !important;
+  text-align: center !important;
 }
 
 #olympique .eah-olympique-responsive > img {
-  position: relative !important;
-  inset: auto !important;
   display: block !important;
   width: 100% !important;
   height: auto !important;
-  max-height: none !important;
   object-fit: contain !important;
   margin: 0 auto !important;
 }
 
-/* Ordinateur : hauteur limitée à 400 px */
+/* ORDINATEUR : image entière, non coupée */
 @media (min-width: 901px) {
   #olympique .eah-olympique-responsive > img {
-    width: auto !important;
-    max-width: 100% !important;
-    max-height: 400px !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    height: auto !important;
+    max-height: none !important;
+    object-fit: contain !important;
+  }
+}
+
+/* MOBILE : on garde le comportement actuel */
+@media (max-width: 900px) {
+  #olympique .eah-olympique-responsive > img {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
   }
 }
 </style>
