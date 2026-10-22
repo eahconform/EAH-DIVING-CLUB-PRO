@@ -4922,6 +4922,281 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+<!-- ==================================================
+     EAH DIVING - BANNIERES COMPLETES V1
+
+     Affichage sans recadrage :
+     - Population
+     - Actualités
+     - Plongeon olympique
+     - Saut de l'ange
+     - High Diving
+     - Freestyle / Døds
+     - Blazons
+
+     Compatible ordinateur / tablette / téléphone
+================================================== -->
+
+<style>
+
+/* ==================================================
+   1. LES 7 BANNIERES
+================================================== */
+
+:is(
+  #population,
+  #actualites,
+  #olympique,
+  #ange,
+  #highdiving,
+  #freestyle,
+  #blazons
+) .page-hero {
+
+  position: relative !important;
+
+  display: block !important;
+
+  width: 100% !important;
+
+  height: auto !important;
+
+  min-height: 0 !important;
+
+  overflow: hidden !important;
+
+  background: #061e33 !important;
+
+}
+
+/* ==================================================
+   2. IMAGES DIRECTES
+   POPULATION, ACTUALITES, OLYMPIQUE,
+   SAUT DE L'ANGE, BLAZONS
+================================================== */
+
+:is(
+  #population,
+  #actualites,
+  #olympique,
+  #ange,
+  #highdiving,
+  #freestyle,
+  #blazons
+) .page-hero > .page-hero-image {
+
+  position: relative !important;
+
+  inset: auto !important;
+
+  display: block !important;
+
+  width: 100% !important;
+
+  height: auto !important;
+
+  min-height: 0 !important;
+
+  max-height: none !important;
+
+  object-fit: contain !important;
+
+  object-position: center center !important;
+
+  aspect-ratio: auto !important;
+
+}
+
+/* ==================================================
+   3. IMAGES RESPONSIVES
+   HIGH DIVING ET FREESTYLE / DODS
+
+   Conserve les versions mobiles existantes.
+================================================== */
+
+:is(
+  #highdiving,
+  #freestyle
+) .page-hero > picture {
+
+  position: relative !important;
+
+  inset: auto !important;
+
+  display: block !important;
+
+  width: 100% !important;
+
+  height: auto !important;
+
+  min-height: 0 !important;
+
+}
+
+:is(
+  #highdiving,
+  #freestyle
+) .page-hero > picture > img {
+
+  position: relative !important;
+
+  inset: auto !important;
+
+  display: block !important;
+
+  width: 100% !important;
+
+  height: auto !important;
+
+  min-height: 0 !important;
+
+  max-height: none !important;
+
+  object-fit: contain !important;
+
+  object-position: center center !important;
+
+  aspect-ratio: auto !important;
+
+}
+
+/* ==================================================
+   4. ENLEVER LE VOILE SOMBRE
+================================================== */
+
+:is(
+  #population,
+  #actualites,
+  #olympique,
+  #ange,
+  #highdiving,
+  #freestyle,
+  #blazons
+) .page-hero .page-hero-overlay {
+
+  display: none !important;
+
+}
+
+/* ==================================================
+   5. CONSERVER LES TITRES ET DESCRIPTIONS
+   SOUS L'IMAGE ENTIERE
+================================================== */
+
+:is(
+  #population,
+  #actualites,
+  #olympique,
+  #ange,
+  #highdiving,
+  #freestyle,
+  #blazons
+) .page-hero > .container {
+
+  position: relative !important;
+
+  z-index: 5 !important;
+
+  width: 100% !important;
+
+  min-height: 0 !important;
+
+  padding-top: 20px !important;
+
+  padding-bottom: 32px !important;
+
+}
+
+/* ==================================================
+   6. TITRES RESPONSIVES
+================================================== */
+
+:is(
+  #population,
+  #actualites,
+  #olympique,
+  #ange,
+  #highdiving,
+  #freestyle,
+  #blazons
+) .page-hero h1 {
+
+  max-width: 100% !important;
+
+  font-size: clamp(
+    2rem,
+    5vw,
+    5rem
+  ) !important;
+
+  line-height: 1.05 !important;
+
+  overflow-wrap: break-word !important;
+
+}
+
+/* ==================================================
+   7. AFFICHAGE TABLETTE / MOBILE
+================================================== */
+
+@media (max-width: 900px) {
+
+  :is(
+    #population,
+    #actualites,
+    #olympique,
+    #ange,
+    #highdiving,
+    #freestyle,
+    #blazons
+  ) .page-hero {
+
+    height: auto !important;
+
+    min-height: 0 !important;
+
+  }
+
+  :is(
+    #population,
+    #actualites,
+    #olympique,
+    #ange,
+    #highdiving,
+    #freestyle,
+    #blazons
+  ) .page-hero > .container {
+
+    padding-top: 18px !important;
+
+    padding-bottom: 26px !important;
+
+  }
+
+  :is(
+    #population,
+    #actualites,
+    #olympique,
+    #ange,
+    #highdiving,
+    #freestyle,
+    #blazons
+  ) .page-hero h1 {
+
+    font-size: clamp(
+      1.8rem,
+      6vw,
+      3.2rem
+    ) !important;
+
+  }
+
+}
+
+</style>
+
+<!-- FIN CORRECTIF BANNIERES EAH DIVING -->
+
 
 </body>
 </html>
