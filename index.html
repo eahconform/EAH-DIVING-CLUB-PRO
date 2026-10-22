@@ -5675,5 +5675,75 @@ document.addEventListener('DOMContentLoaded', () => {
 </style>
 
 
+<style>
+/* =========================================
+   EAH DIVING - OLYMPIQUE MOBILE
+   RESTAURATION GRANDE BANNIERE
+   NE TOUCHE PAS A L'ORDINATEUR
+========================================= */
+
+@media screen and (max-width: 900px) {
+
+  #olympique .page-hero,
+  #olympique .page-hero.discipline-hero {
+    position: relative !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    width: 100% !important;
+    height: 440px !important;
+    min-height: 440px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  /* Photo mobile originale en plein écran */
+  #olympique .page-hero >
+  picture.eah-olympique-responsive {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  #olympique .page-hero >
+  picture.eah-olympique-responsive > img {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+  }
+
+  /* Titre dans la partie basse de la bannière */
+  #olympique .page-hero > .container {
+    position: relative !important;
+    z-index: 3 !important;
+    width: 100% !important;
+    padding: 0 18px 30px !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  #olympique .page-hero h1 {
+    position: relative !important;
+    margin: 0 !important;
+    font-size: clamp(32px, 8vw, 48px) !important;
+    line-height: 1.08 !important;
+    color: white !important;
+  }
+
+  /* Le contenu reprend sa place sous la bannière */
+  #olympique .page-hero + section {
+    position: relative !important;
+    margin-top: 0 !important;
+  }
+
+}
+</style>
+
 </body>
 </html>
