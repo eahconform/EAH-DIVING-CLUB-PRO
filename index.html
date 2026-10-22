@@ -5471,6 +5471,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- FIN CORRECTIF BANNIERES V2 -->
 
+<!-- ==============================================
+     EAH DIVING - PHOTO OLYMPIQUE ORDINATEUR V1
+
+     Ordinateur : nouvelle photo
+     Mobile : ancienne photo conservée
+     Aucun changement pour les autres pages
+============================================== -->
+
+<script>
+(function () {
+
+  const image = document.querySelector(
+    '#olympique .page-hero > img.page-hero-image'
+  );
+
+  if (!image) return;
+
+  // Photo actuellement utilisée sur mobile
+  const photoMobile = image.getAttribute('src');
+
+  // Nouvelle photo ordinateur
+  const photoOrdinateur =
+    'olympique-ordinateur-eah.jpg';
+
+  // Ordinateur à partir de 901 px
+  const ecranOrdinateur = window.matchMedia(
+    '(min-width: 901px)'
+  );
+
+  function adapterPhotoOlympique() {
+
+    const photoSouhaitee =
+      ecranOrdinateur.matches
+        ? photoOrdinateur
+        : photoMobile;
+
+    if (
+      image.getAttribute('src') !== photoSouhaitee
+    ) {
+      image.setAttribute('src', photoSouhaitee);
+    }
+
+  }
+
+  // Application immédiate
+  adapterPhotoOlympique();
+
+  // Adaptation lors du changement de taille
+  if (ecranOrdinateur.addEventListener) {
+    ecranOrdinateur.addEventListener(
+      'change',
+      adapterPhotoOlympique
+    );
+  } else {
+    ecranOrdinateur.addListener(
+      adapterPhotoOlympique
+    );
+  }
+
+})();
+</script>
+
+<!-- FIN PHOTO OLYMPIQUE ORDINATEUR -->
+
 
 </body>
 </html>
