@@ -4840,6 +4840,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+<!-- EAH BOUTIQUE : IMAGE ENTIERE + RETOUR -->
+
+<style>
+#boutique .page-hero.compact {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  background: #061e33 !important;
+}
+
+#boutique .page-hero.compact > .page-hero-image {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+#boutique .page-hero.compact .page-hero-overlay {
+  display: none !important;
+}
+
+#boutique .page-hero.compact > .container {
+  position: relative !important;
+  padding-top: 20px !important;
+  padding-bottom: 32px !important;
+}
+
+.eah-shop-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 18px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 800;
+}
+</style>
+
+<script>
+(() => {
+  const dialog =
+    document.getElementById("eahShopDialog");
+
+  if (!dialog) return;
+
+  function ajouterRetour() {
+    const detailOuvert = dialog.querySelector(
+      '[data-shop-action="checkout"]'
+    );
+
+    if (
+      !detailOuvert ||
+      dialog.querySelector(".eah-shop-back")
+    ) return;
+
+    const bouton = document.createElement("button");
+
+    bouton.type = "button";
+    bouton.className =
+      "eah-shop-button-secondary eah-shop-back";
+
+    bouton.dataset.shopAction = "close";
+
+    bouton.textContent = "← Retour à la boutique";
+
+    dialog.insertBefore(
+      bouton,
+      dialog.firstChild
+    );
+  }
+
+  new MutationObserver(ajouterRetour).observe(
+    dialog,
+    { childList: true }
+  );
+})();
+</script>
+
 
 </body>
 </html>
