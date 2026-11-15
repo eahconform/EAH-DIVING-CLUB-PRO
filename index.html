@@ -5799,5 +5799,423 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 </style>
 <script src="eah-club-preview-v1.js?v=1"></script>
+  
+<!-- ======================================================
+ EAH DIVING PRO — PROFIL PREMIUM V4
+ Cible : EAH-DIVING-CLUB-PRO / index.html
+ Compatible avec diver-profile.js existant
+====================================================== -->
+
+<style id="eah-pro-premium-v4-style">
+
+#eahDiverOnlyApp {
+  --premium-blue:#168cff;
+  --premium-cyan:#68dfff;
+  --premium-border:rgba(112,205,255,.25);
+  --premium-bg:#061a2b;
+  background:
+    radial-gradient(ellipse at 50% -10%,
+      rgba(24,112,191,.28),transparent 50%),
+    #03131f !important;
+}
+
+#eahDiverOnlyApp .eah-diver-only-shell {
+  width:min(1180px,calc(100% - 28px)) !important;
+  padding:30px 0 90px !important;
+}
+
+#eahDiverOnlyApp .eah-diver-brand {
+  color:#69dfff !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  letter-spacing:3px !important;
+}
+
+#eahDiverOnlyApp #eahDiverProfileHost {
+  border:1px solid var(--premium-border) !important;
+  border-radius:28px !important;
+  padding:clamp(18px,3vw,38px) !important;
+  background:
+    radial-gradient(circle at 90% 0%,
+      rgba(18,133,218,.23),transparent 45%),
+    linear-gradient(145deg,#102f49,#061a2b) !important;
+  box-shadow:0 25px 65px rgba(0,0,0,.25) !important;
+}
+
+#eahDiverOnlyApp #profileView {
+  color:#f1f8ff !important;
+}
+
+#eahDiverOnlyApp #profileView h1 {
+  font-size:clamp(32px,5vw,52px) !important;
+  font-weight:900 !important;
+  letter-spacing:-1px !important;
+  color:white !important;
+}
+
+#eahDiverOnlyApp #profileView h2 {
+  color:#e9f8ff !important;
+}
+
+#eahDiverOnlyApp #profileView img {
+  max-width:100%;
+}
+
+#eahDiverOnlyApp #profileView button,
+#eahDiverOnlyApp #profileView .button {
+  border-radius:13px !important;
+}
+
+.eah-pro-v4-dashboard {
+  margin:24px 0;
+}
+
+.eah-pro-v4-heading {
+  color:#f5faff;
+  font-size:clamp(21px,3vw,28px);
+  font-weight:900;
+  margin:0 0 18px;
+}
+
+.eah-pro-v4-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.eah-pro-v4-card {
+  min-width:0;
+  padding:22px;
+  border:1px solid var(--premium-border);
+  border-radius:19px;
+  background:linear-gradient(145deg,#153b59,#0b253a);
+  box-shadow:0 12px 35px rgba(0,0,0,.13);
+}
+
+.eah-pro-v4-card-icon {
+  display:block;
+  font-size:29px;
+  margin-bottom:12px;
+}
+
+.eah-pro-v4-card strong {
+  display:block;
+  color:#f5fbff;
+  font-size:17px;
+  margin-bottom:8px;
+}
+
+.eah-pro-v4-card p {
+  color:#b5cfe1;
+  font-size:13px;
+  line-height:1.65;
+  margin:0;
+}
+
+.eah-pro-v4-navigation {
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding:8px;
+  margin:20px 0;
+  background:#0a263c;
+  border:1px solid var(--premium-border);
+  border-radius:16px;
+}
+
+.eah-pro-v4-navigation button {
+  flex:1 0 auto;
+  min-width:125px;
+  border:1px solid rgba(105,210,255,.22);
+  border-radius:12px;
+  background:#123a55;
+  color:#eaf8ff;
+  font-size:13px;
+  font-weight:800;
+  padding:13px;
+  cursor:pointer;
+}
+
+.eah-pro-v4-navigation button:hover {
+  background:#17608b;
+}
+
+.eah-pro-v4-section {
+  padding:23px;
+  margin:17px 0;
+  border:1px solid var(--premium-border);
+  border-radius:21px;
+  background:linear-gradient(145deg,#102f49,#071d30);
+}
+
+.eah-pro-v4-section h2 {
+  margin:0 0 14px;
+  color:#7fddff;
+  font-size:21px;
+}
+
+.eah-pro-v4-section p {
+  color:#b8d2e2;
+  line-height:1.7;
+}
+
+.eah-pro-v4-note {
+  padding:14px;
+  border-radius:12px;
+  background:#173d57;
+  color:#c2ddeb;
+  font-size:13px;
+  line-height:1.6;
+}
+
+#eahDiverOnlyApp .eah-diver-request-box {
+  border:1px solid var(--premium-border) !important;
+  border-radius:22px !important;
+  background:linear-gradient(145deg,#12354e,#071d30) !important;
+}
+
+@media(max-width:700px) {
+  .eah-pro-v4-grid {
+    grid-template-columns:1fr;
+  }
+  .eah-pro-v4-card {
+    padding:18px;
+  }
+  .eah-pro-v4-navigation button {
+    min-width:110px;
+  }
+  #eahDiverOnlyApp .eah-diver-only-shell {
+    width:calc(100% - 18px) !important;
+  }
+}
+
+</style>
+
+<script id="eah-pro-premium-v4-script">
+(function () {
+  "use strict";
+
+  const params = new URLSearchParams(location.search);
+
+  // Ne pas modifier l'interface des comptes coach.
+  if (params.has("coachToken")) return;
+
+  function element(tag, className, text) {
+    const item = document.createElement(tag);
+    if (className) item.className = className;
+    if (text !== undefined) item.textContent = String(text);
+    return item;
+  }
+
+  function tile(icon, title, description) {
+    const card = element("article", "eah-pro-v4-card");
+
+    card.appendChild(element(
+      "span", "eah-pro-v4-card-icon", icon
+    ));
+
+    card.appendChild(element("strong", "", title));
+    card.appendChild(element("p", "", description));
+
+    return card;
+  }
+
+  function section(title, description) {
+    const box = element("section", "eah-pro-v4-section");
+    box.appendChild(element("h2", "", title));
+    if (description) box.appendChild(element("p", "", description));
+    return box;
+  }
+
+  function goToContent(words) {
+    const root = document.getElementById("eahDiverOnlyApp");
+    if (!root) return;
+
+    const candidates = Array.from(
+      root.querySelectorAll(
+        "#profileView h2, #profileView h3, " +
+        ".eah-diver-request-box h2"
+      )
+    );
+
+    const target = candidates.find(node =>
+      words.some(word =>
+        node.textContent.toLowerCase().includes(word)
+      )
+    );
+
+    if (target) {
+      target.scrollIntoView({
+        behavior:"smooth",
+        block:"start"
+      });
+      return;
+    }
+
+    if (words.includes("vidéo")) {
+      const request = document.getElementById(
+        "openDiverGradingRequest"
+      );
+
+      if (request) {
+        request.scrollIntoView({
+          behavior:"smooth",
+          block:"center"
+        });
+      }
+    }
+  }
+
+  function install() {
+    const app = document.getElementById("eahDiverOnlyApp");
+    const host = document.getElementById("eahDiverProfileHost");
+
+    if (!app || !host) return;
+
+    if (app.dataset.premiumV4 === "ready") return;
+
+    const profile = host.querySelector("#profileView");
+
+    if (!profile) return;
+
+    app.dataset.premiumV4 = "ready";
+
+    /* Tableau de bord */
+
+    const dashboard = element(
+      "section",
+      "eah-pro-v4-dashboard"
+    );
+
+    dashboard.appendChild(element(
+      "h2",
+      "eah-pro-v4-heading",
+      "Mon espace EAH Diving"
+    ));
+
+    const grid = element("div", "eah-pro-v4-grid");
+
+    grid.appendChild(tile(
+      "🏅",
+      "Progression sportive",
+      "Blazons, évaluations, historique et rapports de grading."
+    ));
+
+    grid.appendChild(tile(
+      "🎬",
+      "Mes vidéos",
+      "Retrouvez vos plongeons et soumettez une vidéo à évaluer."
+    ));
+
+    grid.appendChild(tile(
+      "💬",
+      "Vie du club",
+      "Informations du club, conseils et échanges sportifs."
+    ));
+
+    dashboard.appendChild(grid);
+
+    host.insertAdjacentElement("afterend", dashboard);
+
+    /* Navigation premium */
+
+    const nav = element(
+      "nav",
+      "eah-pro-v4-navigation"
+    );
+
+    const links = [
+      ["🏠 Profil", ["profil"]],
+      ["🏅 Progression", ["progression","blazon"]],
+      ["🎬 Vidéos", ["vidéo"]],
+      ["📢 Informations", ["information","club"]],
+      ["💬 Messages", ["message","conversation"]]
+    ];
+
+    links.forEach(([label, words]) => {
+      const button = element("button", "", label);
+      button.type = "button";
+      button.addEventListener("click", () => {
+        if (label.includes("Profil")) {
+          host.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+        } else {
+          goToContent(words);
+        }
+      });
+      nav.appendChild(button);
+    });
+
+    dashboard.insertAdjacentElement("afterend", nav);
+
+    /* Espace de présentation complémentaire */
+
+    const activity = section(
+      "Mon activité EAH",
+      "Suivez votre progression et retrouvez les fonctionnalités associées à votre profil."
+    );
+
+    activity.appendChild(element(
+      "div",
+      "eah-pro-v4-note",
+      "Les évaluations, les likes, les abonnements et les notifications existants restent gérés par les modules du site. Cette présentation ne remplace pas leurs données."
+    ));
+
+    nav.insertAdjacentElement("afterend", activity);
+
+    /* Messagerie : état réel et non simulé */
+
+    const messaging = section(
+      "Conversations privées",
+      "Échangez avec les entraîneurs et les autres adhérents du club."
+    );
+
+    messaging.appendChild(element(
+      "div",
+      "eah-pro-v4-note",
+      "La messagerie privée nécessite une authentification des participants et un raccordement sécurisé à Supabase. Elle n'est pas activée par ce seul module visuel."
+    ));
+
+    activity.insertAdjacentElement("afterend", messaging);
+  }
+
+  let scheduled = false;
+
+  const observer = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      install();
+    });
+  });
+
+  function start() {
+    install();
+
+    observer.observe(document.body, {
+      childList:true,
+      subtree:true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      start,
+      {once:true}
+    );
+  } else {
+    start();
+  }
+
+})();
+</script>
+
+<!-- FIN EAH DIVING PRO — PROFIL PREMIUM V4 -->
+
 </body>
 </html>
