@@ -6217,5 +6217,364 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- FIN EAH DIVING PRO — PROFIL PREMIUM V4 -->
 
+<!-- EAH DIVING PRO — PREMIUM V5 -->
+<style id="eah-premium-v5-css">
+:root {
+  --eah5-bg:#031524;
+  --eah5-panel:#09253c;
+  --eah5-border:rgba(105,204,255,.22);
+  --eah5-accent:#29baff;
+}
+#eahDiverOnlyApp .eah-diver-only-shell {
+  width:min(1440px,calc(100% - 36px))!important;
+}
+.eah5-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1.7fr) minmax(290px,1fr);
+  gap:22px;
+  align-items:start;
+  margin:22px 0;
+}
+.eah5-layout > * {min-width:0}
+#eahDiverOnlyApp .eah5-layout #eahDiverProfileHost {
+  margin:0!important;
+  height:100%;
+}
+.eah5-activity {
+  padding:24px;
+  border:1px solid var(--eah5-border);
+  border-radius:24px;
+  background:linear-gradient(150deg,#103550,#061b2d);
+  box-shadow:0 18px 50px rgba(0,0,0,.2);
+}
+.eah5-activity h2 {margin:0 0 20px;color:white}
+.eah5-activity .eah5-intro {
+  color:#a9c9db;
+  margin-bottom:18px;
+}
+.eah5-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:18px 0 24px;
+}
+.eah5-tabs button,.eah5-tabs a,.eah5-button {
+  border:1px solid var(--eah5-border);
+  background:#10354f;
+  color:white;
+  padding:12px 17px;
+  border-radius:12px;
+  font:700 14px Arial,sans-serif;
+  cursor:pointer;
+  text-decoration:none;
+}
+.eah5-tabs button:hover,.eah5-tabs a:hover {
+  background:#0864a4;
+}
+.eah5-tutorials {
+  margin:30px auto;
+  max-width:1440px;
+  color:white;
+  scroll-margin-top:80px;
+}
+.eah5-tutorials h2 {
+  font-size:clamp(24px,3vw,34px);
+  margin-bottom:8px;
+}
+.eah5-subtitle {color:#a9c9db;margin-bottom:22px}
+.eah5-tutorial-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+}
+.eah5-tutorial {
+  background:linear-gradient(150deg,#103550,#061b2d);
+  border:1px solid var(--eah5-border);
+  border-radius:20px;
+  padding:18px;
+  overflow:hidden;
+}
+.eah5-tutorial h3 {margin:14px 0 10px}
+.eah5-tutorial p {color:#b7d1df;line-height:1.6}
+.eah5-video {
+  aspect-ratio:16/9;
+  background:#03101c;
+  border-radius:12px;
+  overflow:hidden;
+}
+.eah5-video iframe {
+  display:block;width:100%;height:100%;border:0;
+}
+.eah5-status {color:#b7d1df;padding:14px 0}
+@media(max-width:1050px) {
+  .eah5-layout {grid-template-columns:1fr}
+  .eah5-tutorial-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px) {
+  .eah5-tutorial-grid {grid-template-columns:1fr}
+  .eah5-activity {padding:17px}
+  .eah5-tabs button {flex:1}
+}
+</style>
+
+<script id="eah-premium-v5-js">
+(() => {
+  "use strict";
+
+  // À renseigner après déploiement du code Apps Script.
+  const TUTORIAL_API = "COLLER_ICI_URL_APPS_SCRIPT_EXEC";
+
+  const params = new URLSearchParams(location.search);
+  const club = params.get("club") || "";
+
+  const el = (tag, className, content) => {
+    const node = document.createElement(tag);
+    if(className) node.className = className;
+    if(content !== undefined) node.textContent = content;
+    return node;
+  };
+
+  function youtubeId(url) {
+    try {
+      const u = new URL(url);
+      const h = u.hostname.toLowerCase();
+      if(h === "youtu.be" || h === "www.youtu.be")
+        return u.pathname.split("/")[1] || "";
+      if(["youtube.com","www.youtube.com","m.youtube.com"].includes(h)) {
+        if(u.pathname === "/watch") return u.searchParams.get("v") || "";
+        if(u.pathname.startsWith("/shorts/") ||
+           u.pathname.startsWith("/embed/"))
+          return u.pathname.split("/")[2] || "";
+      }
+    } catch(e) {}
+    return "";
+  }
+
+  function videoEmbed(url) {
+    const yt = youtubeId(url);
+    if(/^[a-zA-Z0-9_-]{11}$/.test(yt))
+      return "https://www.youtube-nocookie.com/embed/" + yt;
+
+    try {
+      const u = new URL(url);
+      if(!["drive.google.com","www.drive.google.com"].includes(u.hostname))
+        return "";
+
+      let id = "";
+      const match = u.pathname.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if(match) id = match[1];
+      if(!id) id = u.searchParams.get("id") || "";
+      if(/^[a-zA-Z0-9_-]{15,}$/.test(id))
+        return "https://drive.google.com/file/d/" + id + "/preview";
+    } catch(e) {}
+    return "";
+  }
+
+  function tutorialPanel() {
+    let panel = document.getElementById("eah5Tutorials");
+    if(panel) return panel;
+
+    panel = el("section","eah5-tutorials");
+    panel.id = "eah5Tutorials";
+
+    panel.appendChild(el("h2","","EAH Academy · Tutoriels"));
+    panel.appendChild(el(
+      "p","eah5-subtitle",
+      "Techniques, préparation physique et conseils de plongeon."
+    ));
+
+    const grid = el("div","eah5-tutorial-grid");
+    grid.id = "eah5TutorialGrid";
+    grid.appendChild(el("p","eah5-status","Chargement des tutoriels…"));
+    panel.appendChild(grid);
+
+    const app = document.getElementById("eahDiverOnlyApp");
+    const shell = app?.querySelector(".eah-diver-only-shell");
+
+    if(shell) shell.appendChild(panel);
+    else {
+      const main = document.querySelector("main") || document.body;
+      main.appendChild(panel);
+    }
+
+    return panel;
+  }
+
+  function showTutorials() {
+    const panel = tutorialPanel();
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  function installTabs() {
+    const app = document.getElementById("eahDiverOnlyApp");
+    const host = document.getElementById("eahDiverProfileHost");
+    if(!app || !host || document.getElementById("eah5Tabs")) return;
+
+    const tabs = el("nav","eah5-tabs");
+    tabs.id = "eah5Tabs";
+
+    [
+      ["Mon profil",() => host.scrollIntoView({behavior:"smooth"})],
+      ["Notifications",() => document.getElementById("eah5Activity")?.scrollIntoView({behavior:"smooth"})],
+      ["Tutos EAH",showTutorials]
+    ].forEach(([label,action]) => {
+      const button = el("button","",label);
+      button.type = "button";
+      button.addEventListener("click",action);
+      tabs.appendChild(button);
+    });
+
+    host.parentNode.insertBefore(tabs,host);
+  }
+
+  function installProfileLayout() {
+    const app = document.getElementById("eahDiverOnlyApp");
+    const host = document.getElementById("eahDiverProfileHost");
+    if(!app || !host || document.getElementById("eah5Layout")) return;
+
+    // Ne pas modifier les espaces coach.
+    if(params.has("coachToken")) return;
+
+    // On ne déplace que le panneau d'activité existant,
+    // sans reconstruire les notifications ni leurs boutons.
+    const candidates = [...app.querySelectorAll("section,article,div")]
+      .filter(n =>
+        n !== host &&
+        !n.contains(host) &&
+        n.children.length > 0 &&
+        [...n.children].some(c =>
+          /^Mon activité EAH$/i.test((c.textContent || "").trim())
+        )
+      );
+
+    const activity = candidates.find(n =>
+      n.textContent.includes("Notifications") ||
+      n.textContent.includes("Followers")
+    );
+
+    if(!activity) return;
+
+    const layout = el("div","eah5-layout");
+    layout.id = "eah5Layout";
+
+    host.parentNode.insertBefore(layout,host);
+    layout.appendChild(host);
+
+    const side = el("aside","eah5-activity");
+    side.id = "eah5Activity";
+    side.setAttribute("aria-label","Activité et notifications");
+
+    // Conserve les gestionnaires de clic existants.
+    side.appendChild(activity);
+    layout.appendChild(side);
+  }
+
+  function renderTutorials(rows) {
+    const grid = document.getElementById("eah5TutorialGrid");
+    if(!grid) return;
+
+    grid.replaceChildren();
+    const tutorials = Array.isArray(rows) ? rows : [];
+
+    if(!tutorials.length) {
+      grid.appendChild(el("p","eah5-status","Aucun tutoriel publié pour ce club."));
+      return;
+    }
+
+    tutorials.forEach(item => {
+      const embed = videoEmbed(String(item.url || ""));
+      if(!embed) return;
+
+      const card = el("article","eah5-tutorial");
+      const video = el("div","eah5-video");
+      const iframe = document.createElement("iframe");
+      iframe.src = embed;
+      iframe.title = String(item.title || "Tutoriel EAH");
+      iframe.loading = "lazy";
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      video.appendChild(iframe);
+
+      card.appendChild(video);
+      card.appendChild(el("h3","",String(item.title || "Tutoriel")));
+      card.appendChild(el("p","",String(item.description || "")));
+      grid.appendChild(card);
+    });
+
+    if(!grid.children.length)
+      grid.appendChild(el("p","eah5-status","Aucune vidéo compatible trouvée."));
+  }
+
+  function loadTutorials() {
+    if(TUTORIAL_API.startsWith("COLLER_ICI")) {
+      renderTutorials([]);
+      return;
+    }
+
+    // JSONP en lecture seule pour Google Apps Script.
+    const callback = "EAH_TUTOS_CALLBACK";
+    window[callback] = data => {
+      renderTutorials(data?.ok ? data.tutorials : []);
+      delete window[callback];
+    };
+
+    const script = document.createElement("script");
+    const separator = TUTORIAL_API.includes("?") ? "&" : "?";
+    script.src = TUTORIAL_API + separator +
+      "action=tutos&club=" + encodeURIComponent(club) +
+      "&callback=" + callback;
+    script.onerror = () => {
+      const grid = document.getElementById("eah5TutorialGrid");
+      if(grid) grid.textContent = "Impossible de charger les tutoriels.";
+    };
+    document.head.appendChild(script);
+  }
+
+  function addSiteMenu() {
+    if(document.getElementById("eah5SiteTuto")) return;
+    const nav = document.querySelector("header nav");
+    if(!nav) return;
+
+    const button = el("button","eah5-button","🎓 Tutos EAH");
+    button.id = "eah5SiteTuto";
+    button.type = "button";
+    button.addEventListener("click",showTutorials);
+    nav.appendChild(button);
+  }
+
+  let initialized = false;
+
+  function start() {
+    addSiteMenu();
+    installTabs();
+    installProfileLayout();
+
+    if(!initialized) {
+      initialized = true;
+      tutorialPanel();
+      loadTutorials();
+    }
+  }
+
+  if(document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded",start);
+  else start();
+
+  // Le profil est chargé dynamiquement par le site.
+  const observer = new MutationObserver(() => {
+    installTabs();
+    installProfileLayout();
+    addSiteMenu();
+  });
+
+  observer.observe(document.documentElement,{
+    childList:true,
+    subtree:true
+  });
+})();
+</script>
+<!-- FIN EAH PREMIUM V5 -->
+
 </body>
 </html>
