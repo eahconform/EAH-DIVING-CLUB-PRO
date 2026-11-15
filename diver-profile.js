@@ -939,6 +939,147 @@
     `;
 
 
+/* =====================================================
+   EAH DIVING PREMIUM — DESIGN PROFIL NFC V3
+   Compatible avec le profil existant
+   A placer dans installCSS(), avant appendChild(style)
+===================================================== */
+
+style.textContent += `
+
+#eahDiverOnlyApp {
+  background:
+    radial-gradient(
+      ellipse at 45% -10%,
+      #123e63 0%,
+      #061e33 38%,
+      #03131f 85%
+    ) !important;
+  color: #edf7ff;
+}
+
+#eahDiverOnlyApp .eah-diver-only-shell {
+  width: min(1120px, calc(100% - 32px));
+  padding-top: 32px;
+  padding-bottom: 90px;
+}
+
+#eahDiverOnlyApp .eah-diver-brand {
+  font-size: 13px;
+  letter-spacing: .19em;
+  color: #68dcff;
+  margin-bottom: 24px;
+}
+
+#eahDiverOnlyApp #eahDiverProfileHost {
+  padding: clamp(16px, 3vw, 36px);
+  border: 1px solid rgba(98,197,250,.24);
+  border-radius: 28px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(13,46,73,.92),
+      rgba(4,23,40,.96)
+    );
+  box-shadow: 0 24px 80px rgba(0,0,0,.23);
+  overflow: hidden;
+}
+
+#eahDiverOnlyApp #profileView {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  color: #edf7ff;
+}
+
+#eahDiverOnlyApp #profileView h1 {
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.12;
+  letter-spacing: -.03em;
+}
+
+#eahDiverOnlyApp #profileView h2 {
+  font-size: clamp(20px, 2.4vw, 27px);
+  color: #f4f9ff;
+}
+
+#eahDiverOnlyApp #profileView img {
+  max-width: 100%;
+  object-fit: contain;
+}
+
+#eahDiverOnlyApp #profileView button,
+#eahDiverOnlyApp #profileView .button {
+  border-radius: 13px;
+  transition:
+    transform .2s ease,
+    filter .2s ease;
+}
+
+#eahDiverOnlyApp #profileView button:hover,
+#eahDiverOnlyApp #profileView .button:hover {
+  filter: brightness(1.1);
+}
+
+#eahDiverOnlyApp .eah-diver-request-box,
+#eahDiverOnlyApp .eah-diver-public-info {
+  border: 1px solid rgba(98,197,250,.25);
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14,45,68,.95),
+      rgba(4,25,44,.97)
+    );
+  box-shadow: 0 14px 50px rgba(0,0,0,.17);
+}
+
+#eahDiverOnlyApp .eah-diver-main-button {
+  min-height: 58px;
+  background:
+    linear-gradient(
+      110deg,
+      #0b6bff,
+      #189fff
+    );
+  box-shadow:
+    0 10px 26px rgba(11,107,255,.18);
+}
+
+#eahDiverOnlyApp .eah-diver-main-button:hover {
+  transform: translateY(-2px);
+}
+
+#eahDiverOnlyApp .eah-diver-form input,
+#eahDiverOnlyApp .eah-diver-form select,
+#eahDiverOnlyApp .eah-diver-form textarea {
+  background: #102c42;
+  border: 1px solid #345e79;
+  color: #fff;
+}
+
+@media (max-width: 650px) {
+
+  #eahDiverOnlyApp .eah-diver-only-shell {
+    width: calc(100% - 20px);
+    padding-top: 16px;
+  }
+
+  #eahDiverOnlyApp #eahDiverProfileHost {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  #eahDiverOnlyApp .eah-diver-request-box,
+  #eahDiverOnlyApp .eah-diver-public-info {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+}
+
+`;
+
     document.head
       .appendChild(
         style
