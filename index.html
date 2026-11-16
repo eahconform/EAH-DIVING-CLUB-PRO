@@ -8011,6 +8011,63 @@ notice("Messagerie déverrouillée.");
     width: 100%;
   }
 }
+  
+/* EAH DIVING - NAVIGATION PROFIL PREMIUM V10 */
+
+#eahV7 .v7-tabs {
+  position: sticky !important;
+  top: 0;
+  z-index: 50;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 10px 6px !important;
+  margin: 0 0 16px !important;
+  background: #061e33 !important;
+  border-bottom: 1px solid #2b6587;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#eahV7 .v7-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+#eahV7 .v7-tab,
+#eahV7 .eah-profile-chat-button {
+  flex: 0 0 auto !important;
+  min-width: 105px;
+  padding: 12px 10px !important;
+  font-size: 12px !important;
+  border-radius: 10px !important;
+  white-space: nowrap !important;
+}
+
+#eahV7 .v7-tab[aria-selected="true"] {
+  background: #087cff !important;
+  border-color: #59d2ff !important;
+}
+
+#eahV7 .v7-panel[hidden] {
+  display: none !important;
+}
+
+@media(max-width:600px) {
+  #eahV7 .v7-tabs {
+    top: 0;
+    margin-left: -8px !important;
+    margin-right: -8px !important;
+  }
+
+  #eahV7 .v7-tab,
+  #eahV7 .eah-profile-chat-button {
+    min-width: 95px;
+    font-size: 11px !important;
+  }
+}
+
 </style>
 
 <script id="eah-profile-navigation-fix-v2">
