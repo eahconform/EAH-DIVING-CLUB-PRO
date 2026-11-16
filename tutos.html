@@ -441,844 +441,576 @@ input::placeholder{color:#aac2d2}
 
 </main>
 
+
 <script>
-(function(){
-"use strict";
+/* ===============================================
+   EAH ACADEMY - VERSION SIMPLE ET RAPIDE
+   Navigation + Google Sheet + Filtres + Vidéos
+=============================================== */
+(() => {
+  "use strict";
 
-/* =========================================================
-   CONFIGURATION
-========================================================= */
+  const API = "https://script.google.com/macros/s/AKfycbwtKjzfNHGua_XrNP9FjK2pHT3qChm26oGZ0Z2s0sph2eAOghyD0-r0_vOb-m-AjB9oJg/exec";
 
-const CONFIG={
-  API:
-    "https://script.google.com/macros/s/"+
-    "AKfycbwtKjzfNHGua_XrNP9FjK2pHT3qChm26oGZ0Z2s0sph2eAOghyD0-r0_vOb-m-AjB9oJg"+
-    "/exec",
+  const $ = id => document.getElementById(id);
+  const grid = $("grid");
+  const count = $("count");
+  const search = $("search");
+  const category = $("category");
+  const difficulty = $("difficulty");
+  const discipline = $("discipline");
+  const subcategory = $("subcategory");
+  const reset = $("reset");
 
-  ACTION:"tutos",
-  TIMEOUT:20000
-};
+  let tutorials = [];
 
-const els={
-  grid:document.getElementById("grid"),
-  count:document.getElementById("count"),
-  search:document.getElementById("search"),
-  category:document.getElementById("category"),
-  difficulty:document.getElementById("difficulty"),
-  discipline:document.getElementById("discipline"),
-  subcategory:document.getElementById("subcategory"),
-  reset:document.getElementById("reset")
-};
+  /* NAVIGATION PREMIUM */
 
-let tutorials=[];
+  const style = document.createElement("style");
+  style.textContent = `
+    .top {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      flex-wrap:wrap;
+      margin-bottom:36px;
+    }
+    .eah-navigation {
+      display:flex;
+      align-items:center;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+    .eah-navigation a {
+      display:inline-flex;
+      align-items:center;
+      padding:11px 13px;
+      border-radius:11px;
+      color:#e4f3ff;
+      text-decoration:none;
+      font-size:13px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .eah-navigation a:hover {
+      background:#174460;
+    }
+    .eah-navigation .selected {
+      color:#37caff;
+      border:1px solid #2986b5;
+      background:#092e48;
+    }
+    .eah-tutorial-image {
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .eah-tutorial-play {
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
+      background:rgba(0,0,0,.12);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+    }
+    .eah-tutorial-play span {
+      background:#ff0033;
+      color:#fff;
+      padding:12px 22px;
+      border-radius:15px;
+      font-size:26px;
+    }
+    .eah-tutorial-video {
+      width:100%;
+      height:100%;
+      border:0;
+    }
+    .eah-error {
+      padding:35px 20px;
+      text-align:center;
+      color:#b9d0e1;
+      border:1px dashed #34769b;
+      border-radius:18px;
+    }
+    @media(max-width:1100px) {
+      .eah-navigation {
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        width:100%;
+        padding-bottom:8px;
+      }
+      .eah-navigation a {
+        flex-shrink:0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 
-/* =========================================================
-   OUTILS
-========================================================= */
+  const top = document.querySelector(".top");
 
-function text(value){
-  return String(value??"").trim();
-}
+  if (top) {
+    top.innerHTML = "";
 
-function normalize(value){
-  return text(value)
+    const brand = document.createElement("a");
+    brand.href = "./index.html";
+    brand.className = "brand";
+    brand.style.textDecoration = "none";
+    brand.style.color = "white";
+    brand.innerHTML =
+      'EAH <span>DIVING</span> · PRO CLUB';
+
+    const nav = document.createElement("nav");
+    nav.className = "eah-navigation";
+    nav.setAttribute("aria-label", "Navigation principale");
+
+    const links = [
+      ["Accueil", "./index.html"],
+      ["Le grading", "./index.html#grading"],
+      ["Blazons", "./index.html#blazons"],
+      ["Population", "./index.html#population"],
+      ["Spots", "./index.html#spots"],
+      ["Actualités", "./index.html#actualites"],
+      ["Tarifs", "./index.html#tarifs"],
+      ["Boutique", "./index.html#boutique"],
+      ["Disciplines", "./index.html#disciplines"],
+      ["🎓 Tutos EAH", "./tutos.html"],
+      ["Espace Club", "./index.html#club"]
+    ];
+
+    links.forEach(([label, href]) => {
+      const a = document.createElement("a");
+      a.href = href;
+      a.textContent = label;
+
+      if (href === "./tutos.html") {
+        a.className = "selected";
+        a.setAttribute("aria-current", "page");
+      }
+
+      nav.appendChild(a);
+    });
+
+    top.append(brand, nav);
+  }
+
+  /* OUTILS */
+
+  const str = value => String(value ?? "").trim();
+
+  const norm = value => str(value)
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
-}
 
-function first(row,keys){
-  for(const key of keys){
-    if(
-      row[key]!==undefined&&
-      row[key]!==null&&
-      text(row[key])!==""
-    ){
-      return row[key];
-    }
-  }
+  function field(row, ...keys) {
+    const entries = Object.entries(row || {});
 
-  const normalizedKeys=keys.map(normalize);
-
-  for(const [key,value] of Object.entries(row)){
-    if(
-      normalizedKeys.includes(normalize(key))&&
-      value!==null&&
-      text(value)!==""
-    ){
-      return value;
-    }
-  }
-
-  return "";
-}
-
-function parseDifficulty(value){
-  const raw=text(value);
-
-  if(!raw)return null;
-
-  /*
-    Accepte :
-    1
-    "1"
-    "1 étoile"
-    "Niveau 1"
-    "★★★"
-    "3/5"
-  */
-
-  const stars=raw.match(/^[★⭐]{1,5}$/u);
-
-  if(stars){
-    return [...raw].length;
-  }
-
-  const match=raw.match(
-    /(?:^|[^\d])([1-5])(?:\s*\/\s*5|\s*(?:étoiles?|etoiles?)\b|$)/i
-  );
-
-  if(match){
-    return Number(match[1]);
-  }
-
-  const level=raw.match(
-    /(?:niveau|level|difficult[eé])\s*:?\s*([1-5])/i
-  );
-
-  if(level){
-    return Number(level[1]);
-  }
-
-  const number=Number(raw.replace(",","."));
-
-  if(
-    Number.isInteger(number)&&
-    number>=1&&
-    number<=5
-  ){
-    return number;
-  }
-
-  return null;
-}
-
-function parseActive(value){
-  if(
-    value===false||
-    value===0
-  ){
-    return false;
-  }
-
-  const v=normalize(value);
-
-  return ![
-    "false","0","non","no",
-    "inactif","inactive","off"
-  ].includes(v);
-}
-
-/* =========================================================
-   URL VIDÉO
-========================================================= */
-
-function videoData(raw){
-  try{
-    const u=new URL(raw,location.href);
-    const host=u.hostname.toLowerCase();
-
-    let id="";
-
-    if(["youtu.be","www.youtu.be"].includes(host)){
-      id=u.pathname.split("/")[1]||"";
+    for (const key of keys) {
+      const match = entries.find(
+        ([name]) => norm(name) === norm(key)
+      );
+      if (match && str(match[1])) return match[1];
     }
 
-    if([
-      "youtube.com",
-      "www.youtube.com",
-      "m.youtube.com",
-      "music.youtube.com",
-      "youtube-nocookie.com",
-      "www.youtube-nocookie.com"
-    ].includes(host)){
+    return "";
+  }
 
-      if(u.pathname==="/watch"){
-        id=u.searchParams.get("v")||"";
+  function youtubeId(url) {
+    const value = str(url);
+    try {
+      const u = new URL(value);
+      const host = u.hostname.replace(/^www\./, "");
+
+      if (host === "youtu.be") {
+        return u.pathname.split("/")[1] || "";
       }
 
-      if(
-        u.pathname.startsWith("/shorts/")||
-        u.pathname.startsWith("/embed/")||
-        u.pathname.startsWith("/live/")
-      ){
-        id=u.pathname.split("/")[2]||"";
+      if (host === "youtube.com" ||
+          host === "m.youtube.com") {
+        if (u.searchParams.has("v")) {
+          return u.searchParams.get("v");
+        }
+
+        const parts = u.pathname.split("/");
+        if (["shorts", "embed", "live"].includes(parts[1])) {
+          return parts[2] || "";
+        }
       }
+    } catch (_) {}
+
+    return "";
+  }
+
+  function makeTutorial(row, index) {
+    const url = str(field(
+      row, "URL_VIDEO", "url", "video", "videoUrl"
+    ));
+
+    const id = youtubeId(url);
+    const rawDifficulty = str(field(
+      row, "DIFFICULTE", "difficulty", "niveau"
+    ));
+
+    const match = rawDifficulty.match(/[1-5]/);
+    const level = match ? Number(match[0]) : 0;
+
+    const active = norm(field(row, "ACTIVE", "actif"));
+    const access = norm(field(
+      row, "VISIBILITE", "ACCES", "access"
+    ));
+
+    if (
+      ["false", "faux", "non", "0"].includes(active) ||
+      (access && !["public", "publique"].includes(access)) ||
+      !url
+    ) return null;
+
+    return {
+      id: index,
+      title: str(field(row, "TITRE", "title")) || "Tutoriel",
+      description: str(field(row, "DESCRIPTION", "description")),
+      category: str(field(row, "CATEGORIE", "category")),
+      discipline: str(field(row, "DISCIPLINE", "discipline")),
+      subcategory: str(field(
+        row, "SOUS_CATEGORIE", "subcategory"
+      )),
+      level,
+      url,
+      youtube: id,
+      thumbnail: str(field(
+        row, "URL_MINIATURE", "MINIATURE", "thumbnail"
+      )) || (id
+        ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+        : ""),
+      order: Number(field(row, "ORDRE", "order")) || 9999
+    };
+  }
+
+  /* FILTRES */
+
+  function options(select, values, label) {
+    const previous = select.value;
+
+    select.replaceChildren(new Option(label, ""));
+
+    const unique = [...new Set(values.filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "fr"));
+
+    unique.forEach(value => {
+      select.add(new Option(value, value));
+    });
+
+    if (unique.includes(previous)) {
+      select.value = previous;
+    }
+  }
+
+  function setupFilters() {
+    options(
+      category,
+      tutorials.map(t => t.category),
+      "Toutes les catégories"
+    );
+
+    options(
+      discipline,
+      tutorials.map(t => t.discipline),
+      "Toutes les disciplines"
+    );
+
+    updateSubcategories();
+  }
+
+  function updateSubcategories() {
+    const available = tutorials.filter(t =>
+      (!category.value ||
+        norm(t.category) === norm(category.value)) &&
+      (!discipline.value ||
+        norm(t.discipline) === norm(discipline.value))
+    );
+
+    options(
+      subcategory,
+      available.map(t => t.subcategory),
+      "Toutes les sous-catégories"
+    );
+  }
+
+  /* VIDÉOS - CHARGEMENT À LA DEMANDE */
+
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function createCard(item) {
+    const card = element("article", "card");
+
+    const video = element("div", "video");
+    video.style.position = "relative";
+
+    if (item.thumbnail) {
+      const img = element("img", "eah-tutorial-image");
+      img.src = item.thumbnail;
+      img.alt = item.title;
+      img.loading = "lazy";
+      img.decoding = "async";
+      video.appendChild(img);
     }
 
-    if(/^[A-Za-z0-9_-]{11}$/.test(id)){
-      return {
-        type:"youtube",
-        id,
-        embed:
-          "https://www.youtube-nocookie.com/embed/"+
-          id,
-        watch:
-          "https://www.youtube.com/watch?v="+id,
-        thumbnail:
-          "https://i.ytimg.com/vi/"+id+"/hqdefault.jpg"
-      };
-    }
+    const play = element("button", "eah-tutorial-play");
+    play.type = "button";
+    play.setAttribute("aria-label", "Lire " + item.title);
+    play.appendChild(element("span", "", "▶"));
 
-    if(
-      ["https:","http:"].includes(u.protocol)&&
-      /\.(mp4|webm)(\?|$)/i.test(u.href)
-    ){
-      return {
-        type:"video",
-        embed:u.href,
-        watch:u.href,
-        thumbnail:""
-      };
-    }
-
-  }catch(error){}
-
-  return null;
-}
-
-function safeImage(raw){
-  if(!raw)return "";
-
-  try{
-    const u=new URL(raw,location.href);
-
-    if(
-      u.protocol==="https:"||
-      u.protocol==="http:"
-    ){
-      return u.href;
-    }
-  }catch(error){}
-
-  return "";
-}
-
-/* =========================================================
-   NORMALISATION DES DONNÉES GOOGLE SHEETS
-========================================================= */
-
-function normalizeTutorial(row,index){
-  if(!row||typeof row!=="object"){
-    return null;
-  }
-
-  const active=first(row,[
-    "active","ACTIVE","actif","ACTIF"
-  ]);
-
-  if(!parseActive(active)){
-    return null;
-  }
-
-  const url=text(first(row,[
-    "url","URL_VIDEO","url_video",
-    "video","VIDEO","videoUrl",
-    "lien_video","LIEN_VIDEO"
-  ]));
-
-  const video=videoData(url);
-
-  if(!video){
-    return null;
-  }
-
-  const rawDifficulty=first(row,[
-    "difficulty",
-    "DIFFICULTE",
-    "difficulte",
-    "difficulté",
-    "DIFFICULTÉ",
-    "niveau",
-    "NIVEAU",
-    "etoiles",
-    "ETOILES"
-  ]);
-
-  const category=text(first(row,[
-    "category","CATEGORIE",
-    "categorie","catégorie"
-  ]));
-
-  const discipline=text(first(row,[
-    "discipline","DISCIPLINE",
-    "disciplines","DISCIPLINES"
-  ]));
-
-  const subcategory=text(first(row,[
-    "subcategory",
-    "SOUS_CATEGORIE",
-    "sous_categorie",
-    "sousCategorie",
-    "SOUS-CATEGORIE"
-  ]));
-
-  const access=text(first(row,[
-    "access","ACCES",
-    "acces","VISIBILITE",
-    "visibilite",
-    "PUBLIC_CIBLE"
-  ]));
-
-  const thumbnail=safeImage(first(row,[
-    "thumbnail",
-    "MINIATURE",
-    "URL_MINIATURE",
-    "url_miniature",
-    "IMAGE",
-    "URL_IMAGE"
-  ]));
-
-  const order=Number(first(row,[
-    "order","ORDRE","ordre"
-  ]));
-
-  return {
-    id:text(first(row,[
-      "id","ID","TUTO_ID"
-    ]))||"tuto-"+index,
-
-    title:text(first(row,[
-      "title","TITRE","titre"
-    ]))||"Tutoriel EAH",
-
-    description:text(first(row,[
-      "description","DESCRIPTION"
-    ])),
-
-    category,
-    discipline,
-    subcategory,
-    difficulty:parseDifficulty(rawDifficulty),
-    access,
-    thumbnail:thumbnail||video.thumbnail,
-    video,
-
-    order:Number.isFinite(order)&&order>0
-      ?order
-      :999999
-  };
-}
-
-/* =========================================================
-   CONSTRUCTION DES FILTRES
-========================================================= */
-
-function setOptions(select,values,label){
-  const current=select.value;
-
-  select.replaceChildren();
-
-  const all=document.createElement("option");
-  all.value="";
-  all.textContent=label;
-  select.appendChild(all);
-
-  const unique=[
-    ...new Set(
-      values
-        .map(text)
-        .filter(Boolean)
-    )
-  ].sort((a,b)=>
-    a.localeCompare(b,"fr",{
-      sensitivity:"base"
-    })
-  );
-
-  unique.forEach(value=>{
-    const option=document.createElement("option");
-    option.value=value;
-    option.textContent=value;
-    select.appendChild(option);
-  });
-
-  if(unique.includes(current)){
-    select.value=current;
-  }
-}
-
-function setupFilters(){
-  setOptions(
-    els.category,
-    tutorials.map(t=>t.category),
-    "Toutes les catégories"
-  );
-
-  setOptions(
-    els.discipline,
-    tutorials.map(t=>t.discipline),
-    "Toutes les disciplines"
-  );
-
-  updateSubcategories();
-}
-
-function updateSubcategories(){
-  const category=els.category.value;
-  const discipline=els.discipline.value;
-
-  const available=tutorials.filter(t=>
-    (!category||
-      normalize(t.category)===normalize(category))&&
-    (!discipline||
-      normalize(t.discipline)===normalize(discipline))
-  );
-
-  setOptions(
-    els.subcategory,
-    available.map(t=>t.subcategory),
-    "Toutes les sous-catégories"
-  );
-}
-
-/* =========================================================
-   CARTES VIDÉO
-========================================================= */
-
-function node(tag,className,content){
-  const el=document.createElement(tag);
-
-  if(className){
-    el.className=className;
-  }
-
-  if(content!==undefined){
-    el.textContent=content;
-  }
-
-  return el;
-}
-
-function makeChip(value){
-  return node("span","chip",value);
-}
-
-function createVideo(item){
-  const wrapper=node("div","video");
-
-  if(item.thumbnail){
-    const image=node("img","thumb");
-    image.src=item.thumbnail;
-    image.alt="Miniature : "+item.title;
-    image.loading="lazy";
-    image.decoding="async";
-
-    image.onerror=()=>{
-      image.remove();
+    play.onclick = () => {
+      if (item.youtube) {
+        const iframe = document.createElement("iframe");
+        iframe.className = "eah-tutorial-video";
+        iframe.src =
+          `https://www.youtube-nocookie.com/embed/${encodeURIComponent(item.youtube)}?autoplay=1`;
+        iframe.title = item.title;
+        iframe.allow =
+          "autoplay; encrypted-media; picture-in-picture";
+        iframe.allowFullscreen = true;
+        video.replaceChildren(iframe);
+      } else {
+        window.open(item.url, "_blank", "noopener,noreferrer");
+      }
     };
 
-    wrapper.appendChild(image);
-  }else{
-    wrapper.appendChild(
-      node(
-        "div",
-        "video-placeholder",
-        "Vidéo EAH Academy"
-      )
+    video.appendChild(play);
+
+    const details = element("div", "details");
+    const meta = element("div", "meta");
+
+    meta.appendChild(element(
+      "span", "tag", item.category || "EAH Academy"
+    ));
+
+    const stars = element(
+      "span",
+      "stars",
+      item.level
+        ? "★".repeat(item.level) +
+          "☆".repeat(5 - item.level)
+        : "Non renseigné"
     );
-  }
 
-  const play=node("button","play");
-  play.type="button";
-  play.setAttribute(
-    "aria-label",
-    "Lire la vidéo : "+item.title
-  );
+    meta.appendChild(stars);
 
-  play.appendChild(
-    node("span","play-icon","▶")
-  );
+    details.appendChild(meta);
+    details.appendChild(element("h2", "", item.title));
 
-  play.addEventListener("click",()=>{
-    let player;
-
-    if(item.video.type==="youtube"){
-      player=document.createElement("iframe");
-
-      const embed=new URL(item.video.embed);
-      embed.searchParams.set("autoplay","1");
-      embed.searchParams.set("rel","0");
-
-      player.src=embed.href;
-      player.title=item.title;
-      player.allowFullscreen=true;
-      player.referrerPolicy="strict-origin-when-cross-origin";
-      player.allow=
-        "accelerometer; autoplay; encrypted-media; "+
-        "gyroscope; picture-in-picture; web-share";
-    }else{
-      player=document.createElement("video");
-      player.src=item.video.embed;
-      player.controls=true;
-      player.autoplay=true;
-      player.playsInline=true;
+    if (item.description) {
+      details.appendChild(element(
+        "p", "description", item.description
+      ));
     }
 
-    wrapper.replaceChildren(player);
-  });
+    const chips = element("div", "chips");
 
-  wrapper.appendChild(play);
+    if (item.discipline) {
+      chips.appendChild(element(
+        "span", "chip", item.discipline
+      ));
+    }
 
-  return wrapper;
-}
+    if (item.subcategory) {
+      chips.appendChild(element(
+        "span", "chip", item.subcategory
+      ));
+    }
 
-function createCard(item){
-  const card=node("article","card");
-
-  card.appendChild(createVideo(item));
-
-  const details=node("div","details");
-  const meta=node("div","meta");
-
-  meta.appendChild(
-    node(
-      "span",
-      "tag",
-      item.category||"EAH Academy"
-    )
-  );
-
-  const stars=node("span","stars");
-
-  if(item.difficulty!==null){
-    stars.textContent=
-      "★".repeat(item.difficulty)+
-      "☆".repeat(5-item.difficulty);
-
-    stars.setAttribute(
-      "aria-label",
-      "Difficulté "+
-      item.difficulty+
-      " sur 5"
-    );
-  }else{
-    stars.textContent="Non renseigné";
-    stars.classList.add("unknown");
-  }
-
-  meta.appendChild(stars);
-
-  const title=node("h2","",item.title);
-
-  const description=node(
-    "p",
-    "description",
-    item.description
-  );
-
-  details.append(meta,title);
-
-  if(item.description){
-    details.appendChild(description);
-  }
-
-  const chips=node("div","chips");
-
-  if(item.discipline){
-    chips.appendChild(
-      makeChip("🏊 "+item.discipline)
-    );
-  }
-
-  if(item.subcategory){
-    chips.appendChild(
-      makeChip("📚 "+item.subcategory)
-    );
-  }
-
-  if(item.access){
-    chips.appendChild(
-      makeChip("🔒 "+item.access)
-    );
-  }
-
-  if(chips.childElementCount){
     details.appendChild(chips);
+
+    const footer = element("div", "card-footer");
+    const link = element("a", "watch", "Voir la vidéo");
+
+    link.href = item.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    footer.appendChild(link);
+    footer.appendChild(element(
+      "span", "status",
+      item.level ? `Niveau ${item.level}/5` : "Niveau à définir"
+    ));
+
+    details.appendChild(footer);
+    card.append(video, details);
+
+    return card;
   }
 
-  const footer=node("div","card-footer");
+  function render() {
+    const q = norm(search.value);
 
-  const link=node(
-    "a",
-    "watch",
-    "Voir la vidéo"
-  );
+    const filtered = tutorials.filter(t => {
+      if (category.value &&
+          norm(t.category) !== norm(category.value)) return false;
 
-  link.href=item.video.watch;
-  link.target="_blank";
-  link.rel="noopener noreferrer";
+      if (discipline.value &&
+          norm(t.discipline) !== norm(discipline.value)) return false;
 
-  footer.append(
-    link,
-    node(
-      "span",
-      "status",
-      item.difficulty
-        ?"Niveau "+item.difficulty+"/5"
-        :"Niveau à définir"
-    )
-  );
+      if (subcategory.value &&
+          norm(t.subcategory) !== norm(subcategory.value)) return false;
 
-  details.appendChild(footer);
-  card.appendChild(details);
+      if (Number(difficulty.value) &&
+          t.level !== Number(difficulty.value)) return false;
 
-  return card;
-}
+      if (q && !norm([
+        t.title, t.description, t.category,
+        t.discipline, t.subcategory
+      ].join(" ")).includes(q)) return false;
 
-/* =========================================================
-   FILTRAGE COMBINÉ
-========================================================= */
+      return true;
+    });
 
-function matches(item){
-  const query=normalize(els.search.value);
-  const category=normalize(els.category.value);
-  const discipline=normalize(els.discipline.value);
-  const subcategory=normalize(els.subcategory.value);
-  const difficulty=Number(els.difficulty.value);
+    count.textContent =
+      `${filtered.length} tutoriel(s) affiché(s) sur ${tutorials.length}`;
 
-  if(
-    category&&
-    normalize(item.category)!==category
-  ){
-    return false;
-  }
+    grid.replaceChildren();
 
-  if(
-    discipline&&
-    normalize(item.discipline)!==discipline
-  ){
-    return false;
-  }
-
-  if(
-    subcategory&&
-    normalize(item.subcategory)!==subcategory
-  ){
-    return false;
-  }
-
-  if(
-    difficulty!==0&&
-    item.difficulty!==difficulty
-  ){
-    return false;
-  }
-
-  if(query){
-    const haystack=normalize([
-      item.title,
-      item.description,
-      item.category,
-      item.discipline,
-      item.subcategory
-    ].join(" "));
-
-    if(!haystack.includes(query)){
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function render(){
-  const filtered=tutorials.filter(matches);
-
-  els.grid.replaceChildren();
-
-  els.count.textContent=
-    filtered.length+
-    " tutoriel(s) affiché(s) sur "+
-    tutorials.length;
-
-  if(!filtered.length){
-    const empty=node("div","empty");
-
-    empty.append(
-      node("h2","","Aucun tutoriel trouvé"),
-      node(
-        "p",
-        "",
-        "Essaie une autre catégorie, discipline ou difficulté."
-      )
-    );
-
-    els.grid.appendChild(empty);
-    return;
-  }
-
-  const fragment=document.createDocumentFragment();
-
-  filtered.forEach(item=>{
-    fragment.appendChild(createCard(item));
-  });
-
-  els.grid.appendChild(fragment);
-}
-
-/* =========================================================
-   ÉVÉNEMENTS
-========================================================= */
-
-els.search.addEventListener("input",render);
-
-els.category.addEventListener("change",()=>{
-  updateSubcategories();
-  render();
-});
-
-els.discipline.addEventListener("change",()=>{
-  updateSubcategories();
-  render();
-});
-
-els.subcategory.addEventListener("change",render);
-els.difficulty.addEventListener("change",render);
-
-els.reset.addEventListener("click",()=>{
-  els.search.value="";
-  els.category.value="";
-  els.difficulty.value="0";
-  els.discipline.value="";
-
-  updateSubcategories();
-
-  els.subcategory.value="";
-  render();
-});
-
-/* =========================================================
-   CHARGEMENT APPS SCRIPT JSONP
-========================================================= */
-
-function showError(message){
-  els.count.textContent="Chargement impossible";
-
-  els.grid.replaceChildren();
-
-  const box=node("div","empty");
-
-  box.append(
-    node("h2","","Connexion impossible"),
-    node("p","",message)
-  );
-
-  els.grid.appendChild(box);
-}
-
-function loadTutorials(){
-  const callback=
-    "EAH_TUTOS_CALLBACK_"+Date.now();
-
-  const script=document.createElement("script");
-
-  let completed=false;
-
-  const timeout=setTimeout(()=>{
-    finish();
-
-    showError(
-      "Le serveur Apps Script ne répond pas. "+
-      "Vérifie le déploiement et l'action tutos."
-    );
-  },CONFIG.TIMEOUT);
-
-  function finish(){
-    if(completed)return false;
-
-    completed=true;
-    clearTimeout(timeout);
-    script.remove();
-
-    /*
-      On conserve temporairement une fonction vide :
-      une réponse JSONP tardive ne provoquera
-      pas d'erreur JavaScript.
-    */
-    window[callback]=function(){};
-
-    return true;
-  }
-
-  window[callback]=function(result){
-    if(!finish())return;
-
-    if(!result||result.ok!==true){
-      showError(
-        "La réponse Apps Script ne contient "+
-        "pas de liste de tutoriels valide."
-      );
+    if (!filtered.length) {
+      grid.appendChild(element(
+        "div", "eah-error",
+        "Aucun tutoriel ne correspond aux filtres."
+      ));
       return;
     }
 
-    const rows=Array.isArray(result.tutorials)
-      ?result.tutorials
-      :Array.isArray(result.data)
-        ?result.data
-        :[];
+    const fragment = document.createDocumentFragment();
 
-    tutorials=rows
-      .map(normalizeTutorial)
-      .filter(Boolean)
-      .sort((a,b)=>
-        a.order-b.order||
-        a.title.localeCompare(b.title,"fr")
-      );
+    filtered.forEach(item => {
+      fragment.appendChild(createCard(item));
+    });
 
-    setupFilters();
+    grid.appendChild(fragment);
+  }
+
+  search.addEventListener("input", render);
+
+  category.addEventListener("change", () => {
+    updateSubcategories();
     render();
-  };
+  });
 
-  script.onerror=()=>{
-    if(!finish())return;
+  discipline.addEventListener("change", () => {
+    updateSubcategories();
+    render();
+  });
 
-    showError(
-      "Impossible de contacter Apps Script. "+
-      "Vérifie l'URL et les autorisations du déploiement."
-    );
-  };
+  subcategory.addEventListener("change", render);
+  difficulty.addEventListener("change", render);
 
-  const url=new URL(CONFIG.API);
+  reset.addEventListener("click", () => {
+    search.value = "";
+    category.value = "";
+    discipline.value = "";
+    difficulty.value = "0";
+    updateSubcategories();
+    subcategory.value = "";
+    render();
+  });
 
-  url.searchParams.set(
-    "action",
-    CONFIG.ACTION
-  );
+  /* CONNEXION APPS SCRIPT EXISTANT */
 
-  url.searchParams.set(
-    "callback",
-    callback
-  );
+  function load() {
+    count.textContent = "Chargement des tutoriels…";
 
-  url.searchParams.set(
-    "_",
-    String(Date.now())
-  );
+    const callback =
+      "EAH_ACADEMY_" + Date.now();
 
-  script.src=url.href;
+    const script = document.createElement("script");
+    let finished = false;
 
-  document.head.appendChild(script);
-}
+    const timeout = setTimeout(() => {
+      fail("Apps Script ne répond pas. Vérifie le déploiement et la fonction doGet.");
+    }, 15000);
 
-/* =========================================================
-   DÉMARRAGE
-========================================================= */
+    function cleanup() {
+      if (finished) return false;
+      finished = true;
+      clearTimeout(timeout);
+      script.remove();
+      window[callback] = () => {};
+      return true;
+    }
 
-loadTutorials();
+    function fail(message) {
+      if (!cleanup()) return;
+      count.textContent = "Connexion impossible";
+      grid.replaceChildren(element(
+        "div", "eah-error", message
+      ));
+    }
 
+    window[callback] = response => {
+      if (!cleanup()) return;
+
+      if (response?.ok === false) {
+        count.textContent = "Erreur Apps Script";
+        grid.replaceChildren(element(
+          "div", "eah-error",
+          response.error || "Erreur du serveur."
+        ));
+        return;
+      }
+
+      const rows = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.tutorials)
+          ? response.tutorials
+          : Array.isArray(response?.data)
+            ? response.data
+            : null;
+
+      if (!rows) {
+        count.textContent = "Format de réponse incorrect";
+        grid.replaceChildren(element(
+          "div", "eah-error",
+          "Apps Script ne renvoie pas de tableau tutorials ou data."
+        ));
+        return;
+      }
+
+      tutorials = rows
+        .map(makeTutorial)
+        .filter(Boolean)
+        .sort((a, b) => a.order - b.order);
+
+      setupFilters();
+      render();
+    };
+
+    script.onerror = () => {
+      fail("Impossible de charger la réponse Apps Script.");
+    };
+
+    const url = new URL(API);
+    url.searchParams.set("action", "tutos");
+    url.searchParams.set("callback", callback);
+    url.searchParams.set("_", Date.now().toString());
+
+    script.src = url.toString();
+    document.head.appendChild(script);
+  }
+
+  load();
 })();
 </script>
+
+
+
+  
 
 </body>
 </html>
