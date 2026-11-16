@@ -6355,6 +6355,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return node;
   };
 
+function showTutorials() {
+  window.location.href = "./tutos.html";
+}
+
 
   function installTabs() {
     const app = document.getElementById("eahDiverOnlyApp");
@@ -6420,30 +6424,32 @@ document.addEventListener('DOMContentLoaded', () => {
     layout.appendChild(side);
   }
 
-  function addSiteMenu() {
-    if(document.getElementById("eah5SiteTuto")) return;
-    const nav = document.querySelector("header nav");
-    if(!nav) return;
+  
+function addSiteMenu() {
+  if (document.getElementById("eah5SiteTuto")) return;
 
-    const button = el("button","eah5-button","🎓 Tutos EAH");
-    button.id = "eah5SiteTuto";
-    button.type = "button";
-    button.addEventListener("click",showTutorials);
-    nav.appendChild(button);
-  }
+  const nav = document.querySelector("header nav");
+  if (!nav) return;
+
+  const link = document.createElement("a");
+
+  link.id = "eah5SiteTuto";
+  link.className = "eah5-button";
+  link.href = "./tutos.html";
+  link.textContent = "🎓 Tutos EAH";
+
+  nav.appendChild(link);
+}
 
 
-  function start() {
-    addSiteMenu();
-    installTabs();
-    installProfileLayout();
 
-    if(!initialized) {
-      initialized = true;
-      tutorialPanel();
-      loadTutorials();
-    }
-  }
+
+function start() {
+  addSiteMenu();
+  installTabs();
+  installProfileLayout();
+}
+
 
   if(document.readyState === "loading")
     document.addEventListener("DOMContentLoaded",start);
