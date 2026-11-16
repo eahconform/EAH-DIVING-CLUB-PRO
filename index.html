@@ -298,6 +298,41 @@ window.EAH_CONFIG = {
 ></script>
 
 
+<style>
+/* EAH ACADEMY - MENU PREMIUM */
+
+.nav-tutos-premium{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  color:#45d2ff !important;
+  font-weight:800;
+  text-decoration:none;
+  white-space:nowrap;
+  padding:10px 14px;
+  border:1px solid rgba(69,210,255,.35);
+  border-radius:12px;
+  background:rgba(69,210,255,.08);
+  transition:all .2s ease;
+}
+
+.nav-tutos-premium:hover{
+  color:#fff !important;
+  background:#087fc0;
+  border-color:#45d2ff;
+  box-shadow:0 4px 18px rgba(0,180,255,.2);
+}
+
+@media(max-width:768px){
+  .nav-tutos-premium{
+    width:100%;
+    justify-content:flex-start;
+    margin:5px 0;
+  }
+}
+</style>
+
 </head>
 
 
@@ -389,10 +424,23 @@ Actualités
 Tarifs
 </a>
 
+
 <!-- EAH DIVING : BOUTIQUE -->
 <a href="#boutique" data-page="boutique">
-Boutique
+  Boutique
 </a>
+
+<!-- EAH ACADEMY PREMIUM -->
+<a
+  href="./tutos.html"
+  id="eah5SiteTuto"
+  class="nav-tutos-premium"
+>
+  🎓 Tutos EAH
+</a>
+
+<div class="nav-dropdown">
+
 
 
 <div class="nav-dropdown">
