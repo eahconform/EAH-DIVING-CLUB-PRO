@@ -6637,6 +6637,43 @@ function createProfileV7(){
     )
   );
 
+/* EAH DIVING - SOUMETTRE UN PLONGEON DEPUIS GRADINGS */
+
+if (owner && panels.gradings) {
+  const submitButton = document.createElement("button");
+
+  submitButton.type = "button";
+  submitButton.className = "eah-diver-main-button";
+  submitButton.textContent = "🏅 Soumettre un plongeon au grading";
+
+  submitButton.style.cssText = `
+    display:block;
+    width:100%;
+    max-width:420px;
+    margin:18px 0;
+    padding:15px;
+    border:1px solid #35bfff;
+    border-radius:13px;
+    background:#087cff;
+    color:white;
+    font-weight:800;
+    cursor:pointer;
+  `;
+
+  submitButton.addEventListener("click", function () {
+    const existingButton =
+      document.getElementById("openDiverGradingRequest");
+
+    if (existingButton) {
+      existingButton.click();
+    } else {
+      alert("Le formulaire de grading n'est pas disponible.");
+    }
+  });
+
+  panels.gradings.appendChild(submitButton);
+}
+
   /*
     NOTIFICATIONS
     Le système existant reste conservé.
@@ -7934,6 +7971,203 @@ notice("Messagerie déverrouillée.");
 </script>
 
 <!-- FIN CORRECTIF MENU MOBILE V1 -->
+
+<!-- ==================================================
+ EAH DIVING - CORRECTIF NAVIGATION PROFIL NFC MOBILE V2
+================================================== -->
+
+<style>
+#eahDiverOnlyApp.eah-profile-closed {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#eahProfileExitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1120px;
+  min-height: 48px;
+  margin: 0 auto 16px;
+  padding: 12px 18px;
+  border: 1px solid #40bfff;
+  border-radius: 13px;
+  background: #103b5b;
+  color: white;
+  font: 700 15px Arial, sans-serif;
+  cursor: pointer;
+}
+
+#eahProfileExitButton:hover {
+  background: #086bba;
+}
+
+@media(max-width:768px) {
+  #eahProfileExitButton {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+  }
+}
+</style>
+
+<script id="eah-profile-navigation-fix-v2">
+(function () {
+  "use strict";
+
+  if (window.__EAH_PROFILE_NAV_FIX_V2__) return;
+  window.__EAH_PROFILE_NAV_FIX_V2__ = true;
+
+  let profileClosed = false;
+
+  function profile() {
+    return document.getElementById("eahDiverOnlyApp");
+  }
+
+  function closeProfile() {
+    profileClosed = true;
+
+    const app = profile();
+    if (app) {
+      app.classList.add("eah-profile-closed");
+      app.setAttribute("aria-hidden", "true");
+    }
+
+    const navigation =
+      document.getElementById("navigation");
+
+    navigation?.classList.remove("open");
+
+    const menu = document.getElementById("mobileMenu");
+    menu?.setAttribute("aria-expanded", "false");
+
+    // Ferme également la messagerie si elle est ouverte.
+    const chat = document.getElementById("eahMsgOverlay");
+    if (chat && !chat.hidden) {
+      document.getElementById("eahMsgClose")?.click();
+    }
+
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+  }
+
+  function showProfile() {
+    profileClosed = false;
+
+    const app = profile();
+    if (app) {
+      app.classList.remove("eah-profile-closed");
+      app.removeAttribute("aria-hidden");
+    }
+  }
+
+  function exploreSite() {
+    closeProfile();
+
+    // Réutilise la navigation existante du site.
+    const homeLink = document.querySelector(
+      '[data-page="accueil"]'
+    );
+
+    if (homeLink) {
+      homeLink.click();
+    } else {
+      location.hash = "accueil";
+    }
+
+    window.scrollTo(0, 0);
+  }
+
+  function installExitButton() {
+    const app = profile();
+    if (!app) return;
+
+    if (profileClosed) {
+      app.classList.add("eah-profile-closed");
+    }
+
+    const shell = app.querySelector(
+      ".eah-diver-only-shell"
+    );
+
+    if (!shell) return;
+
+    if (shell.querySelector("#eahProfileExitButton")) {
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "eahProfileExitButton";
+    button.type = "button";
+    button.textContent = "🌐 Explorer le site EAH Diving";
+
+    button.addEventListener("click", exploreSite);
+
+    shell.prepend(button);
+  }
+
+  // Quand l'utilisateur choisit une rubrique,
+  // le profil ne doit plus recouvrir la page.
+  document.addEventListener("click", function (event) {
+    const link = event.target.closest("[data-page]");
+    if (!link) return;
+
+    const destination = link.dataset.page;
+
+    if (destination === "profil") {
+      showProfile();
+    } else {
+      closeProfile();
+    }
+  }, true);
+
+  // Retour vers le profil via navigation.
+  window.addEventListener("hashchange", function () {
+    if (location.hash === "#profil") {
+      showProfile();
+    } else if (location.hash) {
+      closeProfile();
+    }
+  });
+
+  // Les profils sont générés dynamiquement.
+  let pending = false;
+
+  const observer = new MutationObserver(function () {
+    if (pending) return;
+    pending = true;
+
+    requestAnimationFrame(function () {
+      pending = false;
+      installExitButton();
+    });
+  });
+
+  function init() {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    installExitButton();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  window.EAH_PROFILE_NAV = {
+    close: closeProfile,
+    open: showProfile,
+    explore: exploreSite
+  };
+})();
+</script>
+<!-- FIN CORRECTIF NAVIGATION PROFIL NFC -->
 
 
 </body>
