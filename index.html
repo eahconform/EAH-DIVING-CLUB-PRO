@@ -6961,366 +6961,732 @@ observer.observe(
   </section>
 </div>
 
-<script id="eah-chat-v1-js">
-(function () {
+
+<!-- =====================================================
+ EAH DIVING - MESSAGERIE PREMIUM NFC + PIN V2
+ À placer juste avant </body> dans index.html
+===================================================== -->
+
+<style>
+#eahMsgOpen{
+  position:fixed;
+  right:18px;
+  bottom:20px;
+  z-index:2147483001;
+  padding:15px 20px;
+  border:1px solid #46caff;
+  border-radius:50px;
+  background:linear-gradient(135deg,#087cff,#083e7b);
+  color:white;
+  font:700 14px Arial,sans-serif;
+  box-shadow:0 10px 35px #0009;
+  cursor:pointer;
+}
+#eahMsgOpen[hidden],
+#eahMsgOverlay[hidden]{display:none!important}
+
+#eahMsgOverlay{
+  position:fixed;
+  inset:0;
+  z-index:2147483002;
+  display:grid;
+  place-items:center;
+  padding:12px;
+  background:#000c;
+}
+#eahMsgApp{
+  width:min(950px,100%);
+  height:min(760px,95dvh);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid #2877a8;
+  border-radius:20px;
+  background:#061827;
+  color:#f3f9ff;
+  font-family:Arial,sans-serif;
+  box-shadow:0 25px 100px #000c;
+}
+#eahMsgApp *{box-sizing:border-box}
+.eah-msg-head{
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border-bottom:1px solid #285371;
+  background:#0b2940;
+}
+.eah-msg-head strong{font-size:19px}
+.eah-msg-head button,
+.eah-msg-btn{
+  border:1px solid #3677a0;
+  border-radius:10px;
+  background:#174563;
+  color:white;
+  padding:11px 14px;
+  cursor:pointer;
+}
+.eah-msg-layout{
+  display:grid;
+  grid-template-columns:240px minmax(0,1fr);
+  flex:1;
+  min-height:0;
+}
+#eahMsgSidebar{
+  overflow-y:auto;
+  padding:14px;
+  border-right:1px solid #285371;
+}
+.eah-msg-contact{
+  display:block;
+  width:100%;
+  text-align:left;
+  padding:14px;
+  margin-bottom:10px;
+  border:1px solid #2b6286;
+  border-radius:12px;
+  background:#10344d;
+  color:white;
+  cursor:pointer;
+}
+.eah-msg-contact.active{
+  border-color:#38c6ff;
+  background:#145c88;
+}
+.eah-msg-contact small{
+  display:block;
+  margin-top:5px;
+  color:#b7d7e9;
+}
+.eah-msg-main{
+  min-width:0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+#eahMsgTitle{
+  padding:15px;
+  font-weight:bold;
+  border-bottom:1px solid #285371;
+}
+#eahMsgMessages{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.eah-msg-bubble{
+  max-width:85%;
+  align-self:flex-start;
+  padding:12px 15px;
+  border:1px solid #275d80;
+  border-radius:15px;
+  background:#123a55;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  line-height:1.5;
+}
+.eah-msg-bubble.mine{
+  align-self:flex-end;
+  background:#0868b7;
+  border-color:#168eff;
+}
+.eah-msg-bubble small{
+  display:block;
+  margin-top:8px;
+  opacity:.75;
+  font-size:11px;
+}
+#eahMsgForm{
+  display:flex;
+  gap:9px;
+  padding:12px;
+  border-top:1px solid #285371;
+}
+#eahMsgInput,
+#eahMsgPin{
+  min-width:0;
+  border:1px solid #3677a0;
+  border-radius:10px;
+  padding:12px;
+  background:#0e3048;
+  color:white;
+  font:inherit;
+}
+#eahMsgInput{flex:1}
+#eahMsgSend{
+  background:#087cff;
+  font-weight:bold;
+}
+#eahMsgStatus{
+  min-height:29px;
+  padding:8px 14px;
+  color:#add8ef;
+  font-size:12px;
+}
+#eahMsgLogin{
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+#eahMsgLogin[hidden],
+#eahMsgLayout[hidden]{display:none!important}
+@media(max-width:600px){
+  .eah-msg-layout{
+    grid-template-columns:115px minmax(0,1fr);
+  }
+  #eahMsgSidebar{padding:6px}
+  .eah-msg-contact{padding:10px 6px;font-size:12px}
+  .eah-msg-bubble{max-width:95%}
+  #eahMsgForm{padding:7px;gap:5px}
+  #eahMsgInput{padding:9px}
+  #eahMsgSend{padding:9px}
+}
+</style>
+
+<button id="eahMsgOpen" type="button" hidden>
+  💬 Messagerie
+</button>
+
+<div id="eahMsgOverlay" hidden>
+  <section id="eahMsgApp" role="dialog"
+    aria-modal="true" aria-label="Messagerie EAH Diving">
+
+    <div class="eah-msg-head">
+      <strong>💬 EAH DIVING · MESSAGERIE</strong>
+      <button id="eahMsgClose" type="button">
+        ✕ Fermer
+      </button>
+    </div>
+
+    <div id="eahMsgLogin" hidden>
+      <strong>🔐 Connexion privée</strong>
+      <p>
+        Saisis ton code PIN pour accéder
+        à tes messages personnels.
+      </p>
+      <input id="eahMsgPin" type="password"
+        inputmode="numeric" autocomplete="off"
+        placeholder="Code PIN">
+      <button id="eahMsgUnlock"
+        class="eah-msg-btn" type="button">
+        Déverrouiller
+      </button>
+    </div>
+
+    <div id="eahMsgLayout" class="eah-msg-layout" hidden>
+      <aside id="eahMsgSidebar"></aside>
+
+      <div class="eah-msg-main">
+        <div id="eahMsgTitle">
+          Sélectionne une conversation
+        </div>
+        <div id="eahMsgMessages"></div>
+
+        <form id="eahMsgForm">
+          <input id="eahMsgInput"
+            type="text"
+            maxlength="3000"
+            placeholder="Ton message..."
+            autocomplete="off" required>
+          <button id="eahMsgSend"
+            class="eah-msg-btn" type="submit">
+            Envoyer
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div id="eahMsgStatus" aria-live="polite"></div>
+  </section>
+</div>
+
+<script id="eah-messagerie-premium-v2">
+(() => {
   "use strict";
 
-  if (window.__EAH_CHAT_V1__) return;
-  window.__EAH_CHAT_V1__ = true;
+  if(window.__EAH_MESSAGERIE_V2__) return;
+  window.__EAH_MESSAGERIE_V2__ = true;
 
   const $ = id => document.getElementById(id);
 
-  const openButton = $("eahChatOpen");
-  const modal = $("eahChatModal");
-  const closeButton = $("eahChatClose");
-  const contactsBox = $("eahChatContacts");
-  const messagesBox = $("eahChatMessages");
-  const title = $("eahChatTitle");
-  const form = $("eahChatForm");
-  const input = $("eahChatInput");
-  const sendButton = $("eahChatSend");
-  const status = $("eahChatStatus");
+  const openBtn = $("eahMsgOpen");
+  const overlay = $("eahMsgOverlay");
+  const closeBtn = $("eahMsgClose");
+  const login = $("eahMsgLogin");
+  const layout = $("eahMsgLayout");
+  const pinInput = $("eahMsgPin");
+  const unlock = $("eahMsgUnlock");
+  const sidebar = $("eahMsgSidebar");
+  const title = $("eahMsgTitle");
+  const messages = $("eahMsgMessages");
+  const form = $("eahMsgForm");
+  const input = $("eahMsgInput");
+  const send = $("eahMsgSend");
+  const status = $("eahMsgStatus");
 
-  let client = null;
-  let currentUser = null;
-  let conversationId = null;
-  let selectedContact = null;
-  let contacts = [];
-  let polling = null;
-  let loadingMessages = false;
+  const params = new URLSearchParams(location.search);
 
-  function message(text) {
+  let db = null;
+  let mode = "";
+  let pin = "";
+  let eahId = "";
+  let current = null;
+  let timer = null;
+  let busy = false;
+
+  function notice(text){
     status.textContent = text || "";
   }
 
-  function getClient() {
-    if (client) return client;
-
-    if (!window.supabase?.createClient) {
-      throw new Error("Bibliothèque Supabase indisponible");
-    }
+  function client(){
+    if(db) return db;
 
     const config = window.EAH_CONFIG || {};
 
-    if (!config.SUPABASE_URL ||
-        !config.SUPABASE_PUBLISHABLE_KEY) {
-      throw new Error("Configuration Supabase manquante");
+    if(!window.supabase?.createClient){
+      throw new Error("Bibliothèque Supabase absente");
     }
 
-    client = window.supabase.createClient(
+    if(!config.SUPABASE_URL ||
+       !config.SUPABASE_PUBLISHABLE_KEY){
+      throw new Error("Configuration EAH_CONFIG manquante");
+    }
+
+    db = window.supabase.createClient(
       config.SUPABASE_URL,
       config.SUPABASE_PUBLISHABLE_KEY,
       {
-        auth: {
+        auth:{
           persistSession:true,
           autoRefreshToken:true
         }
       }
     );
 
-    return client;
+    return db;
   }
 
-  async function authenticatedUser() {
-    const db = getClient();
+  async function rpc(action,extra={}){
+    const args = {
+      p_action:action,
+      p_eah_id:mode==="DIVER" ? eahId : null,
+      p_pin:mode==="DIVER" ? pin : null,
+      p_diver_id:extra.diverId || null,
+      p_destination:extra.destination || "CLUB",
+      p_body:extra.body || null
+    };
 
-    const {data,error} = await db.auth.getUser();
+    const {data,error} = await client().rpc(
+      "eah_chat_v2",args
+    );
 
-    if (error || !data?.user) {
+    if(error) throw error;
+
+    if(!data?.ok){
       throw new Error(
-        "Connecte-toi avec ton compte Supabase."
+        data?.error || "Opération refusée"
       );
     }
 
-    return data.user;
+    return data;
   }
 
-  async function loadContacts() {
-    const db = getClient();
+  function getEahId(){
+    const fromUrl =
+      params.get("id") ||
+      params.get("eah_id") ||
+      params.get("eahId") ||
+      "";
 
-    const {data,error} = await db.rpc(
-      "eah_chat_contacts"
+    if(fromUrl.trim()) return fromUrl.trim();
+
+    try{
+      if(typeof state!=="undefined"){
+        return String(
+          state.profile?.eahId ||
+          state.profile?.eah_id ||
+          ""
+        ).trim();
+      }
+    }catch(_){}
+
+    return "";
+  }
+
+  function isProfile(){
+    return Boolean(
+      getEahId() ||
+      document.getElementById("eahDiverOnlyApp")
+    );
+  }
+
+  async function isStaff(){
+    const {data,error} =
+      await client().auth.getUser();
+
+    if(error || !data?.user) return false;
+
+    const user = data.user;
+
+    if(user.app_metadata?.eah_role === "EAH_ADMIN"){
+      return true;
+    }
+
+    const result = await client()
+      .from("club_members")
+      .select("id")
+      .eq("user_id",user.id)
+      .eq("active",true)
+      .in("role",["ADMIN","COACH","RESPONSABLE"])
+      .limit(1);
+
+    return !result.error && !!result.data?.length;
+  }
+
+  function clearMessages(){
+    messages.replaceChildren();
+  }
+
+  function contact(label,description,onClick){
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "eah-msg-contact";
+
+    const strong = document.createElement("strong");
+    strong.textContent = label;
+
+    const small = document.createElement("small");
+    small.textContent = description;
+
+    button.append(strong,small);
+    button.onclick = () => {
+      sidebar.querySelectorAll(".eah-msg-contact")
+        .forEach(x => x.classList.remove("active"));
+
+      button.classList.add("active");
+      onClick();
+    };
+
+    sidebar.appendChild(button);
+    return button;
+  }
+
+  async function showDiverContacts(){
+    sidebar.replaceChildren();
+
+    contact(
+      "🏢 Mon club",
+      "Coach et responsables",
+      () => choose({
+        diverId:null,
+        destination:"CLUB",
+        label:"Mon club"
+      })
     );
 
-    if (error) throw error;
+    contact(
+      "🌐 EAH Diving",
+      "Administration EAH",
+      () => choose({
+        diverId:null,
+        destination:"EAH",
+        label:"EAH Diving"
+      })
+    );
+  }
 
-    contacts = data || [];
-    contactsBox.replaceChildren();
+  async function showStaffContacts(){
+    sidebar.replaceChildren();
 
-    if (!contacts.length) {
-      contactsBox.textContent =
-        "Aucun coach ou administrateur disponible.";
+    const result = await rpc("INBOX");
+
+    const items = result.items || [];
+
+    if(!items.length){
+      sidebar.textContent =
+        "Aucune conversation pour le moment.";
       return;
     }
 
-    contacts.forEach(contact => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "eah-chat-contact";
-
-      const name = document.createElement("strong");
-      name.textContent =
-        contact.display_name || "Membre EAH";
-
-      const role = document.createElement("small");
-      role.textContent = contact.role || "";
-
-      button.append(name,role);
-
-      button.addEventListener("click", () => {
-        selectContact(contact).catch(error => {
-          message(error.message);
-        });
-      });
-
-      contactsBox.appendChild(button);
-    });
-  }
-
-  async function selectContact(contact) {
-    message("Ouverture de la conversation...");
-
-    selectedContact = contact;
-    conversationId = null;
-
-    const db = getClient();
-
-    const {data,error} = await db.rpc(
-      "eah_chat_start",
-      {p_recipient:contact.user_id}
-    );
-
-    if (error) throw error;
-
-    conversationId = data;
-
-    title.textContent =
-      contact.display_name || "Conversation";
-
-    [...contactsBox.children].forEach((button,i) => {
-      button.classList.toggle(
-        "active",
-        contacts[i]?.user_id === contact.user_id
+    items.forEach(item => {
+      contact(
+        item.diver_name || item.eah_id,
+        item.destination === "EAH"
+          ? "EAH · " + item.club_name
+          : "Club · " + item.club_name,
+        () => choose({
+          diverId:item.diver_id,
+          destination:item.destination,
+          label:item.diver_name || item.eah_id
+        })
       );
     });
-
-    messagesBox.replaceChildren();
-
-    await loadMessages();
-    message("");
   }
 
-  async function loadMessages() {
-    if (!conversationId || loadingMessages) return;
+  async function choose(value){
+    current = value;
+    title.textContent = value.label;
+    clearMessages();
+    await loadMessages();
+  }
 
-    loadingMessages = true;
+  async function loadMessages(){
+    if(!current || busy) return;
 
-    try {
-      const db = getClient();
+    busy = true;
 
-      const {data,error} = await db
-        .from("eah_private_messages")
-        .select("id,sender_id,body,created_at")
-        .eq("conversation_id",conversationId)
-        .is("deleted_at",null)
-        .order("created_at",{ascending:false})
-        .limit(100);
+    try{
+      const result = await rpc("LIST",{
+        diverId:current.diverId,
+        destination:current.destination
+      });
 
-      if (error) throw error;
+      clearMessages();
 
-      const rows = (data || []).reverse();
+      const items = result.items || [];
 
-      messagesBox.replaceChildren();
+      if(!items.length){
+        const empty = document.createElement("p");
+        empty.textContent =
+          "Aucun message. Commence la conversation !";
+        messages.appendChild(empty);
+      }
 
-      rows.forEach(row => {
+      items.forEach(item => {
         const bubble = document.createElement("div");
-        bubble.className = "eah-chat-message";
+        bubble.className = "eah-msg-bubble";
 
-        if (row.sender_id === currentUser.id) {
-          bubble.classList.add("mine");
-        }
+        const mine = mode === "DIVER"
+          ? item.sender_type === "DIVER"
+          : item.sender_type !== "DIVER";
+
+        if(mine) bubble.classList.add("mine");
 
         const body = document.createElement("div");
-        body.textContent = row.body;
+        body.textContent = item.body;
 
         const date = document.createElement("small");
+        const sender =
+          item.sender_type === "DIVER" ? "Plongeur" :
+          item.sender_type === "COACH" ? "Coach" :
+          "EAH";
 
-        date.textContent = new Date(
-          row.created_at
-        ).toLocaleString("fr-FR");
+        date.textContent = sender + " · " +
+          new Date(item.created_at)
+            .toLocaleString("fr-FR");
 
         bubble.append(body,date);
-        messagesBox.appendChild(bubble);
+        messages.appendChild(bubble);
       });
 
-      messagesBox.scrollTop =
-        messagesBox.scrollHeight;
-
-    } catch(error) {
-      message("Lecture : " + error.message);
-    } finally {
-      loadingMessages = false;
+      messages.scrollTop = messages.scrollHeight;
+      notice("");
+    }catch(error){
+      notice(error.message);
+    }finally{
+      busy = false;
     }
   }
 
-  form.addEventListener("submit",async event => {
+  form.addEventListener("submit",async event=>{
     event.preventDefault();
 
-    const body = input.value.trim();
-
-    if (!body || !conversationId) {
-      message("Sélectionne un destinataire.");
+    if(!current){
+      notice("Sélectionne une conversation.");
       return;
     }
 
-    sendButton.disabled = true;
-    message("Envoi...");
+    const body = input.value.trim();
+    if(!body) return;
 
-    try {
-      const db = getClient();
+    send.disabled = true;
 
-      const {error} = await db
-        .from("eah_private_messages")
-        .insert({
-          conversation_id:conversationId,
-          sender_id:currentUser.id,
-          body:body
-        });
-
-      if (error) throw error;
+    try{
+      await rpc("SEND",{
+        diverId:current.diverId,
+        destination:current.destination,
+        body
+      });
 
       input.value = "";
-
       await loadMessages();
-      message("Message envoyé");
-
-    } catch(error) {
-      message("Envoi impossible : " + error.message);
-    } finally {
-      sendButton.disabled = false;
+      notice("Message enregistré dans Supabase.");
+    }catch(error){
+      notice("Erreur : " + error.message);
+    }finally{
+      send.disabled = false;
     }
   });
 
-  function stopPolling() {
-    if (polling) {
-      clearInterval(polling);
-      polling = null;
+  async function unlockDiver(){
+    eahId = getEahId();
+    pin = pinInput.value.trim();
+
+    if(!eahId){
+      notice("Identifiant EAH introuvable dans le profil.");
+      return;
+    }
+
+    if(!pin){
+      notice("Saisis ton code PIN.");
+      return;
+    }
+
+    unlock.disabled = true;
+    notice("Vérification du PIN...");
+
+    try{
+      // Une lecture réelle valide le PIN côté serveur.
+      await rpc("LIST",{destination:"CLUB"});
+
+      pinInput.value = "";
+      login.hidden = true;
+      layout.hidden = false;
+
+      await showDiverContacts();
+
+clearInterval(timer);
+timer = setInterval(() => {
+  if (!overlay.hidden && current) {
+    loadMessages();
+  }
+}, 5000);
+
+notice("Messagerie déverrouillée.");
+    }catch(error){
+      pin = "";
+      notice(error.message);
+    }finally{
+      unlock.disabled = false;
     }
   }
 
-  async function openChat() {
-    modal.hidden = false;
-    message("Connexion...");
+  unlock.addEventListener("click",unlockDiver);
 
-    try {
-      currentUser = await authenticatedUser();
-      await loadContacts();
-
-      message("");
-
-      stopPolling();
-
-      polling = setInterval(() => {
-        if (!modal.hidden && conversationId) {
-          loadMessages();
-        }
-      },5000);
-
-    } catch(error) {
-      message(error.message);
+  pinInput.addEventListener("keydown",event=>{
+    if(event.key==="Enter"){
+      event.preventDefault();
+      unlockDiver();
     }
-  }
-
-  function closeChat() {
-    modal.hidden = true;
-    stopPolling();
-  }
-
-  openButton.addEventListener("click",openChat);
-  closeButton.addEventListener("click",closeChat);
-
-  modal.addEventListener("click",event => {
-    if (event.target === modal) closeChat();
   });
 
-  document.addEventListener("keydown",event => {
-    if (event.key === "Escape" && !modal.hidden) {
+  async function openChat(){
+    overlay.hidden = false;
+    clearInterval(timer);
+    current = null;
+    clearMessages();
+    notice("");
+
+    try{
+      if(isProfile()){
+        mode = "DIVER";
+        login.hidden = false;
+        layout.hidden = true;
+        return;
+      }
+
+      mode = "STAFF";
+      login.hidden = true;
+      layout.hidden = false;
+
+      await showStaffContacts();
+    }catch(error){
+      notice(error.message);
+    }
+
+    timer = setInterval(()=>{
+      if(!overlay.hidden && current){
+        loadMessages();
+      }
+    },5000);
+  }
+
+  function closeChat(){
+    overlay.hidden = true;
+    clearInterval(timer);
+    timer = null;
+    pin = "";
+    pinInput.value = "";
+    current = null;
+    login.hidden = true;
+    layout.hidden = true;
+  }
+
+  openBtn.addEventListener("click",openChat);
+  closeBtn.addEventListener("click",closeChat);
+
+  overlay.addEventListener("click",event=>{
+    if(event.target===overlay) closeChat();
+  });
+
+  document.addEventListener("keydown",event=>{
+    if(event.key==="Escape" && !overlay.hidden){
       closeChat();
     }
   });
 
-  /*
-   * Raccordement au bouton Messagerie
-   * du profil Premium V7 existant.
-   */
-  document.addEventListener("click",event => {
+  // Raccordement aux boutons Messagerie du profil.
+  document.addEventListener("click",event=>{
     const button = event.target.closest(
-      "#eahV7 .v7-tab"
+      "#eahDiverOnlyApp button, #eahV7 button"
     );
 
-    if (!button) return;
+    if(!button) return;
 
-    if (button.textContent.includes("Messagerie")) {
+    if(/messagerie/i.test(button.textContent)){
+      event.preventDefault();
+      event.stopImmediatePropagation();
       openChat();
     }
-  });
+  },true);
 
-  /*
-   * Vérification périodique de la session.
-   * Le bouton n'apparaît que pour les comptes
-   * Supabase présents parmi les membres du club.
-   */
-  async function checkAccess() {
-    try {
-      currentUser = await authenticatedUser();
+  async function updateVisibility(){
+    if(isProfile()){
+      openBtn.hidden = false;
+      return;
+    }
 
-      const {data,error} = await getClient()
-        .rpc("eah_chat_contacts");
-
-      if (error) throw error;
-
-      // Un compte connecté peut avoir zéro contact.
-      // On vérifie donc aussi son rôle dans club_members.
-      const {data:members,error:memberError} =
-        await getClient()
-          .from("club_members")
-          .select("role,active")
-          .eq("user_id",currentUser.id);
-
-      if (memberError) throw memberError;
-
-      const authorized = (members || []).some(m =>
-        m.active === true &&
-        ["ADMIN","COACH"].includes(
-          String(m.role).toUpperCase()
-        )
-      );
-
-      openButton.hidden = !authorized;
-
-    } catch(error) {
-      openButton.hidden = true;
+    try{
+      openBtn.hidden = !(await isStaff());
+    }catch(_){
+      openBtn.hidden = true;
     }
   }
 
-  function init() {
-    checkAccess();
+  // Le profil NFC est souvent construit après le chargement.
+  const observer = new MutationObserver(()=>{
+    if(isProfile()) openBtn.hidden = false;
+  });
 
-    // Si l'utilisateur se connecte après
-    // le chargement de la page.
-    setInterval(checkAccess,15000);
+  function init(){
+    observer.observe(document.body,{
+      childList:true,
+      subtree:true
+    });
+
+    updateVisibility();
+    window.addEventListener(
+      "eah-diver-pin-ready",updateVisibility
+    );
   }
 
-  if (document.readyState === "loading") {
+  if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded",init);
-  } else {
+  }else{
     init();
   }
 
 })();
 </script>
+<!-- FIN EAH MESSAGERIE PREMIUM V2 -->
 
-<!-- FIN EAH MESSAGERIE PREMIUM CLUB V1 -->
+
 
 
 
