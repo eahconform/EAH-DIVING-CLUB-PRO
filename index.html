@@ -352,67 +352,22 @@ window.EAH_CONFIG = {
 }
 
 /* TABLETTES ET ECRANS INTERMEDIAIRES */
-@media (max-width:1350px){
-  .mobile-menu{
-    display:block !important;
-  }
 
-  .navigation{
-    position:absolute !important;
-    top:calc(100% + 1px);
-    left:14px;
-    right:14px;
-    width:auto;
-    display:none;
-    flex-direction:column;
-    align-items:stretch;
-    justify-content:flex-start;
-    gap:4px;
-    padding:14px;
-    max-height:calc(100dvh - 95px);
-    overflow-y:auto;
-    background:rgba(3,19,31,.98);
-    border:1px solid rgba(69,210,255,.2);
-    border-radius:18px;
-    box-shadow:0 20px 45px rgba(0,0,0,.35);
-    z-index:1100;
-  }
+const raw = rawDifficulty.trim();
 
-  .navigation.open{
-    display:flex !important;
-  }
+let level = 0;
 
-  .navigation > a,
-  .navigation .nav-dropdown-button{
-    width:100%;
-    min-height:46px;
-    padding:12px 14px;
-    justify-content:flex-start;
-    font-size:14px;
-    text-align:left;
-  }
+if (/^[★⭐]{1,5}$/u.test(raw)) {
+  level = [...raw].length;
+} else {
+  const match = raw.match(
+    /(?:^|[^\d])([1-5])(?:\s*\/\s*5|\s*étoiles?|\s*etoiles?|\s*$)/i
+  );
 
-  .navigation .nav-dropdown{
-    width:100%;
-  }
-
-  .navigation .nav-dropdown-menu{
-    position:static;
-    display:block;
-    width:100%;
-    min-width:0;
-    margin:4px 0 8px;
-    opacity:1;
-    visibility:visible;
-    transform:none;
-    box-shadow:none;
-    background:rgba(15,45,68,.65);
-  }
-
-  .navigation .nav-tutos-premium{
-    justify-content:flex-start;
-  }
+  level = match ? Number(match[1]) : 0;
 }
+
+  
 </style>
 
 
