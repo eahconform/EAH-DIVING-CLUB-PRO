@@ -8226,6 +8226,722 @@ notice("Messagerie déverrouillée.");
 </script>
 <!-- FIN CORRECTIF NAVIGATION PROFIL NFC -->
 
+<!-- ==================================================
+ EAH DIVING - PROFIL PREMIUM V10
+ NAVIGATION + VIDÉOS + GRADINGS + NOTIFICATIONS
+================================================== -->
+
+<style id="eah-premium-v10-style">
+
+/* Fermeture réelle du profil plein écran */
+#eahDiverOnlyApp.eah-v10-closed {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Barre de navigation du profil */
+#eahV7 .v7-tabs {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+  width: 100% !important;
+  padding: 10px 5px !important;
+  margin: 0 0 14px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  background: #061e33 !important;
+  border-bottom: 1px solid #2d7195;
+  scrollbar-width: none;
+}
+
+#eahV7 .v7-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+#eahV7 .v7-tab,
+#eahV7 .eah-profile-chat-button {
+  flex: 0 0 auto !important;
+  min-width: 100px !important;
+  padding: 12px 10px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+  border-radius: 10px !important;
+}
+
+#eahV7 .v7-panel[hidden] {
+  display: none !important;
+}
+
+/* Cartes premium */
+.eah-v10-card {
+  padding: 16px;
+  margin: 12px 0;
+  border: 1px solid #295c7d;
+  border-radius: 15px;
+  background: #0d2b43;
+  color: #fff;
+}
+
+.eah-v10-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.eah-v10-card p {
+  margin: 7px 0;
+  color: #b9d5e5;
+  font-size: 13px;
+}
+
+.eah-v10-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 43px;
+  padding: 11px 15px;
+  border: 1px solid #48bfff;
+  border-radius: 10px;
+  background: #087cff;
+  color: white;
+  font: 700 13px Arial,sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.eah-v10-btn.secondary {
+  background: #143b56;
+}
+
+.eah-v10-btn.danger {
+  background: #67313b;
+  border-color: #b96570;
+}
+
+#eahV10Exit {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #39baff;
+  border-radius: 12px;
+  background: #103b5b;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.eah-v10-video {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  margin: 12px 0;
+  border-radius: 12px;
+  background: #000;
+}
+
+.eah-v10-empty {
+  padding: 18px;
+  color: #bad7e8;
+  text-align: center;
+}
+
+@media(max-width:600px) {
+  #eahV7 .v7-panel {
+    padding: 14px !important;
+  }
+
+  #eahV7 .v7-tab,
+  #eahV7 .eah-profile-chat-button {
+    min-width: 92px !important;
+    font-size: 11px !important;
+  }
+}
+</style>
+
+<script id="eah-premium-v10-script">
+(() => {
+  "use strict";
+
+  if (window.__EAH_PREMIUM_V10__) return;
+  window.__EAH_PREMIUM_V10__ = true;
+
+  const $ = (selector, root=document) =>
+    root.querySelector(selector);
+
+  const $$ = (selector, root=document) =>
+    Array.from(root.querySelectorAll(selector));
+
+  const params = new URLSearchParams(location.search);
+  const eahId = (params.get("id") || "").trim();
+
+  let supabaseClient = null;
+  let privatePin = "";
+  let dashboard = null;
+  let initializedRoot = null;
+  let profileClosed = false;
+  let loading = false;
+
+  function getClient() {
+    if (supabaseClient) return supabaseClient;
+
+    const config = window.EAH_CONFIG || {};
+
+    if (!window.supabase?.createClient ||
+        !config.SUPABASE_URL ||
+        !config.SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Configuration Supabase indisponible");
+    }
+
+    supabaseClient = window.supabase.createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      }
+    );
+
+    return supabaseClient;
+  }
+
+  async function callProfile(action="LOAD", notificationId=null) {
+    const {data,error} = await getClient().rpc(
+      "eah_profile_v10",
+      {
+        p_eah_id:eahId,
+        p_pin:privatePin,
+        p_action:action,
+        p_notification_id:notificationId
+      }
+    );
+
+    if (error) throw error;
+    if (!data?.ok) {
+      throw new Error(data?.error || "Accès refusé");
+    }
+
+    return data;
+  }
+
+  function el(tag, className="", text="") {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function button(label, callback, type="") {
+    const node = el(
+      "button",
+      "eah-v10-btn " + type,
+      label
+    );
+
+    node.type = "button";
+    node.addEventListener("click", callback);
+    return node;
+  }
+
+  function card(title) {
+    const node = el("article","eah-v10-card");
+    node.appendChild(el("h3","",title));
+    return node;
+  }
+
+  function empty(container, message) {
+    container.appendChild(
+      el("p","eah-v10-empty",message)
+    );
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toLocaleString("fr-FR");
+  }
+
+  function validUrl(raw) {
+    try {
+      const url = new URL(raw,location.href);
+      return ["https:","http:"].includes(url.protocol)
+        ? url.href
+        : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function closeProfile() {
+    profileClosed = true;
+
+    const app = $("#eahDiverOnlyApp");
+    if (app) {
+      app.classList.add("eah-v10-closed");
+      app.setAttribute("aria-hidden","true");
+    }
+
+    $("#navigation")?.classList.remove("open");
+    $("#mobileMenu")?.setAttribute("aria-expanded","false");
+
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+  }
+
+  function openProfile() {
+    profileClosed = false;
+
+    const app = $("#eahDiverOnlyApp");
+    if (app) {
+      app.classList.remove("eah-v10-closed");
+      app.removeAttribute("aria-hidden");
+    }
+  }
+
+  function explore() {
+    closeProfile();
+
+    const home = $('[data-page="accueil"]');
+    if (home) {
+      home.click();
+    } else {
+      location.hash = "accueil";
+    }
+
+    window.scrollTo(0,0);
+  }
+
+  function installExit() {
+    const app = $("#eahDiverOnlyApp");
+    if (!app) return;
+
+    if (profileClosed) {
+      app.classList.add("eah-v10-closed");
+    }
+
+    const shell = $(".eah-diver-only-shell",app);
+    if (!shell || $("#eahV10Exit",shell)) return;
+
+    const exit = button(
+      "🌐 Explorer le site EAH Diving",
+      explore
+    );
+
+    exit.id = "eahV10Exit";
+    shell.prepend(exit);
+  }
+
+  function updateCounters(root, data) {
+    const stats = $$(".v7-stat",root);
+
+    stats.forEach(stat => {
+      const label = $("span",stat)?.textContent
+        .trim().toLowerCase();
+
+      const number = $("strong",stat);
+      if (!number) return;
+
+      if (label === "vidéos") {
+        number.textContent = data.video_count;
+      }
+
+      if (label === "gradings") {
+        number.textContent = data.grading_count;
+      }
+    });
+  }
+
+  function renderVideos(root, data) {
+    const panel = $("#eahV7-videos",root);
+    if (!panel) return;
+
+    panel.replaceChildren(
+      el("h2","","🎬 Mes vidéos")
+    );
+
+    const videos = data.videos || [];
+
+    if (!videos.length) {
+      empty(panel,"Aucune vidéo associée à ce profil.");
+      return;
+    }
+
+    videos.forEach(item => {
+      const box = card(item.title || "Plongeon");
+
+      box.appendChild(
+        el("p","",item.discipline || "")
+      );
+
+      const url = validUrl(item.url);
+
+      if (url) {
+        const youtube = url.match(
+          /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/
+        );
+
+        if (youtube) {
+          const link = document.createElement("a");
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "eah-v10-btn";
+          link.textContent = "▶ Voir la vidéo";
+          box.appendChild(link);
+        } else if (/\.(mp4|webm)(\?|$)/i.test(url)) {
+          const player = document.createElement("video");
+          player.src = url;
+          player.controls = true;
+          player.preload = "none";
+          player.className = "eah-v10-video";
+          box.appendChild(player);
+        } else {
+          const link = document.createElement("a");
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.className = "eah-v10-btn";
+          link.textContent = "Ouvrir la vidéo";
+          box.appendChild(link);
+        }
+      }
+
+      panel.appendChild(box);
+    });
+  }
+
+  function renderGradings(root, data) {
+    const panel = $("#eahV7-gradings",root);
+    if (!panel) return;
+
+    panel.replaceChildren(
+      el("h2","","🏅 Mes Grade Reports")
+    );
+
+    const reports = data.reports || [];
+
+    if (!reports.length) {
+      empty(panel,"Aucun Grade Report enregistré.");
+    }
+
+    reports.forEach((item,index) => {
+      const box = card(
+        "Grade Report n°" + (index+1)
+      );
+
+      box.appendChild(
+        el("p","",formatDate(item.created_at))
+      );
+
+      if (item.verified) {
+        box.appendChild(
+          el("p","","✓ Grade Report vérifié")
+        );
+      }
+
+      const url = validUrl(item.pdf_url);
+
+      if (url) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.className = "eah-v10-btn";
+        link.textContent = "📄 Ouvrir le Grade Report";
+        box.appendChild(link);
+      }
+
+      panel.appendChild(box);
+    });
+
+    panel.appendChild(
+      button("➕ Soumettre un plongeon",() => {
+        const existing =
+          $("#openDiverGradingRequest") ||
+          $$(".eah-diver-main-button")
+            .find(b => /grading|soumettre/i.test(b.textContent));
+
+        if (existing) {
+          existing.click();
+        } else {
+          alert(
+            "Le formulaire de soumission existant " +
+            "n'a pas été trouvé."
+          );
+        }
+      })
+    );
+  }
+
+  async function hideNotification(id,root) {
+    if (!confirm("Supprimer cette notification de ta liste ?")) {
+      return;
+    }
+
+    try {
+      await callProfile("HIDE_NOTIFICATION",id);
+      dashboard = await callProfile("LOAD");
+      renderNotifications(root,dashboard);
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  function renderNotifications(root,data) {
+    const panel = $("#eahV7-notifications",root);
+    if (!panel) return;
+
+    panel.replaceChildren(
+      el("h2","","🔔 Mes notifications")
+    );
+
+    const items = data.notifications || [];
+
+    if (!items.length) {
+      empty(panel,"Aucune notification pour le moment.");
+      return;
+    }
+
+    items.forEach(item => {
+      const box = card(
+        item.action_kind === "like"
+          ? "❤️ Nouveau like"
+          : item.action_kind === "follow"
+          ? "👥 Nouvel abonné"
+          : "🔔 Activité EAH"
+      );
+
+      box.appendChild(
+        el("p","",item.actor_key || "Utilisateur EAH")
+      );
+
+      box.appendChild(
+        el("p","",formatDate(item.created_at))
+      );
+
+      box.appendChild(
+        button(
+          "🗑 Supprimer",
+          () => hideNotification(item.id,root),
+          "danger"
+        )
+      );
+
+      panel.appendChild(box);
+    });
+  }
+
+  function renderDashboard(root,data) {
+    updateCounters(root,data);
+    renderVideos(root,data);
+    renderGradings(root,data);
+    renderNotifications(root,data);
+  }
+
+  async function unlock(root) {
+    if (!eahId) {
+      alert("Identifiant EAH absent du lien NFC.");
+      return;
+    }
+
+    if (loading) return;
+
+    const entered = prompt(
+      "🔐 Code PIN EAH Diving\n" +
+      "Saisis ton code personnel pour charger " +
+      "tes vidéos, gradings et notifications."
+    );
+
+    if (entered === null) return;
+
+    if (!/^\d{4,8}$/.test(entered)) {
+      alert("Le code PIN doit contenir 4 à 8 chiffres.");
+      return;
+    }
+
+    privatePin = entered;
+    loading = true;
+
+    try {
+      dashboard = await callProfile("LOAD");
+      renderDashboard(root,dashboard);
+    } catch (error) {
+      privatePin = "";
+      alert("Connexion impossible : " + error.message);
+    } finally {
+      loading = false;
+    }
+  }
+
+  function installProfile(root) {
+    if (initializedRoot === root) return;
+    initializedRoot = root;
+
+    const tabs = $(".v7-tabs",root);
+    if (!tabs) return;
+
+    // L'ancien correctif V8 ajoute un bouton
+    // séparé : on conserve un seul accès Messagerie.
+    const chatButtons = $$(
+      ".eah-profile-chat-button",tabs
+    );
+
+    chatButtons.slice(1).forEach(b => b.remove());
+
+    // Ajouter le chargement privé sans perturber
+    // les boutons et événements déjà existants.
+    const secure = button(
+      "🔐 Charger mes données",
+      () => unlock(root),
+      "secondary"
+    );
+
+    secure.id = "eahV10Unlock";
+    secure.style.marginBottom = "12px";
+
+    const content = $(".v7-content",root);
+    if (content) {
+      content.parentNode.insertBefore(secure,content);
+    }
+
+    // L'onglet Messagerie ouvre la vraie fenêtre.
+    tabs.addEventListener("click",event => {
+      const target = event.target.closest("button");
+      if (!target) return;
+
+      if (/messagerie/i.test(target.textContent)) {
+        const opener = $("#eahMsgOpen");
+        if (opener) {
+          opener.click();
+        }
+      }
+    });
+
+    // Conserve une seule section visible.
+    const tabButtons = $$(".v7-tab",tabs);
+
+    tabButtons.forEach(tab => {
+      tab.addEventListener("click",() => {
+        const selected = tab.textContent.trim();
+
+        tabButtons.forEach(other => {
+          other.setAttribute(
+            "aria-selected",
+            String(other === tab)
+          );
+        });
+
+        if (/vidéos|gradings|notifications/i.test(selected)
+            && !dashboard && !privatePin) {
+          // Le contenu privé sera chargé après PIN.
+          // Les autres onglets continuent de fonctionner.
+        }
+      });
+    });
+  }
+
+  // Répare la navigation de toutes les pages.
+  document.addEventListener("click",event => {
+    const page = event.target.closest("[data-page]");
+    if (!page) return;
+
+    if (page.dataset.page === "profil") {
+      openProfile();
+    } else {
+      closeProfile();
+    }
+  },true);
+
+  window.addEventListener("hashchange",() => {
+    if (location.hash === "#profil") {
+      openProfile();
+    } else if (location.hash) {
+      closeProfile();
+    }
+  });
+
+  // Ferme le menu mobile quand on clique dehors.
+  document.addEventListener("pointerdown",event => {
+    const nav = $("#navigation");
+    const toggle = $("#mobileMenu");
+
+    if (!nav?.classList.contains("open")) return;
+
+    if (!nav.contains(event.target) &&
+        !toggle?.contains(event.target)) {
+      nav.classList.remove("open");
+    }
+  });
+
+  function init() {
+    const app = $("#eahDiverOnlyApp");
+    const root = $("#eahV7");
+
+    if (app && profileClosed) {
+      app.classList.add("eah-v10-closed");
+    }
+
+    installExit();
+
+    if (root) installProfile(root);
+  }
+
+  let scheduled = false;
+
+  function scheduleInit() {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      init();
+    });
+  }
+
+  function start() {
+    init();
+
+    const observer = new MutationObserver(scheduleInit);
+
+    observer.observe(document.body,{
+      childList:true,
+      subtree:true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded",start);
+  } else {
+    start();
+  }
+
+  window.EAH_PREMIUM_V10 = {
+    explore,
+    openProfile,
+    closeProfile,
+    reload:async () => {
+      const root = $("#eahV7");
+      if (!root || !privatePin) return;
+
+      dashboard = await callProfile("LOAD");
+      renderDashboard(root,dashboard);
+    }
+  };
+})();
+</script>
+
+<!-- FIN EAH DIVING PREMIUM V10 -->
+
 
 </body>
 </html>
