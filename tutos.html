@@ -226,9 +226,10 @@ function render(){
 
     const stars = document.createElement("span");
     stars.className = "stars";
-    const level = Number(item.difficulty) || 1;
-    stars.textContent =
-      "★".repeat(level) + "☆".repeat(5-level);
+    const level = item.difficulty;
+    stars.textContent = level
+  ? "★".repeat(level) + "☆".repeat(5 - level)
+  : "Non renseigné";
     stars.setAttribute(
       "aria-label",
       "Difficulté " + level + " sur 5"
@@ -272,8 +273,33 @@ window[callback] = function(result){
   }
 
   tutorials = Array.isArray(result.tutorials)
-    ? result.tutorials.filter(item => embedUrl(item.url))
-    : [];
+  ? result.tutorials.map(item => {
+      const rawDifficulty =
+        item.difficulty ??
+        item.DIFFICULTE ??
+        item.difficulte;
+
+      const parsedDifficulty = Number(rawDifficulty);
+
+      return {
+        ...item,
+        title: item.title ?? item.TITRE ?? "",
+        description: item.description ?? item.DESCRIPTION ?? "",
+        url: item.url ?? item.URL_VIDEO ?? "",
+        category: String(
+          item.category ??
+          item.CATEGORIE ??
+          ""
+        ).trim(),
+        difficulty:
+          Number.isInteger(parsedDifficulty) &&
+          parsedDifficulty >= 1 &&
+          parsedDifficulty <= 5
+            ? parsedDifficulty
+            : null
+      };
+    }).filter(item => embedUrl(item.url))
+  : [];
 
   render();
 };
