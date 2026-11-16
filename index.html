@@ -9190,6 +9190,327 @@ notice("Messagerie déverrouillée.");
 
 <!-- FIN EAH NAVIGATION V12 -->
 
+<!-- ==================================================
+ EAH DIVING - ACTIVATION PIN PROFIL NFC V1
+ Première connexion : créer et confirmer le PIN
+ Connexions suivantes : PIN habituel
+================================================== -->
+
+<style>
+#eahFirstPinOverlay[hidden] {
+  display: none !important;
+}
+
+#eahFirstPinOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: grid;
+  place-items: center;
+  padding: 15px;
+  background: rgba(0,0,0,.85);
+}
+
+#eahFirstPinBox {
+  width: min(420px,100%);
+  padding: 24px;
+  border: 1px solid #39bdff;
+  border-radius: 20px;
+  background: #082238;
+  color: #fff;
+  font-family: Arial,sans-serif;
+  box-shadow: 0 20px 60px #000a;
+}
+
+#eahFirstPinBox h2 {
+  margin: 0 0 12px;
+  font-size: 21px;
+}
+
+#eahFirstPinBox p {
+  color: #b9d5e8;
+  line-height: 1.5;
+}
+
+#eahFirstPinBox input {
+  width: 100%;
+  padding: 14px;
+  margin: 8px 0;
+  border: 1px solid #37769a;
+  border-radius: 11px;
+  background: #103650;
+  color: white;
+  font-size: 17px;
+}
+
+#eahFirstPinBox button {
+  padding: 13px;
+  border: 0;
+  border-radius: 11px;
+  color: white;
+  cursor: pointer;
+}
+
+#eahFirstPinSave {
+  width: 100%;
+  margin-top: 12px;
+  background: #087cff;
+  font-weight: bold;
+}
+
+#eahFirstPinCancel {
+  width: 100%;
+  margin-top: 8px;
+  background: #25455b;
+}
+
+#eahFirstPinError {
+  min-height: 20px;
+  color: #ffb8b8 !important;
+  font-size: 13px;
+}
+</style>
+
+<div id="eahFirstPinOverlay" hidden>
+  <form id="eahFirstPinBox">
+    <h2>🔐 Créer mon code EAH</h2>
+    <p>
+      Première connexion à ton espace personnel.
+      Choisis un code PIN de 6 à 8 chiffres.
+      Il protégera tes données et ta messagerie.
+    </p>
+
+    <input
+      id="eahFirstPin1"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]{6,8}"
+      minlength="6"
+      maxlength="8"
+      autocomplete="new-password"
+      placeholder="Choisir mon code PIN"
+      required
+    >
+
+    <input
+      id="eahFirstPin2"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]{6,8}"
+      minlength="6"
+      maxlength="8"
+      autocomplete="new-password"
+      placeholder="Confirmer mon code PIN"
+      required
+    >
+
+    <p id="eahFirstPinError" aria-live="polite"></p>
+
+    <button id="eahFirstPinSave" type="submit">
+      ✓ Activer mon code PIN
+    </button>
+
+    <button id="eahFirstPinCancel" type="button">
+      Annuler
+    </button>
+  </form>
+</div>
+
+<script id="eah-first-pin-nfc-v1">
+(() => {
+  "use strict";
+
+  if (window.__EAH_FIRST_PIN_NFC_V1__) return;
+  window.__EAH_FIRST_PIN_NFC_V1__ = true;
+
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+
+  const eahId = (params.get("id") || "").trim();
+  const token = (params.get("token") || "").trim();
+
+  const overlay = $("eahFirstPinOverlay");
+  const form = $("eahFirstPinBox");
+  const pin1 = $("eahFirstPin1");
+  const pin2 = $("eahFirstPin2");
+  const errorBox = $("eahFirstPinError");
+  const save = $("eahFirstPinSave");
+
+  let db = null;
+  let busy = false;
+  let nextAction = null;
+  let skipNext = false;
+
+  function client() {
+    if (db) return db;
+
+    const config = window.EAH_CONFIG || {};
+
+    if (!window.supabase?.createClient ||
+        !config.SUPABASE_URL ||
+        !config.SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Configuration Supabase absente.");
+    }
+
+    db = window.supabase.createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_PUBLISHABLE_KEY
+    );
+
+    return db;
+  }
+
+  async function checkPin(newPin=null) {
+    const {data,error} = await client().rpc(
+      "eah_nfc_first_pin_v1",
+      {
+        p_eah_id:eahId,
+        p_token:token,
+        p_new_pin:newPin
+      }
+    );
+
+    if (error) throw error;
+    if (!data?.ok) {
+      throw new Error(data?.error || "Opération refusée");
+    }
+
+    return data;
+  }
+
+  function show() {
+    errorBox.textContent = "";
+    pin1.value = "";
+    pin2.value = "";
+    overlay.hidden = false;
+    pin1.focus();
+  }
+
+  function hide() {
+    overlay.hidden = true;
+    pin1.value = "";
+    pin2.value = "";
+  }
+
+  function continueAction() {
+    const target = nextAction;
+    nextAction = null;
+
+    if (!target || !target.isConnected) return;
+
+    // Laisse l'ancien bouton poursuivre son action.
+    skipNext = true;
+    target.click();
+  }
+
+  async function intercept(event) {
+    const target = event.target.closest(
+      "#eahV10Unlock, #eahMsgOpen, #eahProfileChatV8"
+    );
+
+    if (!target) return;
+
+    if (skipNext) {
+      skipNext = false;
+      return;
+    }
+
+    // Le contrôle du premier PIN concerne uniquement
+    // les profils ouverts avec un lien NFC.
+    if (!eahId || !token) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (busy) return;
+    busy = true;
+
+    nextAction = target;
+
+    try {
+      const status = await checkPin();
+
+      if (status.has_pin) {
+        continueAction();
+      } else {
+        show();
+      }
+    } catch (error) {
+      alert("Activation NFC : " + error.message);
+      nextAction = null;
+    } finally {
+      busy = false;
+    }
+  }
+
+  // Capture le clic avant les anciens scripts.
+  document.addEventListener("click",intercept,true);
+
+  form.addEventListener("submit",async event => {
+    event.preventDefault();
+
+    if (busy) return;
+
+    const first = pin1.value.trim();
+    const second = pin2.value.trim();
+
+    if (!/^[0-9]{6,8}$/.test(first)) {
+      errorBox.textContent =
+        "Le PIN doit contenir 6 à 8 chiffres.";
+      return;
+    }
+
+    if (first !== second) {
+      errorBox.textContent =
+        "Les deux codes ne correspondent pas.";
+      return;
+    }
+
+    busy = true;
+    save.disabled = true;
+    errorBox.textContent = "";
+
+    try {
+      const result = await checkPin(first);
+
+      if (!result.created) {
+        throw new Error("Le PIN n'a pas été créé.");
+      }
+
+      hide();
+
+      alert(
+        "✓ Ton code PIN est enregistré sur ton profil EAH Diving."
+      );
+
+      continueAction();
+    } catch (error) {
+      errorBox.textContent = error.message;
+    } finally {
+      busy = false;
+      save.disabled = false;
+    }
+  });
+
+  $("eahFirstPinCancel").addEventListener(
+    "click",() => {
+      nextAction = null;
+      hide();
+    }
+  );
+
+  overlay.addEventListener("click",event => {
+    if (event.target === overlay) {
+      nextAction = null;
+      hide();
+    }
+  });
+
+})();
+</script>
+
+<!-- FIN ACTIVATION PIN PROFIL NFC V1 -->
+
 
 </body>
 </html>
