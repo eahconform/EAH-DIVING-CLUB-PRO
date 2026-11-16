@@ -9316,200 +9316,205 @@ notice("Messagerie déverrouillée.");
   </form>
 </div>
 
-<script id="eah-first-pin-nfc-v1">
+
+<script id="eah-first-pin-nfc-v2">
 (() => {
   "use strict";
 
-  if (window.__EAH_FIRST_PIN_NFC_V1__) return;
-  window.__EAH_FIRST_PIN_NFC_V1__ = true;
+  if (window.__EAH_FIRST_PIN_V2__) return;
+  window.__EAH_FIRST_PIN_V2__ = true;
 
   const $ = id => document.getElementById(id);
+
   const params = new URLSearchParams(location.search);
 
   const eahId = (params.get("id") || "").trim();
   const token = (params.get("token") || "").trim();
 
-  const overlay = $("eahFirstPinOverlay");
-  const form = $("eahFirstPinBox");
-  const pin1 = $("eahFirstPin1");
-  const pin2 = $("eahFirstPin2");
-  const errorBox = $("eahFirstPinError");
-  const save = $("eahFirstPinSave");
-
-  let db = null;
+  let client = null;
   let busy = false;
-  let nextAction = null;
-  let skipNext = false;
+  let pendingButton = null;
+  let replaying = false;
 
-  function client() {
-    if (db) return db;
+  function getClient() {
+    if (client) return client;
 
-    const config = window.EAH_CONFIG || {};
+    const cfg = window.EAH_CONFIG || {};
 
     if (!window.supabase?.createClient ||
-        !config.SUPABASE_URL ||
-        !config.SUPABASE_PUBLISHABLE_KEY) {
-      throw new Error("Configuration Supabase absente.");
+        !cfg.SUPABASE_URL ||
+        !cfg.SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Supabase non disponible.");
     }
 
-    db = window.supabase.createClient(
-      config.SUPABASE_URL,
-      config.SUPABASE_PUBLISHABLE_KEY
+    client = window.supabase.createClient(
+      cfg.SUPABASE_URL,
+      cfg.SUPABASE_PUBLISHABLE_KEY
     );
 
-    return db;
+    return client;
   }
 
-  async function checkPin(newPin=null) {
-    const {data,error} = await client().rpc(
+  async function rpc(pin=null) {
+    const {data,error} = await getClient().rpc(
       "eah_nfc_first_pin_v1",
       {
         p_eah_id:eahId,
         p_token:token,
-        p_new_pin:newPin
+        p_new_pin:pin
       }
     );
 
     if (error) throw error;
+
     if (!data?.ok) {
-      throw new Error(data?.error || "Opération refusée");
+      throw new Error(data?.error || "Activation refusée.");
     }
 
     return data;
   }
 
-  function show() {
-    errorBox.textContent = "";
-    pin1.value = "";
-    pin2.value = "";
-    overlay.hidden = false;
-    pin1.focus();
-  }
+  function openForm() {
+    const overlay = $("eahFirstPinOverlay");
 
-  function hide() {
-    overlay.hidden = true;
-    pin1.value = "";
-    pin2.value = "";
-  }
-
-  function continueAction() {
-    const target = nextAction;
-    nextAction = null;
-
-    if (!target || !target.isConnected) return;
-
-    // Laisse l'ancien bouton poursuivre son action.
-    skipNext = true;
-    target.click();
-  }
-
-  async function intercept(event) {
-    const target = event.target.closest(
-      "#eahV10Unlock, #eahMsgOpen, #eahProfileChatV8"
-    );
-
-    if (!target) return;
-
-    if (skipNext) {
-      skipNext = false;
+    if (!overlay) {
+      alert("Formulaire de création du PIN introuvable.");
       return;
     }
 
-    // Le contrôle du premier PIN concerne uniquement
-    // les profils ouverts avec un lien NFC.
-    if (!eahId || !token) return;
+    $("eahFirstPin1").value = "";
+    $("eahFirstPin2").value = "";
+    $("eahFirstPinError").textContent = "";
+
+    overlay.hidden = false;
+    $("eahFirstPin1").focus();
+  }
+
+  function closeForm() {
+    $("eahFirstPinOverlay").hidden = true;
+  }
+
+  function resume() {
+    const button = pendingButton;
+    pendingButton = null;
+
+    if (!button?.isConnected) return;
+
+    replaying = true;
+
+    try {
+      button.click();
+    } finally {
+      replaying = false;
+    }
+  }
+
+  document.addEventListener("click",async event => {
+    const button = event.target.closest(
+      "#eahV10Unlock, #eahMsgOpen, " +
+      "#eahProfileChatV8"
+    );
+
+    if (!button || replaying) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
     if (busy) return;
-    busy = true;
 
-    nextAction = target;
+    if (!eahId || !token) {
+      alert(
+        "Pour créer ton premier code PIN, " +
+        "ouvre ton profil depuis le lien complet " +
+        "de ta carte NFC. Ce lien doit contenir " +
+        "ton identifiant EAH et ton jeton de carte."
+      );
+      return;
+    }
+
+    busy = true;
+    pendingButton = button;
 
     try {
-      const status = await checkPin();
+      const status = await rpc();
 
       if (status.has_pin) {
-        continueAction();
+        resume();
       } else {
-        show();
+        openForm();
       }
     } catch (error) {
-      alert("Activation NFC : " + error.message);
-      nextAction = null;
+      alert("EAH Diving : " + error.message);
+      pendingButton = null;
     } finally {
       busy = false;
     }
-  }
+  },true);
 
-  // Capture le clic avant les anciens scripts.
-  document.addEventListener("click",intercept,true);
+  $("eahFirstPinBox").addEventListener(
+    "submit",async event => {
+      event.preventDefault();
 
-  form.addEventListener("submit",async event => {
-    event.preventDefault();
+      if (busy) return;
 
-    if (busy) return;
+      const pin = $("eahFirstPin1").value.trim();
+      const confirmation =
+        $("eahFirstPin2").value.trim();
 
-    const first = pin1.value.trim();
-    const second = pin2.value.trim();
+      const errorBox = $("eahFirstPinError");
 
-    if (!/^[0-9]{6,8}$/.test(first)) {
-      errorBox.textContent =
-        "Le PIN doit contenir 6 à 8 chiffres.";
-      return;
-    }
-
-    if (first !== second) {
-      errorBox.textContent =
-        "Les deux codes ne correspondent pas.";
-      return;
-    }
-
-    busy = true;
-    save.disabled = true;
-    errorBox.textContent = "";
-
-    try {
-      const result = await checkPin(first);
-
-      if (!result.created) {
-        throw new Error("Le PIN n'a pas été créé.");
+      if (!/^[0-9]{6,8}$/.test(pin)) {
+        errorBox.textContent =
+          "Choisis un PIN de 6 à 8 chiffres.";
+        return;
       }
 
-      hide();
+      if (pin !== confirmation) {
+        errorBox.textContent =
+          "Les deux codes ne correspondent pas.";
+        return;
+      }
 
-      alert(
-        "✓ Ton code PIN est enregistré sur ton profil EAH Diving."
-      );
+      busy = true;
 
-      continueAction();
-    } catch (error) {
-      errorBox.textContent = error.message;
-    } finally {
-      busy = false;
-      save.disabled = false;
-    }
-  });
+      try {
+        const result = await rpc(pin);
 
-  $("eahFirstPinCancel").addEventListener(
-    "click",() => {
-      nextAction = null;
-      hide();
+        if (!result.created) {
+          throw new Error(
+            "Un code PIN existe déjà sur ce profil."
+          );
+        }
+
+        closeForm();
+
+        alert(
+          "Ton code PIN a été créé et enregistré !"
+        );
+
+        resume();
+
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        busy = false;
+      }
     }
   );
 
-  overlay.addEventListener("click",event => {
-    if (event.target === overlay) {
-      nextAction = null;
-      hide();
+  $("eahFirstPinCancel").addEventListener(
+    "click",() => {
+      pendingButton = null;
+      closeForm();
     }
-  });
+  );
 
+  window.EAH_FIRST_PIN_V2 = {
+    open:openForm
+  };
 })();
 </script>
 
-<!-- FIN ACTIVATION PIN PROFIL NFC V1 -->
 
 
 </body>
