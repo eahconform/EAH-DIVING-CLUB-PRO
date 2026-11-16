@@ -6575,6 +6575,204 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 <!-- FIN EAH PREMIUM V5 -->
+<!-- EAH DIVING — PROFIL PREMIUM V6 -->
+<style id="eah-profile-v6-css">
 
+#eahDiverOnlyApp {
+  background:#031321!important;
+  color:#f5faff;
+}
+
+#eahDiverOnlyApp .eah-diver-only-shell {
+  width:min(1280px,calc(100% - 32px))!important;
+  margin:auto;
+}
+
+#eahDiverOnlyApp #eahDiverProfileHost {
+  border-radius:24px!important;
+  background:linear-gradient(145deg,#123c5c,#061a2b)!important;
+  border:1px solid rgba(100,200,255,.25)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.22)!important;
+}
+
+#eahDiverOnlyApp #profileView h1 {
+  font-size:clamp(30px,4vw,46px)!important;
+  letter-spacing:-.7px!important;
+}
+
+#eahDiverOnlyApp .eah5-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);
+  gap:20px;
+  align-items:start;
+}
+
+#eahDiverOnlyApp .eah5-activity {
+  border-radius:24px;
+  padding:22px;
+  background:#082238;
+  border:1px solid rgba(100,200,255,.22);
+}
+
+#eahDiverOnlyApp .eah5-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+#eahDiverOnlyApp .eah5-tabs button {
+  background:#0b304b;
+  border:1px solid #255a79;
+  color:white;
+  border-radius:12px;
+  padding:12px 18px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+#eahDiverOnlyApp .eah5-tabs button:hover {
+  background:#0877bb;
+}
+
+#eahDiverOnlyApp .eah-pro-v4-note {
+  display:none!important;
+}
+
+#eahDiverOnlyApp .eah-v6-actions {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:20px 0;
+}
+
+#eahDiverOnlyApp .eah-v6-actions button {
+  min-height:72px;
+  border:1px solid #286080;
+  border-radius:16px;
+  background:linear-gradient(145deg,#103b59,#08253d);
+  color:white;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+#eahDiverOnlyApp .eah-v6-actions button:hover {
+  background:#11649a;
+}
+
+@media(max-width:950px) {
+  #eahDiverOnlyApp .eah5-layout {
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:600px) {
+  #eahDiverOnlyApp .eah-v6-actions {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+</style>
+
+<script id="eah-profile-v6-js">
+(() => {
+  "use strict";
+
+  const actions = [
+    ["👤 Mon profil", ["profil"]],
+    ["🎬 Vidéos", ["vidéo", "video", "grading"]],
+    ["ℹ️ Informations", ["information", "club"]],
+    ["🔔 Notifications", ["notification"]]
+  ];
+
+  function findTarget(words, excluded) {
+    const root = document.getElementById("eahDiverOnlyApp");
+    if (!root) return null;
+
+    const candidates = [
+      ...root.querySelectorAll(
+        "h1,h2,h3,button,a,summary"
+      )
+    ];
+
+    return candidates.find(node => {
+      if (excluded && excluded.contains(node)) return false;
+
+      const text = (node.textContent || "")
+        .trim()
+        .toLowerCase();
+
+      return words.some(word => text.includes(word));
+    });
+  }
+
+  function install() {
+    const root = document.getElementById("eahDiverOnlyApp");
+    const host = document.getElementById("eahDiverProfileHost");
+
+    if (!root || !host) return;
+    if (document.getElementById("eahV6Actions")) return;
+
+    const bar = document.createElement("nav");
+    bar.id = "eahV6Actions";
+    bar.className = "eah-v6-actions";
+    bar.setAttribute("aria-label", "Navigation du profil");
+
+    actions.forEach(([label, words]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+
+      button.addEventListener("click", () => {
+        if (label.includes("Mon profil")) {
+          host.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+          return;
+        }
+
+        const target = findTarget(words, bar);
+
+        if (!target) {
+          alert("Cette rubrique n'est pas encore disponible.");
+          return;
+        }
+
+        if (
+          target.matches("button,a,summary") &&
+          target !== button
+        ) {
+          target.click();
+        } else {
+          target.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+        }
+      });
+
+      bar.appendChild(button);
+    });
+
+    host.insertAdjacentElement("afterend", bar);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", install);
+  } else {
+    install();
+  }
+
+  const observer = new MutationObserver(install);
+
+  observer.observe(document.documentElement, {
+    childList:true,
+    subtree:true
+  });
+
+})();
+</script>
+<!-- FIN PROFIL PREMIUM V6 -->
 </body>
 </html>
