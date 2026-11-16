@@ -6731,6 +6731,597 @@ observer.observe(
 
   
 
+<!-- ============================================
+ EAH DIVING - MESSAGERIE PREMIUM CLUB V1
+ ADMIN / COACH - SUPABASE
+============================================= -->
+
+<style id="eah-chat-v1-css">
+#eahChatOpen {
+  position:fixed;
+  right:20px;
+  bottom:24px;
+  z-index:2147483100;
+  padding:14px 20px;
+  border:1px solid #43c8ff;
+  border-radius:40px;
+  background:#0879d7;
+  color:white;
+  font:700 14px Arial,sans-serif;
+  box-shadow:0 10px 35px #0008;
+  cursor:pointer;
+}
+#eahChatOpen[hidden] {display:none!important}
+
+#eahChatModal {
+  position:fixed;
+  inset:0;
+  z-index:2147483200;
+  display:grid;
+  place-items:center;
+  padding:12px;
+  background:#000b;
+}
+#eahChatModal[hidden] {display:none!important}
+
+#eahChatBox {
+  width:min(920px,100%);
+  height:min(720px,94dvh);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid #28638a;
+  border-radius:20px;
+  background:#061b2c;
+  color:white;
+  font-family:Arial,sans-serif;
+  box-shadow:0 20px 80px #000a;
+}
+.eah-chat-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:18px;
+  border-bottom:1px solid #24516e;
+  background:#0b2a43;
+}
+.eah-chat-head strong {
+  font-size:19px;
+}
+.eah-chat-head button {
+  border:0;
+  background:#20435d;
+  color:white;
+  border-radius:10px;
+  padding:10px 14px;
+  cursor:pointer;
+}
+.eah-chat-layout {
+  display:grid;
+  grid-template-columns:240px minmax(0,1fr);
+  min-height:0;
+  flex:1;
+}
+.eah-chat-sidebar {
+  overflow-y:auto;
+  padding:12px;
+  border-right:1px solid #24516e;
+}
+.eah-chat-sidebar h3 {
+  margin:8px 5px 14px;
+  font-size:14px;
+  color:#9bdfff;
+}
+.eah-chat-contact {
+  width:100%;
+  display:block;
+  padding:13px 11px;
+  margin-bottom:8px;
+  border:1px solid #295a7a;
+  border-radius:12px;
+  background:#0e304a;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.eah-chat-contact.active {
+  border-color:#36c7ff;
+  background:#155077;
+}
+.eah-chat-contact small {
+  display:block;
+  margin-top:5px;
+  color:#a5c8dd;
+}
+.eah-chat-main {
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  min-height:0;
+}
+#eahChatTitle {
+  padding:14px;
+  border-bottom:1px solid #24516e;
+  font-weight:bold;
+}
+#eahChatMessages {
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:18px;
+}
+.eah-chat-message {
+  max-width:85%;
+  padding:12px 15px;
+  border-radius:15px;
+  background:#163a55;
+  overflow-wrap:anywhere;
+  line-height:1.5;
+  white-space:pre-wrap;
+}
+.eah-chat-message.mine {
+  align-self:flex-end;
+  background:#096ec4;
+}
+.eah-chat-message small {
+  display:block;
+  margin-top:7px;
+  opacity:.7;
+  font-size:11px;
+}
+#eahChatForm {
+  display:flex;
+  gap:9px;
+  padding:12px;
+  border-top:1px solid #24516e;
+}
+#eahChatInput {
+  flex:1;
+  min-width:0;
+  padding:13px;
+  border:1px solid #397398;
+  border-radius:12px;
+  background:#10344f;
+  color:white;
+}
+#eahChatSend {
+  border:0;
+  border-radius:12px;
+  padding:12px 17px;
+  background:#0879d7;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+#eahChatStatus {
+  padding:7px 14px;
+  font-size:12px;
+  color:#a9cde2;
+}
+@media(max-width:620px) {
+  .eah-chat-layout {
+    grid-template-columns:125px minmax(0,1fr);
+  }
+  .eah-chat-sidebar {padding:6px}
+  .eah-chat-contact {padding:9px 6px;font-size:12px}
+  .eah-chat-message {max-width:95%}
+  #eahChatOpen {right:12px;bottom:12px}
+}
+</style>
+
+<button id="eahChatOpen" type="button" hidden>
+  💬 Messagerie
+</button>
+
+<div id="eahChatModal" hidden>
+  <section id="eahChatBox"
+           role="dialog"
+           aria-modal="true"
+           aria-label="Messagerie EAH">
+    <div class="eah-chat-head">
+      <strong>💬 EAH Messagerie</strong>
+      <button id="eahChatClose" type="button">
+        ✕ Fermer
+      </button>
+    </div>
+
+    <div class="eah-chat-layout">
+      <aside class="eah-chat-sidebar">
+        <h3>Mon club</h3>
+        <div id="eahChatContacts"></div>
+      </aside>
+
+      <div class="eah-chat-main">
+        <div id="eahChatTitle">
+          Choisis une conversation
+        </div>
+
+        <div id="eahChatMessages"></div>
+
+        <form id="eahChatForm">
+          <input
+            id="eahChatInput"
+            type="text"
+            maxlength="3000"
+            placeholder="Écrire un message..."
+            autocomplete="off"
+            required
+          >
+          <button id="eahChatSend" type="submit">
+            Envoyer
+          </button>
+        </form>
+
+        <div id="eahChatStatus"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script id="eah-chat-v1-js">
+(function () {
+  "use strict";
+
+  if (window.__EAH_CHAT_V1__) return;
+  window.__EAH_CHAT_V1__ = true;
+
+  const $ = id => document.getElementById(id);
+
+  const openButton = $("eahChatOpen");
+  const modal = $("eahChatModal");
+  const closeButton = $("eahChatClose");
+  const contactsBox = $("eahChatContacts");
+  const messagesBox = $("eahChatMessages");
+  const title = $("eahChatTitle");
+  const form = $("eahChatForm");
+  const input = $("eahChatInput");
+  const sendButton = $("eahChatSend");
+  const status = $("eahChatStatus");
+
+  let client = null;
+  let currentUser = null;
+  let conversationId = null;
+  let selectedContact = null;
+  let contacts = [];
+  let polling = null;
+  let loadingMessages = false;
+
+  function message(text) {
+    status.textContent = text || "";
+  }
+
+  function getClient() {
+    if (client) return client;
+
+    if (!window.supabase?.createClient) {
+      throw new Error("Bibliothèque Supabase indisponible");
+    }
+
+    const config = window.EAH_CONFIG || {};
+
+    if (!config.SUPABASE_URL ||
+        !config.SUPABASE_PUBLISHABLE_KEY) {
+      throw new Error("Configuration Supabase manquante");
+    }
+
+    client = window.supabase.createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession:true,
+          autoRefreshToken:true
+        }
+      }
+    );
+
+    return client;
+  }
+
+  async function authenticatedUser() {
+    const db = getClient();
+
+    const {data,error} = await db.auth.getUser();
+
+    if (error || !data?.user) {
+      throw new Error(
+        "Connecte-toi avec ton compte Supabase."
+      );
+    }
+
+    return data.user;
+  }
+
+  async function loadContacts() {
+    const db = getClient();
+
+    const {data,error} = await db.rpc(
+      "eah_chat_contacts"
+    );
+
+    if (error) throw error;
+
+    contacts = data || [];
+    contactsBox.replaceChildren();
+
+    if (!contacts.length) {
+      contactsBox.textContent =
+        "Aucun coach ou administrateur disponible.";
+      return;
+    }
+
+    contacts.forEach(contact => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "eah-chat-contact";
+
+      const name = document.createElement("strong");
+      name.textContent =
+        contact.display_name || "Membre EAH";
+
+      const role = document.createElement("small");
+      role.textContent = contact.role || "";
+
+      button.append(name,role);
+
+      button.addEventListener("click", () => {
+        selectContact(contact).catch(error => {
+          message(error.message);
+        });
+      });
+
+      contactsBox.appendChild(button);
+    });
+  }
+
+  async function selectContact(contact) {
+    message("Ouverture de la conversation...");
+
+    selectedContact = contact;
+    conversationId = null;
+
+    const db = getClient();
+
+    const {data,error} = await db.rpc(
+      "eah_chat_start",
+      {p_recipient:contact.user_id}
+    );
+
+    if (error) throw error;
+
+    conversationId = data;
+
+    title.textContent =
+      contact.display_name || "Conversation";
+
+    [...contactsBox.children].forEach((button,i) => {
+      button.classList.toggle(
+        "active",
+        contacts[i]?.user_id === contact.user_id
+      );
+    });
+
+    messagesBox.replaceChildren();
+
+    await loadMessages();
+    message("");
+  }
+
+  async function loadMessages() {
+    if (!conversationId || loadingMessages) return;
+
+    loadingMessages = true;
+
+    try {
+      const db = getClient();
+
+      const {data,error} = await db
+        .from("eah_private_messages")
+        .select("id,sender_id,body,created_at")
+        .eq("conversation_id",conversationId)
+        .is("deleted_at",null)
+        .order("created_at",{ascending:false})
+        .limit(100);
+
+      if (error) throw error;
+
+      const rows = (data || []).reverse();
+
+      messagesBox.replaceChildren();
+
+      rows.forEach(row => {
+        const bubble = document.createElement("div");
+        bubble.className = "eah-chat-message";
+
+        if (row.sender_id === currentUser.id) {
+          bubble.classList.add("mine");
+        }
+
+        const body = document.createElement("div");
+        body.textContent = row.body;
+
+        const date = document.createElement("small");
+
+        date.textContent = new Date(
+          row.created_at
+        ).toLocaleString("fr-FR");
+
+        bubble.append(body,date);
+        messagesBox.appendChild(bubble);
+      });
+
+      messagesBox.scrollTop =
+        messagesBox.scrollHeight;
+
+    } catch(error) {
+      message("Lecture : " + error.message);
+    } finally {
+      loadingMessages = false;
+    }
+  }
+
+  form.addEventListener("submit",async event => {
+    event.preventDefault();
+
+    const body = input.value.trim();
+
+    if (!body || !conversationId) {
+      message("Sélectionne un destinataire.");
+      return;
+    }
+
+    sendButton.disabled = true;
+    message("Envoi...");
+
+    try {
+      const db = getClient();
+
+      const {error} = await db
+        .from("eah_private_messages")
+        .insert({
+          conversation_id:conversationId,
+          sender_id:currentUser.id,
+          body:body
+        });
+
+      if (error) throw error;
+
+      input.value = "";
+
+      await loadMessages();
+      message("Message envoyé");
+
+    } catch(error) {
+      message("Envoi impossible : " + error.message);
+    } finally {
+      sendButton.disabled = false;
+    }
+  });
+
+  function stopPolling() {
+    if (polling) {
+      clearInterval(polling);
+      polling = null;
+    }
+  }
+
+  async function openChat() {
+    modal.hidden = false;
+    message("Connexion...");
+
+    try {
+      currentUser = await authenticatedUser();
+      await loadContacts();
+
+      message("");
+
+      stopPolling();
+
+      polling = setInterval(() => {
+        if (!modal.hidden && conversationId) {
+          loadMessages();
+        }
+      },5000);
+
+    } catch(error) {
+      message(error.message);
+    }
+  }
+
+  function closeChat() {
+    modal.hidden = true;
+    stopPolling();
+  }
+
+  openButton.addEventListener("click",openChat);
+  closeButton.addEventListener("click",closeChat);
+
+  modal.addEventListener("click",event => {
+    if (event.target === modal) closeChat();
+  });
+
+  document.addEventListener("keydown",event => {
+    if (event.key === "Escape" && !modal.hidden) {
+      closeChat();
+    }
+  });
+
+  /*
+   * Raccordement au bouton Messagerie
+   * du profil Premium V7 existant.
+   */
+  document.addEventListener("click",event => {
+    const button = event.target.closest(
+      "#eahV7 .v7-tab"
+    );
+
+    if (!button) return;
+
+    if (button.textContent.includes("Messagerie")) {
+      openChat();
+    }
+  });
+
+  /*
+   * Vérification périodique de la session.
+   * Le bouton n'apparaît que pour les comptes
+   * Supabase présents parmi les membres du club.
+   */
+  async function checkAccess() {
+    try {
+      currentUser = await authenticatedUser();
+
+      const {data,error} = await getClient()
+        .rpc("eah_chat_contacts");
+
+      if (error) throw error;
+
+      // Un compte connecté peut avoir zéro contact.
+      // On vérifie donc aussi son rôle dans club_members.
+      const {data:members,error:memberError} =
+        await getClient()
+          .from("club_members")
+          .select("role,active")
+          .eq("user_id",currentUser.id);
+
+      if (memberError) throw memberError;
+
+      const authorized = (members || []).some(m =>
+        m.active === true &&
+        ["ADMIN","COACH"].includes(
+          String(m.role).toUpperCase()
+        )
+      );
+
+      openButton.hidden = !authorized;
+
+    } catch(error) {
+      openButton.hidden = true;
+    }
+  }
+
+  function init() {
+    checkAccess();
+
+    // Si l'utilisateur se connecte après
+    // le chargement de la page.
+    setInterval(checkAccess,15000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded",init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+
+<!-- FIN EAH MESSAGERIE PREMIUM CLUB V1 -->
+
 
 
 </body>
