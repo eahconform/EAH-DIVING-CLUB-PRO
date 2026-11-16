@@ -7689,6 +7689,137 @@ notice("Messagerie déverrouillée.");
 
 
 
+<!-- ==========================================
+ EAH DIVING - BOUTON MESSAGERIE PROFIL V8
+ Visible dans tous les profils Premium V7
+========================================== -->
+
+<style>
+#eahV7 .eah-profile-chat-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 18px;
+  border: 1px solid #36caff;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#086dce,#06417f);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px #0004;
+}
+
+#eahV7 .eah-profile-chat-button:hover {
+  background: #087cff;
+}
+
+#eahV7 .v7-tabs {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px;
+}
+
+@media(max-width:600px) {
+  #eahV7 .eah-profile-chat-button {
+    flex: 1 1 auto;
+    font-size: 13px;
+    padding: 11px 12px;
+  }
+}
+</style>
+
+<script id="eah-profile-chat-button-v8">
+(function () {
+  "use strict";
+
+  if (window.__EAH_PROFILE_CHAT_BUTTON_V8__) return;
+  window.__EAH_PROFILE_CHAT_BUTTON_V8__ = true;
+
+  function installButton() {
+    const profile = document.getElementById("eahV7");
+    if (!profile) return;
+
+    const tabs = profile.querySelector(".v7-tabs");
+    if (!tabs) return;
+
+    // Supprime un éventuel ancien onglet Messagerie
+    // afin de ne pas avoir deux boutons.
+    tabs.querySelectorAll(".v7-tab").forEach(button => {
+      if (/messagerie/i.test(button.textContent)) {
+        button.remove();
+      }
+    });
+
+    if (document.getElementById("eahProfileChatV8")) {
+      return;
+    }
+
+    const button = document.createElement("button");
+
+    button.id = "eahProfileChatV8";
+    button.type = "button";
+    button.className = "eah-profile-chat-button";
+    button.textContent = "💬 Messagerie";
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Ouvre le module Messagerie V2 existant.
+      const chatButton =
+        document.getElementById("eahMsgOpen");
+
+      if (!chatButton) {
+        alert(
+          "Le module de messagerie EAH V2 n'est pas chargé."
+        );
+        return;
+      }
+
+      chatButton.click();
+    });
+
+    tabs.appendChild(button);
+  }
+
+  let scheduled = false;
+
+  function scheduleInstall() {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      installButton();
+    });
+  }
+
+  function init() {
+    installButton();
+
+    // Le profil NFC peut apparaître après
+    // le chargement initial de la page.
+    const observer = new MutationObserver(scheduleInstall);
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<!-- FIN BOUTON MESSAGERIE PROFIL V8 -->
+
 
 </body>
 </html>
