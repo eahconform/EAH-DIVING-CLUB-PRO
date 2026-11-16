@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EAH Academy | Tutoriels</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#041321;
+  color:#f5faff;
+  font-family:Arial,sans-serif
+}
+header{
+  background:linear-gradient(120deg,#041321,#123c5b);
+  border-bottom:1px solid #24516d;
+  padding:24px max(20px,5vw) 38px
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:35px
+}
+.brand{font-weight:800;letter-spacing:1px}
+.back{
+  color:white;
+  text-decoration:none;
+  background:#16415d;
+  border:1px solid #367da7;
+  border-radius:12px;
+  padding:12px 16px
+}
+h1{font-size:clamp(30px,5vw,52px);margin:0 0 12px}
+.subtitle{color:#bad0df}
+main{max-width:1350px;margin:auto;padding:30px 20px 80px}
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:22px;
+  margin-bottom:28px
+}
+.filter-group{display:flex;flex-direction:column;gap:9px}
+label{font-weight:700}
+select{
+  min-width:180px;
+  padding:12px;
+  background:#10324b;
+  border:1px solid #32698d;
+  border-radius:10px;
+  color:white;
+  font-size:15px
+}
+.count{color:#b7d0e0;margin-bottom:20px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));
+  gap:24px
+}
+.card{
+  background:#09263d;
+  border:1px solid #24516d;
+  border-radius:18px;
+  overflow:hidden
+}
+.video{aspect-ratio:16/9;background:#000}
+.video iframe{width:100%;height:100%;border:0}
+.details{padding:20px}
+.details h2{font-size:21px;margin:12px 0}
+.details p{color:#b7d0e0;line-height:1.6}
+.meta{display:flex;justify-content:space-between;gap:12px}
+.tag{
+  color:#87d9ff;
+  font-size:13px;
+  font-weight:700
+}
+.stars{color:#ffcf4b;letter-spacing:2px}
+.empty{color:#b7d0e0}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="top">
+    <div class="brand">EAH DIVING · ACADEMY</div>
+    <a class="back" href="./">← Retour au site</a>
+  </div>
+  <h1>🎓 EAH Academy</h1>
+  <p class="subtitle">
+    Tutoriels techniques et préparation physique
+  </p>
+</header>
+
+<main>
+  <div class="filters">
+    <div class="filter-group">
+      <label for="category">Catégorie</label>
+      <select id="category">
+        <option value="Toutes">Toutes les catégories</option>
+        <option value="Technique">Technique</option>
+        <option value="Physique">Physique</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="difficulty">Difficulté</label>
+      <select id="difficulty">
+        <option value="0">Toutes les étoiles</option>
+        <option value="1">★ 1 étoile</option>
+        <option value="2">★★ 2 étoiles</option>
+        <option value="3">★★★ 3 étoiles</option>
+        <option value="4">★★★★ 4 étoiles</option>
+        <option value="5">★★★★★ 5 étoiles</option>
+      </select>
+    </div>
+  </div>
+
+  <p id="count" class="count">Chargement des tutoriels…</p>
+  <div id="grid" class="grid"></div>
+</main>
+
+<script>
+(function(){
+"use strict";
+
+const API =
+  "https://script.google.com/macros/s/" +
+  "AKfycbwtKjzfNHGua_XrNP9FjK2pHT3qChm26oGZ0Z2s0sph2eAOghyD0-r0_vOb-m-AjB9oJg" +
+  "/exec";
+
+const grid = document.getElementById("grid");
+const count = document.getElementById("count");
+const category = document.getElementById("category");
+const difficulty = document.getElementById("difficulty");
+
+let tutorials = [];
+
+function embedUrl(url){
+  try{
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    let id = "";
+
+    if(["youtu.be","www.youtu.be"].includes(host)){
+      id = u.pathname.split("/")[1];
+    }else if(
+      ["youtube.com","www.youtube.com","m.youtube.com"]
+        .includes(host)
+    ){
+      if(u.pathname === "/watch"){
+        id = u.searchParams.get("v");
+      }else if(
+        u.pathname.startsWith("/shorts/") ||
+        u.pathname.startsWith("/embed/")
+      ){
+        id = u.pathname.split("/")[2];
+      }
+    }
+
+    if(/^[A-Za-z0-9_-]{11}$/.test(id || "")){
+      return "https://www.youtube-nocookie.com/embed/" + id;
+    }
+  }catch(e){}
+
+  return "";
+}
+
+function render(){
+  const selectedCategory = category.value;
+  const selectedDifficulty = Number(difficulty.value);
+
+  const filtered = tutorials.filter(item =>
+    (selectedCategory === "Toutes" ||
+      item.category === selectedCategory) &&
+    (selectedDifficulty === 0 ||
+      Number(item.difficulty) === selectedDifficulty)
+  );
+
+  grid.replaceChildren();
+
+  count.textContent =
+    filtered.length + " tutoriel(s) affiché(s)";
+
+  if(!filtered.length){
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Aucune vidéo pour ces filtres.";
+    grid.appendChild(p);
+    return;
+  }
+
+  filtered.forEach(item => {
+    const url = embedUrl(item.url);
+    if(!url) return;
+
+    const card = document.createElement("article");
+    card.className = "card";
+
+    const video = document.createElement("div");
+    video.className = "video";
+
+    const iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.loading = "lazy";
+    iframe.title = item.title;
+    iframe.allowFullscreen = true;
+    iframe.allow =
+      "accelerometer; autoplay; encrypted-media; " +
+      "gyroscope; picture-in-picture; web-share";
+
+    video.appendChild(iframe);
+
+    const details = document.createElement("div");
+    details.className = "details";
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = item.category;
+
+    const stars = document.createElement("span");
+    stars.className = "stars";
+    const level = Number(item.difficulty) || 1;
+    stars.textContent =
+      "★".repeat(level) + "☆".repeat(5-level);
+    stars.setAttribute(
+      "aria-label",
+      "Difficulté " + level + " sur 5"
+    );
+
+    meta.append(tag, stars);
+
+    const title = document.createElement("h2");
+    title.textContent = item.title;
+
+    const description = document.createElement("p");
+    description.textContent = item.description || "";
+
+    details.append(meta, title, description);
+    card.append(video, details);
+    grid.appendChild(card);
+  });
+}
+
+category.addEventListener("change",render);
+difficulty.addEventListener("change",render);
+
+const callback = "EAH_TUTOS_CALLBACK";
+const script = document.createElement("script");
+
+const timeout = setTimeout(() => {
+  delete window[callback];
+  script.remove();
+  count.textContent =
+    "Chargement impossible : vérifie le déploiement Apps Script.";
+},15000);
+
+window[callback] = function(result){
+  clearTimeout(timeout);
+  script.remove();
+  delete window[callback];
+
+  if(!result || !result.ok){
+    count.textContent = "Erreur de chargement des tutoriels.";
+    return;
+  }
+
+  tutorials = Array.isArray(result.tutorials)
+    ? result.tutorials.filter(item => embedUrl(item.url))
+    : [];
+
+  render();
+};
+
+script.onerror = function(){
+  clearTimeout(timeout);
+  delete window[callback];
+  script.remove();
+  count.textContent = "Connexion aux tutoriels impossible.";
+};
+
+script.src =
+  API + "?action=tutos&callback=" + callback +
+  "&_=" + Date.now();
+
+document.head.appendChild(script);
+})();
+</script>
+</body>
+</html>
