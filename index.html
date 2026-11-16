@@ -8942,6 +8942,368 @@ notice("Messagerie déverrouillée.");
 
 <!-- FIN EAH DIVING PREMIUM V10 -->
 
+<!-- =====================================================
+ EAH DIVING - NAVIGATION MOBILE ET PROFIL NFC V12
+ - Explorer le site : accueil direct
+ - Menu fermé par défaut
+ - Hamburger pour ouvrir / fermer
+ - Fermeture après sélection d'une page
+ - Profil NFC conservé
+===================================================== -->
+
+<style id="eah-navigation-v12-css">
+
+/* Profil fermé lorsqu'on explore le site */
+#eahDiverOnlyApp.eah-site-exploring {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Bouton Explorer le site */
+#eahExplorerSiteV12 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid #43c9ff;
+  border-radius: 12px;
+  background: #0a4776;
+  color: #fff;
+  font: 800 14px Arial,sans-serif;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+
+  /* Menu caché tant qu'il n'est pas demandé */
+  #navigation:not(.open) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* Menu ouvert depuis le hamburger */
+  #navigation.open {
+    display: flex !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    position: fixed !important;
+    top: var(--eah-nav-top, 75px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: calc(100dvh - var(--eah-nav-top, 75px) - 12px) !important;
+    overflow-y: auto !important;
+    padding: 14px !important;
+    border: 1px solid #285d80 !important;
+    border-radius: 17px !important;
+    background: #061b2c !important;
+    box-shadow: 0 18px 50px #000b !important;
+    z-index: 2147482000 !important;
+  }
+
+  #navigation.open > a,
+  #navigation.open > .nav-dropdown,
+  #navigation.open > .nav-dropdown > button {
+    width: 100% !important;
+  }
+
+  #navigation.open > a {
+    display: flex !important;
+    justify-content: center !important;
+    min-height: 44px;
+    padding: 11px !important;
+  }
+
+  #navigation .nav-dropdown-menu {
+    position: static !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  #mobileMenu {
+    display: flex !important;
+    position: relative;
+    z-index: 2147482001 !important;
+  }
+
+  /* Empêche un menu fermé de recouvrir le site */
+  body:not(.eah-nav-open) #navigation {
+    pointer-events: none;
+  }
+
+  body.eah-nav-open #navigation {
+    pointer-events: auto;
+  }
+}
+</style>
+
+<script id="eah-navigation-v12-js">
+(function () {
+  "use strict";
+
+  if (window.__EAH_NAVIGATION_V12__) return;
+  window.__EAH_NAVIGATION_V12__ = true;
+
+  const $ = selector => document.querySelector(selector);
+
+  const nav = $("#navigation");
+  const hamburger = $("#mobileMenu");
+
+  if (!nav || !hamburger) {
+    console.warn(
+      "EAH V12 : navigation ou hamburger introuvable."
+    );
+    return;
+  }
+
+  let exploring = false;
+
+  function syncMenu() {
+    const opened = nav.classList.contains("open");
+
+    document.body.classList.toggle(
+      "eah-nav-open",
+      opened
+    );
+
+    hamburger.setAttribute(
+      "aria-expanded",
+      String(opened)
+    );
+
+    hamburger.setAttribute(
+      "aria-label",
+      opened ? "Fermer le menu" : "Ouvrir le menu"
+    );
+
+    const header = $("#siteHeader");
+    if (header) {
+      document.documentElement.style.setProperty(
+        "--eah-nav-top",
+        Math.ceil(header.getBoundingClientRect().bottom) + "px"
+      );
+    }
+  }
+
+  function closeMenu() {
+    nav.classList.remove("open");
+    syncMenu();
+  }
+
+  function openMenu() {
+    nav.classList.add("open");
+    syncMenu();
+  }
+
+  function closeProfile() {
+    exploring = true;
+
+    const app = $("#eahDiverOnlyApp");
+
+    if (app) {
+      app.classList.add("eah-site-exploring");
+      app.setAttribute("aria-hidden", "true");
+    }
+
+    const chat = $("#eahMsgOverlay");
+
+    if (chat && !chat.hidden) {
+      $("#eahMsgClose")?.click();
+    }
+
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+
+    closeMenu();
+  }
+
+  function openProfile() {
+    exploring = false;
+
+    const app = $("#eahDiverOnlyApp");
+
+    if (app) {
+      app.classList.remove("eah-site-exploring");
+      app.removeAttribute("aria-hidden");
+    }
+
+    closeMenu();
+  }
+
+  function exploreSite() {
+    closeProfile();
+
+    // Active la page d'accueil existante.
+    const home = document.querySelector(
+      '.brand[data-page="accueil"]'
+    );
+
+    if (home) {
+      home.click();
+    } else {
+      location.hash = "#accueil";
+    }
+
+    closeMenu();
+
+    requestAnimationFrame(() => {
+      closeMenu();
+      window.scrollTo({top:0,behavior:"instant"});
+    });
+  }
+
+  function installExplorerButton() {
+    const app = $("#eahDiverOnlyApp");
+    if (!app) return;
+
+    if (exploring) {
+      app.classList.add("eah-site-exploring");
+    }
+
+    const shell = app.querySelector(
+      ".eah-diver-only-shell"
+    );
+
+    if (!shell) return;
+
+    // Remplace les anciens boutons Explorer.
+    shell.querySelectorAll(
+      "#eahProfileExitButton, #eahV10Exit, #eahExplorerSiteV12"
+    ).forEach(node => node.remove());
+
+    const button = document.createElement("button");
+    button.id = "eahExplorerSiteV12";
+    button.type = "button";
+    button.textContent = "🌐 Explorer le site";
+
+    button.addEventListener("click",function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      exploreSite();
+    });
+
+    shell.prepend(button);
+  }
+
+  // Le script principal gère déjà le hamburger.
+  // On synchronise son état après son clic.
+  hamburger.addEventListener("click",function() {
+    requestAnimationFrame(syncMenu);
+  });
+
+  // Une rubrique sélectionnée ferme immédiatement le menu.
+  nav.addEventListener("click",function(event) {
+    const link = event.target.closest("a");
+
+    if (!link) return;
+
+    closeMenu();
+
+    if (link.dataset.page) {
+      closeProfile();
+    }
+  },true);
+
+  // Le logo EAH ramène à l'accueil.
+  document.addEventListener("click",function(event) {
+    const home = event.target.closest(
+      '.brand[data-page="accueil"]'
+    );
+
+    if (home) {
+      closeProfile();
+      closeMenu();
+    }
+  },true);
+
+  // Cliquer en dehors ferme le menu.
+  document.addEventListener("pointerdown",function(event) {
+    if (!nav.classList.contains("open")) return;
+
+    if (
+      nav.contains(event.target) ||
+      hamburger.contains(event.target)
+    ) {
+      return;
+    }
+
+    closeMenu();
+  });
+
+  window.addEventListener("hashchange",function() {
+    if (location.hash === "#profil") {
+      openProfile();
+    } else if (location.hash) {
+      closeProfile();
+    }
+  });
+
+  window.addEventListener("popstate",closeMenu);
+
+  document.addEventListener("keydown",function(event) {
+    if (event.key === "Escape") closeMenu();
+  });
+
+  window.addEventListener("resize",function() {
+    closeMenu();
+  });
+
+  // Ne pas laisser un ancien état ouvert au démarrage.
+  closeMenu();
+
+  // Le profil NFC est créé dynamiquement.
+  let scheduled = false;
+
+  const observer = new MutationObserver(function() {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(function() {
+      scheduled = false;
+
+      const app = $("#eahDiverOnlyApp");
+      const shell = app?.querySelector(
+        ".eah-diver-only-shell"
+      );
+
+      if (app && exploring) {
+        app.classList.add("eah-site-exploring");
+      }
+
+      if (shell && !$("#eahExplorerSiteV12")) {
+        installExplorerButton();
+      }
+    });
+  });
+
+  observer.observe(document.body,{
+    childList:true,
+    subtree:true
+  });
+
+  installExplorerButton();
+
+  window.EAH_NAVIGATION_V12 = {
+    exploreSite,
+    closeProfile,
+    openProfile,
+    closeMenu,
+    openMenu
+  };
+
+})();
+</script>
+
+<!-- FIN EAH NAVIGATION V12 -->
+
 
 </body>
 </html>
