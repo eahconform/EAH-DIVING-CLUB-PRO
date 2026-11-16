@@ -298,40 +298,123 @@ window.EAH_CONFIG = {
 ></script>
 
 
-<style>
-/* EAH ACADEMY - MENU PREMIUM */
 
-.nav-tutos-premium{
+<style>
+/* EAH DIVING - NAVIGATION PREMIUM */
+
+.navigation{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:nowrap;
+  gap:5px;
+}
+
+.navigation > a,
+.navigation .nav-dropdown-button{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:7px;
+  min-height:42px;
+  padding:9px 10px;
+  white-space:nowrap;
+  flex-shrink:0;
+  font-size:13px;
+  line-height:1.2;
+}
+
+.navigation .nav-dropdown{
+  position:relative;
+  flex-shrink:0;
+}
+
+.navigation .nav-tutos-premium{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   color:#45d2ff !important;
   font-weight:800;
+  border:1px solid rgba(69,210,255,.35);
+  border-radius:11px;
+  background:rgba(69,210,255,.08);
   text-decoration:none;
   white-space:nowrap;
-  padding:10px 14px;
-  border:1px solid rgba(69,210,255,.35);
-  border-radius:12px;
-  background:rgba(69,210,255,.08);
-  transition:all .2s ease;
 }
 
-.nav-tutos-premium:hover{
-  color:#fff !important;
+.navigation .nav-tutos-premium:hover{
+  color:white !important;
   background:#087fc0;
   border-color:#45d2ff;
-  box-shadow:0 4px 18px rgba(0,180,255,.2);
 }
 
-@media(max-width:768px){
-  .nav-tutos-premium{
-    width:100%;
+.navigation .nav-club{
+  color:#45d2ff;
+}
+
+/* TABLETTES ET ECRANS INTERMEDIAIRES */
+@media (max-width:1350px){
+  .mobile-menu{
+    display:block !important;
+  }
+
+  .navigation{
+    position:absolute !important;
+    top:calc(100% + 1px);
+    left:14px;
+    right:14px;
+    width:auto;
+    display:none;
+    flex-direction:column;
+    align-items:stretch;
     justify-content:flex-start;
-    margin:5px 0;
+    gap:4px;
+    padding:14px;
+    max-height:calc(100dvh - 95px);
+    overflow-y:auto;
+    background:rgba(3,19,31,.98);
+    border:1px solid rgba(69,210,255,.2);
+    border-radius:18px;
+    box-shadow:0 20px 45px rgba(0,0,0,.35);
+    z-index:1100;
+  }
+
+  .navigation.open{
+    display:flex !important;
+  }
+
+  .navigation > a,
+  .navigation .nav-dropdown-button{
+    width:100%;
+    min-height:46px;
+    padding:12px 14px;
+    justify-content:flex-start;
+    font-size:14px;
+    text-align:left;
+  }
+
+  .navigation .nav-dropdown{
+    width:100%;
+  }
+
+  .navigation .nav-dropdown-menu{
+    position:static;
+    display:block;
+    width:100%;
+    min-width:0;
+    margin:4px 0 8px;
+    opacity:1;
+    visibility:visible;
+    transform:none;
+    box-shadow:none;
+    background:rgba(15,45,68,.65);
+  }
+
+  .navigation .nav-tutos-premium{
+    justify-content:flex-start;
   }
 }
 </style>
+
 
 </head>
 
@@ -438,10 +521,6 @@ Tarifs
 >
   🎓 Tutos EAH
 </a>
-
-<div class="nav-dropdown">
-
-
 
 <div class="nav-dropdown">
 
