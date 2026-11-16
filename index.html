@@ -6774,5 +6774,411 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 <!-- FIN PROFIL PREMIUM V6 -->
+  
+<!-- =====================================================
+     EAH DIVING — PAGE ACADEMY V2
+     Page dédiée + Google Sheets
+===================================================== -->
+
+<style>
+  body.eah-academy-open {
+    overflow: hidden !important;
+  }
+
+  #eahAcademyPage {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    overflow-y: auto;
+    background: #041321;
+    color: #f5faff;
+    font-family: inherit;
+  }
+
+  body.eah-academy-open #eahAcademyPage {
+    display: block;
+  }
+
+  .eah-academy-header {
+    padding: 30px max(22px, 5vw);
+    background: linear-gradient(
+      135deg,
+      #041321,
+      #103b5c
+    );
+    border-bottom: 1px solid #23516d;
+  }
+
+  .eah-academy-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .eah-academy-logo {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .eah-academy-back {
+    background: #123c59;
+    border: 1px solid #4b88ad;
+    color: white;
+    border-radius: 12px;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .eah-academy-header h1 {
+    font-size: clamp(30px, 5vw, 54px);
+    margin: 0 0 12px;
+  }
+
+  .eah-academy-header p {
+    color: #b6d0e1;
+    font-size: 17px;
+    margin: 0;
+  }
+
+  .eah-academy-content {
+    max-width: 1350px;
+    margin: auto;
+    padding: 40px 22px 90px;
+  }
+
+  .eah-academy-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 24px;
+  }
+
+  .eah-academy-card {
+    overflow: hidden;
+    background: #09263d;
+    border: 1px solid #24516d;
+    border-radius: 20px;
+  }
+
+  .eah-academy-video {
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+
+  .eah-academy-video iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .eah-academy-card-body {
+    padding: 22px;
+  }
+
+  .eah-academy-card h2 {
+    font-size: 21px;
+    margin: 0 0 12px;
+  }
+
+  .eah-academy-card p {
+    color: #b7d0e0;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .eah-academy-status {
+    color: #b7d0e0;
+    padding: 25px 0;
+  }
+</style>
+
+<section id="eahAcademyPage" aria-label="Tutoriels EAH">
+  <div class="eah-academy-header">
+    <div class="eah-academy-top">
+      <div class="eah-academy-logo">
+        EAH DIVING · ACADEMY
+      </div>
+
+      <button
+        type="button"
+        class="eah-academy-back"
+        id="eahAcademyBack"
+      >
+        ← Retour au site
+      </button>
+    </div>
+
+    <h1>🎓 EAH Academy</h1>
+
+    <p>
+      Tutoriels de plongeon, techniques,
+      préparation physique et conseils.
+    </p>
+  </div>
+
+  <main class="eah-academy-content">
+    <div
+      id="eahAcademyGrid"
+      class="eah-academy-grid"
+    >
+      <p class="eah-academy-status">
+        Chargement des tutoriels…
+      </p>
+    </div>
+  </main>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  const API =
+    "https://script.google.com/macros/s/" +
+    "AKfycbwtKjzfNHGua_XrNP9FjK2pHT3qChm26oGZ0Z2s0sph2eAOghyD0-r0_vOb-m-AjB9oJg" +
+    "/exec";
+
+  const page = document.getElementById(
+    "eahAcademyPage"
+  );
+
+  const grid = document.getElementById(
+    "eahAcademyGrid"
+  );
+
+  let loading = false;
+  let requestId = 0;
+
+  function youtubeEmbed(url) {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+
+      let id = "";
+
+      if (host === "youtu.be" ||
+          host === "www.youtu.be") {
+        id = parsed.pathname.split("/")[1];
+      } else if (
+        ["youtube.com", "www.youtube.com",
+         "m.youtube.com"].includes(host)
+      ) {
+        if (parsed.pathname === "/watch") {
+          id = parsed.searchParams.get("v");
+        } else if (
+          parsed.pathname.startsWith("/shorts/") ||
+          parsed.pathname.startsWith("/embed/")
+        ) {
+          id = parsed.pathname.split("/")[2];
+        }
+      }
+
+      if (/^[a-zA-Z0-9_-]{11}$/.test(id || "")) {
+        return "https://www.youtube-nocookie.com/embed/" +
+          id;
+      }
+    } catch (error) {}
+
+    return "";
+  }
+
+  function setStatus(message) {
+    grid.replaceChildren();
+
+    const p = document.createElement("p");
+    p.className = "eah-academy-status";
+    p.textContent = message;
+
+    grid.appendChild(p);
+  }
+
+  function renderTutorials(items) {
+    grid.replaceChildren();
+
+    const tutorials = Array.isArray(items)
+      ? items
+      : [];
+
+    let count = 0;
+
+    tutorials.forEach(item => {
+      const embed = youtubeEmbed(
+        String(item.url || "")
+      );
+
+      if (!embed) return;
+
+      const card = document.createElement("article");
+      card.className = "eah-academy-card";
+
+      const video = document.createElement("div");
+      video.className = "eah-academy-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.src = embed;
+      iframe.title = String(item.title || "Tutoriel");
+      iframe.loading = "lazy";
+      iframe.allowFullscreen = true;
+      iframe.allow =
+        "accelerometer; autoplay; encrypted-media; " +
+        "gyroscope; picture-in-picture; web-share";
+
+      video.appendChild(iframe);
+
+      const body = document.createElement("div");
+      body.className = "eah-academy-card-body";
+
+      const title = document.createElement("h2");
+      title.textContent = item.title || "Tutoriel";
+
+      const description = document.createElement("p");
+      description.textContent = item.description || "";
+
+      body.append(title, description);
+      card.append(video, body);
+      grid.appendChild(card);
+
+      count++;
+    });
+
+    if (!count) {
+      setStatus("Aucun tutoriel disponible pour le moment.");
+    }
+  }
+
+  function loadTutorials() {
+    if (loading) return;
+
+    loading = true;
+    setStatus("Chargement des tutoriels…");
+
+    const currentRequest = ++requestId;
+    const callback = "EAH_TUTOS_CALLBACK";
+
+    const script = document.createElement("script");
+
+    const timeout = setTimeout(() => {
+      if (currentRequest !== requestId) return;
+
+      loading = false;
+      delete window[callback];
+      script.remove();
+
+      setStatus(
+        "Le chargement a expiré. Vérifie le déploiement Apps Script."
+      );
+    }, 12000);
+
+    window[callback] = function (response) {
+      if (currentRequest !== requestId) return;
+
+      clearTimeout(timeout);
+      loading = false;
+      script.remove();
+      delete window[callback];
+
+      if (!response || !response.ok) {
+        setStatus(
+          "Impossible de charger les tutoriels."
+        );
+        return;
+      }
+
+      renderTutorials(response.tutorials);
+    };
+
+    script.onerror = function () {
+      if (currentRequest !== requestId) return;
+
+      clearTimeout(timeout);
+      loading = false;
+      delete window[callback];
+      script.remove();
+
+      setStatus(
+        "Erreur de connexion au catalogue."
+      );
+    };
+
+    script.src =
+      API +
+      "?action=tutos" +
+      "&callback=" + callback +
+      "&_=" + Date.now();
+
+    document.head.appendChild(script);
+  }
+
+  function openAcademy() {
+    document.body.classList.add(
+      "eah-academy-open"
+    );
+
+    page.scrollTop = 0;
+    loadTutorials();
+  }
+
+  function closeAcademy() {
+    document.body.classList.remove(
+      "eah-academy-open"
+    );
+
+    // Arrêter les vidéos quand on quitte la page.
+    grid.querySelectorAll("iframe").forEach(frame => {
+      frame.src = "about:blank";
+    });
+  }
+
+  function syncPage() {
+    if (location.hash === "#tutos-eah") {
+      openAcademy();
+    } else {
+      closeAcademy();
+    }
+  }
+
+  function navigateAcademy() {
+    if (location.hash === "#tutos-eah") {
+      openAcademy();
+    } else {
+      location.hash = "tutos-eah";
+    }
+  }
+
+  document.getElementById(
+    "eahAcademyBack"
+  ).addEventListener("click", function () {
+    if (location.hash === "#tutos-eah") {
+      history.back();
+    } else {
+      closeAcademy();
+    }
+  });
+
+  // Intercepter le bouton Tutos existant.
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest(
+      "#eah5SiteTuto, " +
+      'a[href="#tutos-eah"], ' +
+      '[data-eah-academy]'
+    );
+
+    if (!button) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    navigateAcademy();
+  }, true);
+
+  window.addEventListener("hashchange", syncPage);
+
+  syncPage();
+})();
+</script>
+
 </body>
 </html>
