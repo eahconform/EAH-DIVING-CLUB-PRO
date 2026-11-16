@@ -7253,9 +7253,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 </style>
 
-<script id="eah-index-v7-script">
-(function () {
-  "use strict";
 
   const API =
     "https://script.google.com/macros/s/" +
@@ -7674,6 +7671,52 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- FIN CORRECTIF INDEX V7 -->
+
+<!-- EAH DIVING - NAVIGATION TUTORIELS CORRIGÉE -->
+<style>
+  #eah5Tutorials,
+  #eahAcademyPage {
+    display: none !important;
+  }
+
+  body.eah-academy-open {
+    overflow: auto !important;
+  }
+</style>
+
+<script id="eah-tutos-navigation-finale">
+(function () {
+  "use strict";
+
+  const TUTOS_URL = "./tutos.html";
+
+  // Les anciens liens vers les tutoriels restent compatibles.
+  if (window.location.hash === "#tutos-eah") {
+    window.location.replace(TUTOS_URL);
+    return;
+  }
+
+  // Un clic sur Tutos ouvre sa véritable page HTML.
+  document.addEventListener("click", function (event) {
+    const target = event.target.closest(
+      '#eah5SiteTuto, ' +
+      'a[href="#tutos-eah"], ' +
+      '[data-eah-academy]'
+    );
+
+    if (!target) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    window.location.href = TUTOS_URL;
+  }, true);
+
+  // Supprime l'état bloquant laissé par l'ancien système.
+  document.body.classList.remove("eah-academy-open");
+})();
+</script>
+<!-- FIN NAVIGATION TUTORIELS -->
 
 </body>
 </html>
